@@ -42,6 +42,14 @@ All colors MUST be HSL.
 
     --radius: 0.75rem;
 
+    /* Prangon Theme Colors */
+    --electric-coral: 6 93% 71%;
+    --olive-dark: 82 37% 30%;
+    --parrot-green: 90 100% 50%;
+
+    /* Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(var(--olive-dark)), hsl(var(--parrot-green)));
+    
     --sidebar-background: 0 0% 98%;
 
     --sidebar-foreground: 240 5.3% 26.1%;
@@ -91,6 +99,14 @@ All colors MUST be HSL.
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
     --ring: 239 84% 67%;
+
+    /* Prangon Theme Colors - Dark Mode */
+    --electric-coral: 6 93% 71%;
+    --olive-dark: 82 37% 35%;
+    --parrot-green: 90 100% 45%;
+
+    --gradient-primary: linear-gradient(135deg, hsl(var(--olive-dark)), hsl(var(--parrot-green)));
+
     --sidebar-background: 240 5.9% 10%;
     --sidebar-foreground: 240 4.8% 95.9%;
     --sidebar-primary: 224.3 76.3% 48%;
