@@ -3,8 +3,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Heart, MessageCircle, Share2, Bookmark } from "lucide-react";
 import { useState } from "react";
+import { useToggleLike, usePostLikes } from "@/hooks/usePostInteractions";
+import { formatDistanceToNow } from "date-fns";
+import { CommentsDialog } from "./CommentsDialog";
 
 interface PostCardProps {
+  id: string;
   author: {
     name: string;
     avatar?: string;
@@ -12,19 +16,23 @@ interface PostCardProps {
   };
   content: string;
   image?: string;
+  video?: string;
   likes: number;
   comments: number;
   timestamp: string;
 }
 
-export const PostCard = ({ author, content, image, likes, comments, timestamp }: PostCardProps) => {
-  const [isLiked, setIsLiked] = useState(false);
+export const PostCard = ({ id, author, content, image, video, likes, comments, timestamp }: PostCardProps) => {
   const [isSaved, setIsSaved] = useState(false);
-  const [likesCount, setLikesCount] = useState(likes);
+  const [showComments, setShowComments] = useState(false);
+  
+  const { data: likeData } = usePostLikes(id);
+  const toggleLike = useToggleLike();
+  
+  const isLiked = likeData?.isLiked || false;
 
   const handleLike = () => {
-    setIsLiked(!isLiked);
-    setLikesCount(isLiked ? likesCount - 1 : likesCount + 1);
+    toggleLike.mutate({ postId: id, isLiked });
   };
 
   return (
@@ -33,22 +41,29 @@ export const PostCard = ({ author, content, image, likes, comments, timestamp }:
         {/* Post Header */}
         <div className="flex items-center gap-3 mb-3">
           <Avatar className="h-10 w-10">
-            <AvatarImage src={author.avatar} alt={author.name} />
+            <AvatarImage src={author.avatar || undefined} alt={author.name} />
             <AvatarFallback>{author.name.charAt(0)}</AvatarFallback>
           </Avatar>
           <div className="flex-1">
             <p className="font-semibold text-sm">{author.name}</p>
-            <p className="text-xs text-muted-foreground">@{author.username} · {timestamp}</p>
+            <p className="text-xs text-muted-foreground">
+              @{author.username} · {formatDistanceToNow(new Date(timestamp), { addSuffix: true })}
+            </p>
           </div>
         </div>
 
         {/* Post Content */}
-        <p className="text-sm mb-3">{content}</p>
+        {content && <p className="text-sm mb-3">{content}</p>}
 
-        {/* Post Image */}
+        {/* Post Media */}
         {image && (
           <div className="mb-3 rounded-lg overflow-hidden">
-            <img src={image} alt="Post" className="w-full object-cover" />
+            <img src={image} alt="Post" className="w-full object-cover max-h-96" />
+          </div>
+        )}
+        {video && (
+          <div className="mb-3 rounded-lg overflow-hidden">
+            <video src={video} controls className="w-full max-h-96" />
           </div>
         )}
 
@@ -60,13 +75,19 @@ export const PostCard = ({ author, content, image, likes, comments, timestamp }:
               size="sm"
               className="gap-2 h-8 px-2"
               onClick={handleLike}
+              disabled={toggleLike.isPending}
             >
               <Heart
-                className={`h-5 w-5 ${isLiked ? "fill-red-500 text-red-500" : ""}`}
+                className={`h-5 w-5 transition-colors ${isLiked ? "fill-red-500 text-red-500" : ""}`}
               />
-              <span className="text-xs">{likesCount}</span>
+              <span className="text-xs">{likes}</span>
             </Button>
-            <Button variant="ghost" size="sm" className="gap-2 h-8 px-2">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="gap-2 h-8 px-2"
+              onClick={() => setShowComments(true)}
+            >
               <MessageCircle className="h-5 w-5" />
               <span className="text-xs">{comments}</span>
             </Button>
@@ -83,6 +104,12 @@ export const PostCard = ({ author, content, image, likes, comments, timestamp }:
             <Bookmark className={`h-5 w-5 ${isSaved ? "fill-primary" : ""}`} />
           </Button>
         </div>
+        
+        <CommentsDialog 
+          postId={id} 
+          open={showComments} 
+          onOpenChange={setShowComments} 
+        />
       </CardContent>
     </Card>
   );
