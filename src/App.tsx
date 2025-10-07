@@ -16,6 +16,8 @@ import Search from "./pages/Search";
 import Notifications from "./pages/Notifications";
 import Circles from "./pages/Circles";
 import Live from "./pages/Live";
+import Friends from "./pages/Friends";
+import Settings from "./pages/Settings";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 
@@ -55,6 +57,8 @@ const App = () => {
               <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
               <Route path="/circles" element={<ProtectedRoute><Circles /></ProtectedRoute>} />
               <Route path="/live" element={<ProtectedRoute><Live /></ProtectedRoute>} />
+              <Route path="/friends" element={<ProtectedRoute><Friends /></ProtectedRoute>} />
+              <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </AuthProvider>
