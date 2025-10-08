@@ -5,10 +5,13 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { MessageCircle, UserCircle } from "lucide-react";
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
+import { useConversations } from "@/hooks/useConversations";
 
 export const MyFriends = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
+  const { createConversation } = useConversations();
 
   const { data: friendships } = useQuery({
     queryKey: ["friendships", user?.id],
@@ -51,16 +54,24 @@ export const MyFriends = () => {
               </div>
             </div>
             <div className="flex gap-2">
-              <Button size="sm" variant="outline" className="flex-1" asChild>
-                <Link to={`/profile/${friend.id}`}>
-                  View Profile
-                </Link>
+              <Button
+                size="sm"
+                variant="outline"
+                className="flex-1"
+                onClick={() => navigate(`/profile/${friend.id}`)}
+              >
+                View Profile
               </Button>
-              <Button size="sm" className="flex-1" asChild>
-                <Link to="/messages">
-                  <MessageCircle className="h-4 w-4 mr-1" />
-                  Message
-                </Link>
+              <Button
+                size="sm"
+                className="flex-1"
+                onClick={async () => {
+                  const conversationId = await createConversation.mutateAsync(friend.id);
+                  navigate(`/messages?conversation=${conversationId}`);
+                }}
+              >
+                <MessageCircle className="h-4 w-4 mr-1" />
+                Message
               </Button>
             </div>
           </Card>

@@ -36,7 +36,7 @@ export const ReelCard = ({
   const videoRef = useRef<HTMLVideoElement>(null);
   
   const { data: likeData } = usePostLikes(id);
-  const toggleLike = useToggleLike();
+  const toggleLike = useToggleLike(id);
   
   const isLiked = likeData?.isLiked || false;
 
@@ -51,7 +51,7 @@ export const ReelCard = ({
   }, [isInView]);
 
   const handleLike = () => {
-    toggleLike.mutate({ postId: id, isLiked });
+    toggleLike.mutate(isLiked);
   };
 
   return (

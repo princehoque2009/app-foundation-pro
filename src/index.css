@@ -17,8 +17,8 @@ All colors MUST be HSL.
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
 
-    /* Prangon Brand Colors */
-    --primary: 239 84% 67%;
+    /* Prangon Brand Colors - Electric Coral */
+    --primary: 6 93% 71%;
     --primary-foreground: 0 0% 100%;
 
     --secondary: 220 14% 96%;
@@ -27,7 +27,7 @@ All colors MUST be HSL.
     --muted: 220 14% 96%;
     --muted-foreground: 215.4 16.3% 46.9%;
 
-    --accent: 38 92% 50%;
+    --accent: 6 93% 71%;
     --accent-foreground: 0 0% 100%;
 
     --success: 160 84% 39%;
@@ -38,7 +38,7 @@ All colors MUST be HSL.
 
     --border: 220 13% 91%;
     --input: 220 13% 91%;
-    --ring: 239 84% 67%;
+    --ring: 6 93% 71%;
 
     --radius: 0.75rem;
 
@@ -77,8 +77,8 @@ All colors MUST be HSL.
     --popover: 222.2 84% 4.9%;
     --popover-foreground: 210 40% 98%;
 
-    /* Prangon Brand Colors - Dark Mode */
-    --primary: 239 84% 67%;
+    /* Prangon Brand Colors - Electric Coral Dark Mode */
+    --primary: 6 93% 71%;
     --primary-foreground: 0 0% 100%;
 
     --secondary: 217.2 32.6% 17.5%;
@@ -87,7 +87,7 @@ All colors MUST be HSL.
     --muted: 217.2 32.6% 17.5%;
     --muted-foreground: 215 20.2% 65.1%;
 
-    --accent: 38 92% 50%;
+    --accent: 6 93% 71%;
     --accent-foreground: 0 0% 100%;
 
     --success: 160 84% 39%;
@@ -98,7 +98,7 @@ All colors MUST be HSL.
 
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
-    --ring: 239 84% 67%;
+    --ring: 6 93% 71%;
 
     /* Prangon Theme Colors - Dark Mode */
     --electric-coral: 6 93% 71%;

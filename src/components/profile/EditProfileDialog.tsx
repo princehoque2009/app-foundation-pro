@@ -78,11 +78,54 @@ export const EditProfileDialog = ({ profile, open, onOpenChange }: EditProfileDi
     },
   });
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      setAvatarFile(file);
-      setPreviewUrl(URL.createObjectURL(file));
+      // Compress image if larger than 1MB
+      if (file.size > 1024 * 1024) {
+        try {
+          const canvas = document.createElement("canvas");
+          const ctx = canvas.getContext("2d");
+          const img = new Image();
+          
+          img.onload = () => {
+            const maxSize = 800;
+            let width = img.width;
+            let height = img.height;
+            
+            if (width > height && width > maxSize) {
+              height *= maxSize / width;
+              width = maxSize;
+            } else if (height > maxSize) {
+              width *= maxSize / height;
+              height = maxSize;
+            }
+            
+            canvas.width = width;
+            canvas.height = height;
+            ctx?.drawImage(img, 0, 0, width, height);
+            
+            canvas.toBlob((blob) => {
+              if (blob) {
+                const compressedFile = new File([blob], file.name, {
+                  type: "image/jpeg",
+                  lastModified: Date.now(),
+                });
+                setAvatarFile(compressedFile);
+                setPreviewUrl(URL.createObjectURL(compressedFile));
+              }
+            }, "image/jpeg", 0.8);
+          };
+          
+          img.src = URL.createObjectURL(file);
+        } catch (error) {
+          setAvatarFile(file);
+          setPreviewUrl(URL.createObjectURL(file));
+        }
+      } else {
+        setAvatarFile(file);
+        setPreviewUrl(URL.createObjectURL(file));
+      }
     }
   };
 

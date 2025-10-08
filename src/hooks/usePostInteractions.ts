@@ -2,11 +2,11 @@ import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 
-export const useToggleLike = () => {
+export const useToggleLike = (postId: string) => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ postId, isLiked }: { postId: string; isLiked: boolean }) => {
+    mutationFn: async (isLiked: boolean) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
@@ -24,9 +24,33 @@ export const useToggleLike = () => {
         if (error) throw error;
       }
     },
-    onSuccess: () => {
+    onMutate: async (isLiked) => {
+      // Optimistic update
+      await queryClient.cancelQueries({ queryKey: ["posts"] });
+      const previousPosts = queryClient.getQueryData(["posts"]);
+      
+      queryClient.setQueryData(["posts"], (old: any) => {
+        if (!old) return old;
+        return old.map((post: any) =>
+          post.id === postId
+            ? {
+                ...post,
+                likes_count: isLiked ? post.likes_count - 1 : post.likes_count + 1,
+              }
+            : post
+        );
+      });
+
+      return { previousPosts };
+    },
+    onError: (err, variables, context) => {
+      if (context?.previousPosts) {
+        queryClient.setQueryData(["posts"], context.previousPosts);
+      }
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["posts"] });
-      queryClient.invalidateQueries({ queryKey: ["likes"] });
+      queryClient.invalidateQueries({ queryKey: ["likes", postId] });
     },
   });
 };

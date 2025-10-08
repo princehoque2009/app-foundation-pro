@@ -27,12 +27,12 @@ export const PostCard = ({ id, author, content, image, video, likes, comments, t
   const [showComments, setShowComments] = useState(false);
   
   const { data: likeData } = usePostLikes(id);
-  const toggleLike = useToggleLike();
+  const toggleLike = useToggleLike(id);
   
   const isLiked = likeData?.isLiked || false;
 
   const handleLike = () => {
-    toggleLike.mutate({ postId: id, isLiked });
+    toggleLike.mutate(isLiked);
   };
 
   return (

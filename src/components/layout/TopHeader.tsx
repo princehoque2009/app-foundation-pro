@@ -1,4 +1,4 @@
-import { Search, Bell, LogOut, Users } from "lucide-react";
+import { Search, Bell, LogOut, Users, MessageCircle } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -33,6 +33,12 @@ export const TopHeader = () => {
             className="text-muted-foreground hover:text-foreground transition-colors"
           >
             <Users className="h-5 w-5" />
+          </Link>
+          <Link
+            to="/messages"
+            className="text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <MessageCircle className="h-5 w-5" />
           </Link>
           <Link
             to="/notifications"
