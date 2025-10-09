@@ -7,6 +7,19 @@ import { Input } from "@/components/ui/input";
 import { useCreatePost } from "@/hooks/usePosts";
 import { Loader2, Image, Video, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { z } from "zod";
+import { toast } from "@/hooks/use-toast";
+
+const postSchema = z.object({
+  caption: z.string().max(5000, "Caption must be less than 5000 characters").optional(),
+  file: z.instanceof(File).refine(
+    (file) => file.size <= 50 * 1024 * 1024,
+    "File size must be less than 50MB"
+  ).refine(
+    (file) => file.type.startsWith("image/") || file.type.startsWith("video/"),
+    "File must be an image or video"
+  ).optional(),
+});
 
 interface CreatePostFormProps {
   isReel?: boolean;
@@ -34,6 +47,21 @@ export const CreatePostForm = ({ isReel = false }: CreatePostFormProps) => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!caption && !file) return;
+
+    // Validate input
+    const validation = postSchema.safeParse({ 
+      caption: caption.trim(),
+      file: file || undefined 
+    });
+    
+    if (!validation.success) {
+      toast({
+        title: "Validation error",
+        description: validation.error.errors[0].message,
+        variant: "destructive",
+      });
+      return;
+    }
 
     createPost.mutate(
       { caption, file: file || undefined, isReel },

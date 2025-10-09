@@ -104,11 +104,22 @@ const UserProfile = () => {
 
   const unfriend = useMutation({
     mutationFn: async () => {
-      await supabase
+      // Delete both directions of friendship
+      const { error: error1 } = await supabase
         .from("friendships")
         .delete()
         .eq("user_id", user?.id)
         .eq("friend_id", userId);
+
+      if (error1) throw error1;
+
+      const { error: error2 } = await supabase
+        .from("friendships")
+        .delete()
+        .eq("user_id", userId)
+        .eq("friend_id", user!.id);
+
+      if (error2) throw error2;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["friendship"] });

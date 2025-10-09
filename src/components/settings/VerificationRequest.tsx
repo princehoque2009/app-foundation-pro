@@ -9,6 +9,18 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/hooks/use-toast";
 import { CheckCircle, XCircle, Clock, Upload } from "lucide-react";
+import { z } from "zod";
+
+const verificationSchema = z.object({
+  fullName: z.string().trim().min(2, "Full name must be at least 2 characters").max(100),
+  email: z.string().trim().email("Invalid email address").max(255),
+  idDocument: z.instanceof(File)
+    .refine((file) => file.size <= 10 * 1024 * 1024, "Document must be less than 10MB")
+    .refine(
+      (file) => file.type.startsWith("image/") || file.type === "application/pdf",
+      "Document must be an image or PDF"
+    ),
+});
 
 export const VerificationRequest = () => {
   const { user } = useAuth();
@@ -34,17 +46,24 @@ export const VerificationRequest = () => {
 
   const submitRequestMutation = useMutation({
     mutationFn: async () => {
-      if (!fullName || !email || !idFile) {
-        throw new Error("Please fill all fields and upload an ID document");
+      // Validate input
+      const validation = verificationSchema.safeParse({
+        fullName: fullName.trim(),
+        email: email.trim(),
+        idDocument: idFile,
+      });
+
+      if (!validation.success) {
+        throw new Error(validation.error.errors[0].message);
       }
 
       // Upload ID document
-      const fileExt = idFile.name.split(".").pop();
+      const fileExt = idFile!.name.split(".").pop();
       const fileName = `${user?.id}/${Date.now()}.${fileExt}`;
       
       const { error: uploadError } = await supabase.storage
         .from("verification-documents")
-        .upload(fileName, idFile);
+        .upload(fileName, idFile!);
 
       if (uploadError) throw uploadError;
 
@@ -57,8 +76,8 @@ export const VerificationRequest = () => {
         .from("verification_requests")
         .insert({
           user_id: user?.id,
-          full_name: fullName,
-          email,
+          full_name: fullName.trim(),
+          email: email.trim(),
           id_document_url: publicUrl,
           status: "pending",
         });

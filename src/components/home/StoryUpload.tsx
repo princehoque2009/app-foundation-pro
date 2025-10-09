@@ -4,6 +4,16 @@ import { Button } from "@/components/ui/button";
 import { Upload, X } from "lucide-react";
 import { useStories } from "@/hooks/useStories";
 import { toast } from "@/hooks/use-toast";
+import { z } from "zod";
+
+const storySchema = z.object({
+  file: z.instanceof(File)
+    .refine((file) => file.size <= 50 * 1024 * 1024, "File must be less than 50MB")
+    .refine(
+      (file) => file.type.startsWith("image/") || file.type.startsWith("video/"),
+      "File must be an image or video"
+    ),
+});
 
 interface StoryUploadProps {
   open: boolean;
@@ -20,19 +30,12 @@ export const StoryUpload = ({ open, onOpenChange }: StoryUploadProps) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (!file.type.startsWith("image/") && !file.type.startsWith("video/")) {
+    // Validate file
+    const validation = storySchema.safeParse({ file });
+    if (!validation.success) {
       toast({
-        title: "Invalid file type",
-        description: "Please select an image or video",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (file.size > 50 * 1024 * 1024) {
-      toast({
-        title: "File too large",
-        description: "Please select a file smaller than 50MB",
+        title: "Invalid file",
+        description: validation.error.errors[0].message,
         variant: "destructive",
       });
       return;

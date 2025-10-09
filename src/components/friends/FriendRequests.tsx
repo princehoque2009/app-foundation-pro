@@ -44,24 +44,13 @@ export const FriendRequests = () => {
 
   const acceptRequestMutation = useMutation({
     mutationFn: async (requestId: string) => {
-      const request = receivedRequests?.find(r => r.id === requestId);
-      if (!request) throw new Error("Request not found");
-
-      // Update request status
-      const { error: updateError } = await supabase
+      // Simply update status to 'accepted' - trigger will handle friendship creation
+      const { error } = await supabase
         .from("friend_requests")
         .update({ status: "accepted" })
         .eq("id", requestId);
 
-      if (updateError) throw updateError;
-
-      // Create friendship (both directions)
-      const { error: insertError } = await supabase.from("friendships").insert([
-        { user_id: request.from_user_id, friend_id: user?.id },
-        { user_id: user?.id, friend_id: request.from_user_id },
-      ]);
-
-      if (insertError) throw insertError;
+      if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["friend-requests-received"] });

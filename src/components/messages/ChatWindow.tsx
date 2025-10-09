@@ -9,6 +9,11 @@ import { Paperclip, Send, UserCircle, Image as ImageIcon, Video } from "lucide-r
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { toast } from "@/hooks/use-toast";
+import { z } from "zod";
+
+const messageSchema = z.object({
+  content: z.string().trim().min(1, "Message cannot be empty").max(10000, "Message too long"),
+});
 
 interface ChatWindowProps {
   conversationId: string;
@@ -31,6 +36,17 @@ export const ChatWindow = ({ conversationId, otherUser }: ChatWindowProps) => {
 
   const handleSend = async () => {
     if (!messageText.trim()) return;
+
+    // Validate message
+    const validation = messageSchema.safeParse({ content: messageText });
+    if (!validation.success) {
+      toast({
+        title: "Invalid message",
+        description: validation.error.errors[0].message,
+        variant: "destructive",
+      });
+      return;
+    }
 
     await sendMessage.mutateAsync({
       content: messageText,
