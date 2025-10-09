@@ -12,6 +12,7 @@ import Reels from "./pages/Reels";
 import Create from "./pages/Create";
 import Messages from "./pages/Messages";
 import Profile from "./pages/Profile";
+import UserProfile from "./pages/UserProfile";
 import Search from "./pages/Search";
 import Notifications from "./pages/Notifications";
 import Circles from "./pages/Circles";
@@ -53,6 +54,7 @@ const App = () => {
               <Route path="/create" element={<ProtectedRoute><Create /></ProtectedRoute>} />
               <Route path="/messages" element={<ProtectedRoute><Messages /></ProtectedRoute>} />
               <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+              <Route path="/profile/:userId" element={<ProtectedRoute><UserProfile /></ProtectedRoute>} />
               <Route path="/search" element={<ProtectedRoute><Search /></ProtectedRoute>} />
               <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
               <Route path="/circles" element={<ProtectedRoute><Circles /></ProtectedRoute>} />

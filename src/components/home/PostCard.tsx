@@ -1,11 +1,14 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Heart, MessageCircle, Share2, Bookmark } from "lucide-react";
+import { Heart, MessageCircle, Share2, Bookmark, UserCircle } from "lucide-react";
 import { useState } from "react";
 import { useToggleLike, usePostLikes } from "@/hooks/usePostInteractions";
 import { formatDistanceToNow } from "date-fns";
 import { CommentsDialog } from "./CommentsDialog";
+import { useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 interface PostCardProps {
   id: string;
@@ -25,27 +28,54 @@ interface PostCardProps {
 export const PostCard = ({ id, author, content, image, video, likes, comments, timestamp }: PostCardProps) => {
   const [isSaved, setIsSaved] = useState(false);
   const [showComments, setShowComments] = useState(false);
+  const navigate = useNavigate();
   
   const { data: likeData } = usePostLikes(id);
   const toggleLike = useToggleLike(id);
   
   const isLiked = likeData?.isLiked || false;
 
+  // Get user ID from username
+  const { data: userProfile } = useQuery({
+    queryKey: ["user-by-username", author.username],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("id")
+        .eq("username", author.username)
+        .single();
+      
+      if (error) throw error;
+      return data;
+    },
+  });
+
   const handleLike = () => {
     toggleLike.mutate(isLiked);
+  };
+
+  const handleProfileClick = () => {
+    if (userProfile?.id) {
+      navigate(`/profile/${userProfile.id}`);
+    }
   };
 
   return (
     <Card className="border-border mb-4">
       <CardContent className="p-4">
         {/* Post Header */}
-        <div className="flex items-center gap-3 mb-3">
-          <Avatar className="h-10 w-10">
+        <div 
+          className="flex items-center gap-3 mb-3 cursor-pointer hover:bg-accent/50 -m-2 p-2 rounded-lg transition-colors"
+          onClick={handleProfileClick}
+        >
+          <Avatar className="h-10 w-10 hover-scale">
             <AvatarImage src={author.avatar || undefined} alt={author.name} />
-            <AvatarFallback>{author.name.charAt(0)}</AvatarFallback>
+            <AvatarFallback>
+              <UserCircle className="h-6 w-6" />
+            </AvatarFallback>
           </Avatar>
           <div className="flex-1">
-            <p className="font-semibold text-sm">{author.name}</p>
+            <p className="font-semibold text-sm hover:text-primary transition-colors">{author.name}</p>
             <p className="text-xs text-muted-foreground">
               @{author.username} · {formatDistanceToNow(new Date(timestamp), { addSuffix: true })}
             </p>

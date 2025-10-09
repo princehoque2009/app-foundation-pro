@@ -45,24 +45,35 @@ export const FriendRequests = () => {
   const acceptRequestMutation = useMutation({
     mutationFn: async (requestId: string) => {
       const request = receivedRequests?.find(r => r.id === requestId);
-      if (!request) return;
+      if (!request) throw new Error("Request not found");
 
       // Update request status
-      await supabase
+      const { error: updateError } = await supabase
         .from("friend_requests")
         .update({ status: "accepted" })
         .eq("id", requestId);
 
+      if (updateError) throw updateError;
+
       // Create friendship (both directions)
-      await supabase.from("friendships").insert([
+      const { error: insertError } = await supabase.from("friendships").insert([
         { user_id: request.from_user_id, friend_id: user?.id },
         { user_id: user?.id, friend_id: request.from_user_id },
       ]);
+
+      if (insertError) throw insertError;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["friend-requests-received"] });
       queryClient.invalidateQueries({ queryKey: ["friendships"] });
-      toast({ title: "Friend request accepted" });
+      toast({ title: "Friend request accepted!" });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Failed to accept friend request",
+        description: error.message,
+        variant: "destructive",
+      });
     },
   });
 
@@ -127,15 +138,19 @@ export const FriendRequests = () => {
                       <Button
                         size="sm"
                         onClick={() => acceptRequestMutation.mutate(request.id)}
+                        disabled={acceptRequestMutation.isPending}
                       >
-                        <Check className="h-4 w-4" />
+                        <Check className="h-4 w-4 mr-1" />
+                        Confirm
                       </Button>
                       <Button
                         size="sm"
-                        variant="outline"
+                        variant="secondary"
                         onClick={() => rejectRequestMutation.mutate(request.id)}
+                        disabled={rejectRequestMutation.isPending}
                       >
-                        <X className="h-4 w-4" />
+                        <X className="h-4 w-4 mr-1" />
+                        Remove
                       </Button>
                     </div>
                   </div>
