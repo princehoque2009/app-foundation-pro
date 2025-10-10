@@ -7,8 +7,11 @@ import { useToggleLike, usePostLikes } from "@/hooks/usePostInteractions";
 import { formatDistanceToNow } from "date-fns";
 import { CommentsDialog } from "./CommentsDialog";
 import { useNavigate } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { PostMenu } from "./PostMenu";
+import { toast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface PostCardProps {
   id: string;
@@ -29,6 +32,8 @@ export const PostCard = ({ id, author, content, image, video, likes, comments, t
   const [isSaved, setIsSaved] = useState(false);
   const [showComments, setShowComments] = useState(false);
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
   
   const { data: likeData } = usePostLikes(id);
   const toggleLike = useToggleLike(id);
@@ -60,26 +65,69 @@ export const PostCard = ({ id, author, content, image, video, likes, comments, t
     }
   };
 
+  const handleDelete = async () => {
+    if (!confirm("Are you sure you want to delete this post?")) return;
+    
+    try {
+      const { error } = await supabase
+        .from("posts")
+        .delete()
+        .eq("id", id);
+      
+      if (error) throw error;
+      
+      queryClient.invalidateQueries({ queryKey: ["posts"] });
+      queryClient.invalidateQueries({ queryKey: ["user-posts"] });
+      
+      toast({
+        title: "Post deleted",
+        description: "Your post has been deleted successfully",
+      });
+    } catch (error) {
+      console.error("Error deleting post:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete post. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleEdit = () => {
+    toast({
+      title: "Edit feature",
+      description: "Post editing will be available soon!",
+    });
+  };
+
   return (
-    <Card className="border-border mb-4">
+    <Card className="border-border mb-4 hover-lift">
       <CardContent className="p-4">
         {/* Post Header */}
-        <div 
-          className="flex items-center gap-3 mb-3 cursor-pointer hover:bg-accent/50 -m-2 p-2 rounded-lg transition-colors"
-          onClick={handleProfileClick}
-        >
-          <Avatar className="h-10 w-10 hover-scale">
-            <AvatarImage src={author.avatar || undefined} alt={author.name} />
-            <AvatarFallback>
-              <UserCircle className="h-6 w-6" />
-            </AvatarFallback>
-          </Avatar>
-          <div className="flex-1">
-            <p className="font-semibold text-sm hover:text-primary transition-colors">{author.name}</p>
-            <p className="text-xs text-muted-foreground">
-              @{author.username} · {formatDistanceToNow(new Date(timestamp), { addSuffix: true })}
-            </p>
+        <div className="flex items-center justify-between mb-3">
+          <div 
+            className="flex items-center gap-3 cursor-pointer hover:bg-accent/50 -m-2 p-2 rounded-lg transition-colors flex-1"
+            onClick={handleProfileClick}
+          >
+            <Avatar className="h-10 w-10 hover-scale ring-2 ring-primary/20">
+              <AvatarImage src={author.avatar || undefined} alt={author.name} />
+              <AvatarFallback>
+                <UserCircle className="h-6 w-6" />
+              </AvatarFallback>
+            </Avatar>
+            <div className="flex-1">
+              <p className="font-semibold text-sm hover:text-primary transition-colors">{author.name}</p>
+              <p className="text-xs text-muted-foreground">
+                @{author.username} · {formatDistanceToNow(new Date(timestamp), { addSuffix: true })}
+              </p>
+            </div>
           </div>
+          <PostMenu 
+            postId={id} 
+            postUserId={userProfile?.id || ""} 
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+          />
         </div>
 
         {/* Post Content */}
@@ -103,25 +151,25 @@ export const PostCard = ({ id, author, content, image, video, likes, comments, t
             <Button
               variant="ghost"
               size="sm"
-              className="gap-2 h-8 px-2"
+              className="gap-2 h-8 px-2 ripple"
               onClick={handleLike}
               disabled={toggleLike.isPending}
             >
               <Heart
-                className={`h-5 w-5 transition-colors ${isLiked ? "fill-red-500 text-red-500" : ""}`}
+                className={`h-5 w-5 transition-all ${isLiked ? "fill-red-500 text-red-500 animate-like" : ""}`}
               />
               <span className="text-xs">{likes}</span>
             </Button>
             <Button 
               variant="ghost" 
               size="sm" 
-              className="gap-2 h-8 px-2"
+              className="gap-2 h-8 px-2 ripple"
               onClick={() => setShowComments(true)}
             >
               <MessageCircle className="h-5 w-5" />
               <span className="text-xs">{comments}</span>
             </Button>
-            <Button variant="ghost" size="sm" className="h-8 px-2">
+            <Button variant="ghost" size="sm" className="h-8 px-2 ripple">
               <Share2 className="h-5 w-5" />
             </Button>
           </div>
