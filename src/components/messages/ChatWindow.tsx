@@ -107,89 +107,93 @@ export const ChatWindow = ({ conversationId, otherUser }: ChatWindowProps) => {
   };
 
   return (
-    <div className="flex flex-col h-full">
-      {/* Header */}
-      <div className="p-4 border-b flex items-center gap-3 bg-gradient-to-r from-background to-accent/5">
-        <div className="relative">
-          <Avatar className="h-11 w-11 ring-2 ring-primary/20">
-            <AvatarImage src={otherUser?.avatar_url || ""} />
-            <AvatarFallback>
-              <UserCircle className="h-6 w-6" />
-            </AvatarFallback>
-          </Avatar>
-          {/* Online status indicator - placeholder */}
-          <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-background" />
-        </div>
-        <div className="flex-1">
-          <h2 className="font-semibold">
+    <div className="flex flex-col h-full bg-background">
+      {/* Header - Meta Style */}
+      <div className="px-4 py-3 border-b flex items-center gap-3 bg-card/50 backdrop-blur-sm">
+        <Avatar className="h-10 w-10">
+          <AvatarImage src={otherUser?.avatar_url || ""} />
+          <AvatarFallback className="bg-muted">
+            <UserCircle className="h-5 w-5 text-muted-foreground" />
+          </AvatarFallback>
+        </Avatar>
+        <div className="flex-1 min-w-0">
+          <h2 className="font-semibold text-sm truncate">
             {otherUser?.display_name || otherUser?.username}
           </h2>
-          <p className="text-xs text-muted-foreground flex items-center gap-1">
-            <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-            Active now
-          </p>
+          <p className="text-xs text-muted-foreground">Active now</p>
         </div>
       </div>
 
-      {/* Messages */}
-      <ScrollArea className="flex-1 p-4">
-        <div className="space-y-4">
-          {messages.map((message) => {
+      {/* Messages - Meta Style */}
+      <ScrollArea className="flex-1 px-4 py-3 bg-background">
+        <div className="space-y-2 max-w-3xl mx-auto">
+          {messages.map((message, index) => {
             const isOwn = message.sender_id === user?.id;
+            const showAvatar = index === 0 || messages[index - 1].sender_id !== message.sender_id;
+            const showTimestamp = index === messages.length - 1 || 
+              messages[index + 1].sender_id !== message.sender_id ||
+              new Date(messages[index + 1].created_at).getTime() - new Date(message.created_at).getTime() > 60000;
+            
             return (
               <div
                 key={message.id}
-                className={cn("flex gap-2", isOwn && "flex-row-reverse")}
+                className={cn(
+                  "flex gap-2 items-end animate-fade-in",
+                  isOwn ? "flex-row-reverse" : "flex-row"
+                )}
               >
-                <Avatar className="h-8 w-8">
-                  <AvatarImage src={message.sender?.avatar_url || ""} />
-                  <AvatarFallback>
-                    <UserCircle className="h-5 w-5" />
-                  </AvatarFallback>
-                </Avatar>
-                <div
-                  className={cn(
-                    "max-w-[70%] space-y-1",
-                    isOwn && "items-end"
-                  )}
-                >
+                {!isOwn && (
+                  <Avatar className={cn("h-7 w-7 flex-shrink-0", !showAvatar && "invisible")}>
+                    <AvatarImage src={message.sender?.avatar_url || ""} />
+                    <AvatarFallback className="bg-muted">
+                      <UserCircle className="h-4 w-4" />
+                    </AvatarFallback>
+                  </Avatar>
+                )}
+                
+                <div className={cn("flex flex-col gap-0.5", isOwn ? "items-end" : "items-start")}>
                   <div
                     className={cn(
-                      "rounded-2xl px-4 py-2 animate-fade-in",
+                      "rounded-3xl px-4 py-2 max-w-[280px] sm:max-w-md",
                       isOwn
                         ? "bg-primary text-primary-foreground"
-                        : "bg-muted"
+                        : "bg-muted/80"
                     )}
                   >
                     {message.media_url && (
-                      <div className="mb-2">
+                      <div className={cn(message.content ? "mb-2" : "")}>
                         {message.media_type === "image" ? (
                           <img
                             src={message.media_url}
-                            alt="Message media"
-                            className="rounded-lg max-w-full"
+                            alt="Shared image"
+                            className="rounded-2xl max-w-full h-auto"
                             loading="lazy"
                           />
                         ) : (
                           <video
                             src={message.media_url}
                             controls
-                            className="rounded-lg max-w-full"
+                            className="rounded-2xl max-w-full"
                           />
                         )}
                       </div>
                     )}
-                    {message.content && <p className="break-words">{message.content}</p>}
-                  </div>
-                  <div className={cn("flex items-center gap-2 px-2", isOwn && "justify-end")}>
-                    <span className="text-xs text-muted-foreground">
-                      {format(new Date(message.created_at), "h:mm a")}
-                    </span>
-                    {isOwn && message.is_read && (
-                      <span className="text-xs text-primary">✓✓</span>
+                    {message.content && (
+                      <p className="text-[15px] leading-relaxed break-words whitespace-pre-wrap">
+                        {message.content}
+                      </p>
                     )}
                   </div>
+                  
+                  {showTimestamp && (
+                    <span className="text-[11px] text-muted-foreground px-3 mt-0.5">
+                      {format(new Date(message.created_at), "h:mm a")}
+                      {isOwn && message.is_read && " · Read"}
+                    </span>
+                  )}
                 </div>
+
+                {isOwn && <div className="w-7" />}
               </div>
             );
           })}
@@ -197,9 +201,9 @@ export const ChatWindow = ({ conversationId, otherUser }: ChatWindowProps) => {
         </div>
       </ScrollArea>
 
-      {/* Input */}
-      <div className="p-4 border-t bg-gradient-to-r from-background to-accent/5">
-        <div className="flex items-center gap-2">
+      {/* Input - Meta Style */}
+      <div className="p-3 border-t bg-card/50 backdrop-blur-sm">
+        <div className="flex items-end gap-2 max-w-3xl mx-auto">
           <input
             ref={fileInputRef}
             type="file"
@@ -210,35 +214,42 @@ export const ChatWindow = ({ conversationId, otherUser }: ChatWindowProps) => {
           <Button
             variant="ghost"
             size="icon"
-            className="hover-scale rounded-full"
+            className="h-9 w-9 rounded-full flex-shrink-0 text-primary hover:bg-primary/10"
             onClick={() => fileInputRef.current?.click()}
             disabled={isUploading}
           >
             <Paperclip className="h-5 w-5" />
           </Button>
-          <Input
-            value={messageText}
-            onChange={(e) => setMessageText(e.target.value)}
-            onKeyPress={(e) => e.key === "Enter" && !e.shiftKey && handleSend()}
-            placeholder="Type a message..."
-            className="flex-1 rounded-full border-2 focus-visible:ring-2 focus-visible:ring-primary/20"
-            disabled={isUploading}
-          />
+          
+          <div className="flex-1 relative">
+            <Input
+              value={messageText}
+              onChange={(e) => setMessageText(e.target.value)}
+              onKeyPress={(e) => e.key === "Enter" && !e.shiftKey && handleSend()}
+              placeholder="Aa"
+              className="rounded-full bg-muted/50 border-0 px-4 py-2 h-9 focus-visible:ring-1 focus-visible:ring-primary/30 text-[15px]"
+              disabled={isUploading}
+            />
+          </div>
+
           <Button
             onClick={handleSend}
             disabled={!messageText.trim() || sendMessage.isPending || isUploading}
             size="icon"
-            className="hover-scale rounded-full bg-primary hover:bg-primary/90"
+            className="h-9 w-9 rounded-full flex-shrink-0 bg-primary hover:bg-primary/90 disabled:opacity-40"
           >
-            <Send className="h-5 w-5" />
+            <Send className="h-4 w-4" />
           </Button>
         </div>
+        
         {isUploading && (
-          <div className="flex items-center gap-2 mt-2">
-            <div className="w-1 h-1 bg-primary rounded-full animate-bounce" />
-            <div className="w-1 h-1 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0.1s' }} />
-            <div className="w-1 h-1 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
-            <p className="text-xs text-muted-foreground ml-2">Uploading media...</p>
+          <div className="flex items-center justify-center gap-2 mt-2">
+            <div className="flex gap-1">
+              <div className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce" />
+              <div className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0.1s' }} />
+              <div className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
+            </div>
+            <p className="text-xs text-muted-foreground">Uploading...</p>
           </div>
         )}
       </div>
