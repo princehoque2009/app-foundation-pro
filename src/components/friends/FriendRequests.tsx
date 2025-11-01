@@ -126,6 +126,7 @@ export const FriendRequests = () => {
                     <div className="flex gap-2">
                       <Button
                         size="sm"
+                        className="bg-primary text-primary-foreground hover:bg-primary/90"
                         onClick={() => acceptRequestMutation.mutate(request.id)}
                         disabled={acceptRequestMutation.isPending}
                       >
@@ -134,7 +135,8 @@ export const FriendRequests = () => {
                       </Button>
                       <Button
                         size="sm"
-                        variant="secondary"
+                        className="bg-muted text-foreground hover:bg-muted/80"
+                        variant="ghost"
                         onClick={() => rejectRequestMutation.mutate(request.id)}
                         disabled={rejectRequestMutation.isPending}
                       >

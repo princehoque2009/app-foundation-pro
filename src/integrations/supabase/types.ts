@@ -294,6 +294,50 @@ export type Database = {
           },
         ]
       }
+      notifications: {
+        Row: {
+          action_url: string | null
+          created_at: string | null
+          from_user_id: string | null
+          id: string
+          is_read: boolean | null
+          message: string
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          action_url?: string | null
+          created_at?: string | null
+          from_user_id?: string | null
+          id?: string
+          is_read?: boolean | null
+          message: string
+          title: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          action_url?: string | null
+          created_at?: string | null
+          from_user_id?: string | null
+          id?: string
+          is_read?: boolean | null
+          message?: string
+          title?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_from_user_id_fkey"
+            columns: ["from_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       posts: {
         Row: {
           caption: string | null
@@ -389,6 +433,7 @@ export type Database = {
           media_url: string
           user_id: string
           views_count: number | null
+          visibility: string
         }
         Insert: {
           created_at?: string
@@ -398,6 +443,7 @@ export type Database = {
           media_url: string
           user_id: string
           views_count?: number | null
+          visibility: string
         }
         Update: {
           created_at?: string
@@ -407,6 +453,7 @@ export type Database = {
           media_url?: string
           user_id?: string
           views_count?: number | null
+          visibility?: string
         }
         Relationships: [
           {
@@ -529,10 +576,18 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      delete_expired_stories: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
+      create_notification: {
+        Args: {
+          p_action_url?: string
+          p_from_user_id: string
+          p_message: string
+          p_title: string
+          p_type: string
+          p_user_id: string
+        }
+        Returns: string
       }
+      delete_expired_stories: { Args: never; Returns: undefined }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

@@ -109,18 +109,25 @@ export const ChatWindow = ({ conversationId, otherUser }: ChatWindowProps) => {
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="p-4 border-b flex items-center gap-3">
-        <Avatar>
-          <AvatarImage src={otherUser?.avatar_url || ""} />
-          <AvatarFallback>
-            <UserCircle className="h-6 w-6" />
-          </AvatarFallback>
-        </Avatar>
-        <div>
+      <div className="p-4 border-b flex items-center gap-3 bg-gradient-to-r from-background to-accent/5">
+        <div className="relative">
+          <Avatar className="h-11 w-11 ring-2 ring-primary/20">
+            <AvatarImage src={otherUser?.avatar_url || ""} />
+            <AvatarFallback>
+              <UserCircle className="h-6 w-6" />
+            </AvatarFallback>
+          </Avatar>
+          {/* Online status indicator - placeholder */}
+          <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-background" />
+        </div>
+        <div className="flex-1">
           <h2 className="font-semibold">
             {otherUser?.display_name || otherUser?.username}
           </h2>
-          <p className="text-xs text-muted-foreground">@{otherUser?.username}</p>
+          <p className="text-xs text-muted-foreground flex items-center gap-1">
+            <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+            Active now
+          </p>
         </div>
       </div>
 
@@ -191,7 +198,7 @@ export const ChatWindow = ({ conversationId, otherUser }: ChatWindowProps) => {
       </ScrollArea>
 
       {/* Input */}
-      <div className="p-4 border-t">
+      <div className="p-4 border-t bg-gradient-to-r from-background to-accent/5">
         <div className="flex items-center gap-2">
           <input
             ref={fileInputRef}
@@ -203,6 +210,7 @@ export const ChatWindow = ({ conversationId, otherUser }: ChatWindowProps) => {
           <Button
             variant="ghost"
             size="icon"
+            className="hover-scale rounded-full"
             onClick={() => fileInputRef.current?.click()}
             disabled={isUploading}
           >
@@ -211,22 +219,27 @@ export const ChatWindow = ({ conversationId, otherUser }: ChatWindowProps) => {
           <Input
             value={messageText}
             onChange={(e) => setMessageText(e.target.value)}
-            onKeyPress={(e) => e.key === "Enter" && handleSend()}
+            onKeyPress={(e) => e.key === "Enter" && !e.shiftKey && handleSend()}
             placeholder="Type a message..."
-            className="flex-1"
+            className="flex-1 rounded-full border-2 focus-visible:ring-2 focus-visible:ring-primary/20"
             disabled={isUploading}
           />
           <Button
             onClick={handleSend}
             disabled={!messageText.trim() || sendMessage.isPending || isUploading}
             size="icon"
-            className="hover-scale"
+            className="hover-scale rounded-full bg-primary hover:bg-primary/90"
           >
             <Send className="h-5 w-5" />
           </Button>
         </div>
         {isUploading && (
-          <p className="text-xs text-muted-foreground mt-2">Uploading media...</p>
+          <div className="flex items-center gap-2 mt-2">
+            <div className="w-1 h-1 bg-primary rounded-full animate-bounce" />
+            <div className="w-1 h-1 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0.1s' }} />
+            <div className="w-1 h-1 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
+            <p className="text-xs text-muted-foreground ml-2">Uploading media...</p>
+          </div>
         )}
       </div>
     </div>
