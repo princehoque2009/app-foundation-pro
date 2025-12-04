@@ -5,6 +5,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useStories } from "@/hooks/useStories";
 import { StoryUpload } from "./StoryUpload";
 import { StoryViewer } from "./StoryViewer";
+import { cn } from "@/lib/utils";
+import { motion } from "framer-motion";
 
 export const Stories = () => {
   const { user } = useAuth();
@@ -29,46 +31,67 @@ export const Stories = () => {
 
   return (
     <>
-      <div className="flex gap-4 overflow-x-auto pb-4 px-4 scrollbar-hide">
+      <div className="flex gap-3 overflow-x-auto pb-4 px-4 scrollbar-hide">
         {/* Your Story */}
-        <div
-          className="flex flex-col items-center gap-1 flex-shrink-0 cursor-pointer"
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.3 }}
+          className="flex flex-col items-center gap-2 flex-shrink-0 cursor-pointer"
           onClick={() => setUploadOpen(true)}
         >
-          <div className="relative rounded-full p-0.5">
-            <Avatar className="h-16 w-16">
-              <AvatarImage src={user?.user_metadata?.avatar_url} alt="Your Story" />
-              <AvatarFallback className="bg-gradient-to-br from-primary/50 to-primary">
-                <UserCircle className="h-8 w-8" />
-              </AvatarFallback>
-            </Avatar>
-            <div className="absolute bottom-0 right-0 bg-primary rounded-full p-1">
-              <Plus className="h-3 w-3 text-primary-foreground" />
-            </div>
-          </div>
-          <span className="text-xs text-muted-foreground max-w-[70px] truncate">
-            Your Story
-          </span>
-        </div>
-
-        {/* Friends' Stories */}
-        {!isLoading && storyGroups.map((group: any) => (
-          <div
-            key={group.user.id}
-            className="flex flex-col items-center gap-1 flex-shrink-0 cursor-pointer"
-            onClick={() => setSelectedStory(group.stories[0])}
-          >
-            <div className="relative ring-2 ring-primary rounded-full p-0.5">
-              <Avatar className="h-16 w-16">
-                <AvatarImage src={group.user.avatar_url || ""} alt={group.user.username} />
-                <AvatarFallback className="bg-gradient-to-br from-primary/50 to-primary">
-                  {group.user.username?.charAt(0).toUpperCase()}
+          <div className="relative">
+            <div className="p-[3px] rounded-full bg-gradient-to-br from-muted to-muted">
+              <Avatar className="h-16 w-16 border-2 border-background">
+                <AvatarImage src={user?.user_metadata?.avatar_url} alt="Your Story" />
+                <AvatarFallback className="bg-muted">
+                  <UserCircle className="h-8 w-8 text-muted-foreground" />
                 </AvatarFallback>
               </Avatar>
             </div>
-            <span className="text-xs text-muted-foreground max-w-[70px] truncate">
+            <div className="absolute -bottom-1 -right-1 bg-primary rounded-full p-1.5 border-2 border-background shadow-lg">
+              <Plus className="h-3 w-3 text-primary-foreground" />
+            </div>
+          </div>
+          <span className="text-[11px] text-muted-foreground font-medium max-w-[70px] truncate">
+            Your Story
+          </span>
+        </motion.div>
+
+        {/* Friends' Stories */}
+        {!isLoading && storyGroups.map((group: any, index: number) => (
+          <motion.div
+            key={group.user.id}
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.3, delay: index * 0.05 }}
+            className="flex flex-col items-center gap-2 flex-shrink-0 cursor-pointer group"
+            onClick={() => setSelectedStory(group.stories[0])}
+          >
+            <div className="relative">
+              <div className={cn(
+                "p-[3px] rounded-full story-ring",
+                "group-hover:scale-105 transition-transform"
+              )}>
+                <Avatar className="h-16 w-16 border-2 border-background">
+                  <AvatarImage src={group.user.avatar_url || ""} alt={group.user.username} />
+                  <AvatarFallback className="bg-primary/10 text-primary font-semibold">
+                    {group.user.username?.charAt(0).toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+              </div>
+            </div>
+            <span className="text-[11px] text-muted-foreground font-medium max-w-[70px] truncate group-hover:text-foreground transition-colors">
               {group.user.display_name || group.user.username}
             </span>
+          </motion.div>
+        ))}
+
+        {/* Loading Skeleton */}
+        {isLoading && [...Array(4)].map((_, i) => (
+          <div key={i} className="flex flex-col items-center gap-2 flex-shrink-0">
+            <div className="h-16 w-16 rounded-full shimmer" />
+            <div className="h-3 w-12 rounded shimmer" />
           </div>
         ))}
       </div>

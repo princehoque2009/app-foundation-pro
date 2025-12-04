@@ -25,7 +25,6 @@ export const useToggleLike = (postId: string) => {
       }
     },
     onMutate: async (isLiked) => {
-      // Optimistic update
       await queryClient.cancelQueries({ queryKey: ["posts"] });
       const previousPosts = queryClient.getQueryData(["posts"]);
       
@@ -75,11 +74,18 @@ export const usePostLikes = (postId: string) => {
   });
 };
 
+interface CreateCommentParams {
+  postId: string;
+  content: string;
+  parentId?: string;
+  mentionedUserId?: string;
+}
+
 export const useCreateComment = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ postId, content }: { postId: string; content: string }) => {
+    mutationFn: async ({ postId, content, parentId, mentionedUserId }: CreateCommentParams) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
@@ -89,7 +95,9 @@ export const useCreateComment = () => {
           post_id: postId,
           user_id: user.id,
           content,
-        })
+          parent_id: parentId || null,
+          mentioned_user_id: mentionedUserId || null,
+        } as any)
         .select()
         .single();
 
@@ -111,21 +119,91 @@ export const usePostComments = (postId: string) => {
   return useQuery({
     queryKey: ["comments", postId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      // First get all comments for the post
+      const { data: commentsData, error: commentsError } = await supabase
         .from("comments")
-        .select(`
-          *,
-          profiles:user_id (
-            username,
-            display_name,
-            avatar_url
-          )
-        `)
+        .select("*")
         .eq("post_id", postId)
-        .order("created_at", { ascending: false });
+        .order("created_at", { ascending: true });
+
+      if (commentsError) throw commentsError;
+
+      // Get unique user IDs
+      const userIds = [...new Set(commentsData?.map(c => c.user_id) || [])];
+      
+      // Fetch profiles for these users
+      const { data: profilesData, error: profilesError } = await supabase
+        .from("profiles")
+        .select("id, username, display_name, avatar_url")
+        .in("id", userIds);
+
+      if (profilesError) throw profilesError;
+
+      // Create a map of profiles
+      const profilesMap = new Map(profilesData?.map(p => [p.id, p]) || []);
+
+      // Combine comments with profiles
+      const commentsWithProfiles = commentsData?.map(comment => ({
+        ...comment,
+        profiles: profilesMap.get(comment.user_id) || { 
+          username: 'unknown', 
+          display_name: null, 
+          avatar_url: null 
+        }
+      })) || [];
+
+      return commentsWithProfiles;
+    },
+  });
+};
+
+// Hook for comment reactions
+export const useToggleCommentReaction = (commentId: string) => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (hasReacted: boolean) => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
+
+      if (hasReacted) {
+        const { error } = await supabase
+          .from("comment_reactions" as any)
+          .delete()
+          .eq("comment_id", commentId)
+          .eq("user_id", user.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from("comment_reactions" as any)
+          .insert({ comment_id: commentId, user_id: user.id, reaction: 'like' });
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["comment-reactions", commentId] });
+      queryClient.invalidateQueries({ queryKey: ["comments"] });
+    },
+  });
+};
+
+export const useCommentReactions = (commentId: string) => {
+  return useQuery({
+    queryKey: ["comment-reactions", commentId],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      const { data, error } = await supabase
+        .from("comment_reactions" as any)
+        .select("*")
+        .eq("comment_id", commentId);
 
       if (error) throw error;
-      return data;
+      
+      return {
+        count: data?.length || 0,
+        hasReacted: user ? data?.some((r: any) => r.user_id === user.id) : false
+      };
     },
   });
 };
