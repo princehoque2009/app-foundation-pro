@@ -38,7 +38,7 @@
     --input: 220 13% 91%;
     --ring: 5 100% 69%;
 
-    --radius: 1rem;
+    --radius: 0rem;
 
     /* Prangon Theme Colors */
     --electric-coral: 5 100% 69%;
@@ -58,6 +58,10 @@
     --sidebar-accent-foreground: 240 5.9% 10%;
     --sidebar-border: 220 13% 91%;
     --sidebar-ring: 5 100% 69%;
+    --shadow-sm: 10px 10px 0px 0px hsla(0, 0%, 0%, 0.92);
+    --shadow: 10px 10px 0px 0px hsla(0, 0%, 0%, 0.92);
+    --shadow-md: 10px 10px 0px 0px hsla(0, 0%, 0%, 0.92);
+    --shadow-lg: 10px 10px 0px 0px hsla(0, 0%, 0%, 0.92);
   }
 
   .dark {
@@ -109,6 +113,11 @@
     --sidebar-accent-foreground: 240 4.8% 95.9%;
     --sidebar-border: 240 3.7% 15.9%;
     --sidebar-ring: 5 100% 65%;
+    --radius: 0rem;
+    --shadow-sm: 10px 10px 0px 0px hsla(0, 0%, 0%, 0.92);
+    --shadow: 10px 10px 0px 0px hsla(0, 0%, 0%, 0.92);
+    --shadow-md: 10px 10px 0px 0px hsla(0, 0%, 0%, 0.92);
+    --shadow-lg: 10px 10px 0px 0px hsla(0, 0%, 0%, 0.92);
   }
 }
 
