@@ -50,11 +50,52 @@ export type Database = {
           },
         ]
       }
+      comment_reactions: {
+        Row: {
+          comment_id: string
+          created_at: string | null
+          id: string
+          reaction: string
+          user_id: string
+        }
+        Insert: {
+          comment_id: string
+          created_at?: string | null
+          id?: string
+          reaction?: string
+          user_id: string
+        }
+        Update: {
+          comment_id?: string
+          created_at?: string | null
+          id?: string
+          reaction?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "comment_reactions_comment_id_fkey"
+            columns: ["comment_id"]
+            isOneToOne: false
+            referencedRelation: "comments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "comment_reactions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       comments: {
         Row: {
           content: string
           created_at: string
           id: string
+          mentioned_user_id: string | null
+          parent_id: string | null
           post_id: string
           user_id: string
         }
@@ -62,6 +103,8 @@ export type Database = {
           content: string
           created_at?: string
           id?: string
+          mentioned_user_id?: string | null
+          parent_id?: string | null
           post_id: string
           user_id: string
         }
@@ -69,10 +112,26 @@ export type Database = {
           content?: string
           created_at?: string
           id?: string
+          mentioned_user_id?: string | null
+          parent_id?: string | null
           post_id?: string
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "comments_mentioned_user_id_fkey"
+            columns: ["mentioned_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "comments_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "comments"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "comments_post_id_fkey"
             columns: ["post_id"]
@@ -253,15 +312,56 @@ export type Database = {
           },
         ]
       }
+      message_reactions: {
+        Row: {
+          created_at: string | null
+          id: string
+          message_id: string
+          reaction: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          message_id: string
+          reaction: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          message_id?: string
+          reaction?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "message_reactions_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "message_reactions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       messages: {
         Row: {
           content: string | null
           conversation_id: string
           created_at: string
           id: string
+          is_pinned: boolean | null
           is_read: boolean | null
           media_type: string | null
           media_url: string | null
+          reply_to_id: string | null
           sender_id: string
         }
         Insert: {
@@ -269,9 +369,11 @@ export type Database = {
           conversation_id: string
           created_at?: string
           id?: string
+          is_pinned?: boolean | null
           is_read?: boolean | null
           media_type?: string | null
           media_url?: string | null
+          reply_to_id?: string | null
           sender_id: string
         }
         Update: {
@@ -279,9 +381,11 @@ export type Database = {
           conversation_id?: string
           created_at?: string
           id?: string
+          is_pinned?: boolean | null
           is_read?: boolean | null
           media_type?: string | null
           media_url?: string | null
+          reply_to_id?: string | null
           sender_id?: string
         }
         Relationships: [
@@ -290,6 +394,13 @@ export type Database = {
             columns: ["conversation_id"]
             isOneToOne: false
             referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messages_reply_to_id_fkey"
+            columns: ["reply_to_id"]
+            isOneToOne: false
+            referencedRelation: "messages"
             referencedColumns: ["id"]
           },
         ]
