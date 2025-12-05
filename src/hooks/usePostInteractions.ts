@@ -94,22 +94,33 @@ export const useCreateComment = () => {
         .insert({
           post_id: postId,
           user_id: user.id,
-          content,
+          content: content.trim(),
           parent_id: parentId || null,
           mentioned_user_id: mentionedUserId || null,
-        } as any)
+        })
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error creating comment:", error);
+        throw error;
+      }
+      
       return data;
     },
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["posts"] });
-      queryClient.invalidateQueries({ queryKey: ["comments"] });
+      queryClient.invalidateQueries({ queryKey: ["comments", variables.postId] });
       toast({
-        title: "Comment added",
-        description: "Your comment has been posted.",
+        title: variables.parentId ? "Reply added" : "Comment added",
+        description: variables.parentId ? "Your reply has been posted." : "Your comment has been posted.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: "Failed to post comment. Please try again.",
+        variant: "destructive",
       });
     },
   });
