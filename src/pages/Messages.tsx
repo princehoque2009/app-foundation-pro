@@ -1,143 +1,246 @@
-import { useState, useEffect } from "react";
-import { MainLayout } from "@/components/layout/MainLayout";
-import { ChatWindow } from "@/components/messages/ChatWindow";
+import React, { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { MainLayout } from "@/components/layout/MainLayout";
+import { FirebaseChatList } from "@/components/messages/FirebaseChatList";
+import { FirebaseChatWindow } from "@/components/messages/FirebaseChatWindow";
+import { CallInterface } from "@/components/calling/CallInterface";
+import { useWebRTC } from "@/hooks/useWebRTC";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { UserCircle } from "lucide-react";
+import { MessageCircle, Search, Users, UserCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useConversations } from "@/hooks/useConversations";
-import { useSearchParams } from "react-router-dom";
+
+interface Profile {
+  id: string;
+  username: string;
+  display_name?: string;
+  avatar_url?: string;
+}
 
 const Messages = () => {
   const { user } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
-  const [selectedConversationId, setSelectedConversationId] = useState<string | null>(
-    searchParams.get("conversation")
-  );
-  const { createConversation } = useConversations();
+  const [selectedFriend, setSelectedFriend] = useState<Profile | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const { initiateCall, incomingCall, currentCall } = useWebRTC();
+
+  // Get friend ID from URL params
+  useEffect(() => {
+    const friendId = searchParams.get("friend");
+    if (friendId) {
+      supabase
+        .from("profiles")
+        .select("id, username, display_name, avatar_url")
+        .eq("id", friendId)
+        .single()
+        .then(({ data }) => {
+          if (data) setSelectedFriend(data);
+        });
+    }
+  }, [searchParams]);
 
   // Fetch friends list
   const { data: friends } = useQuery({
-    queryKey: ["friendships", user?.id],
+    queryKey: ["friends", user?.id],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("friendships")
-        .select("*, profiles!friendships_friend_id_fkey(*)")
+        .select(`
+          friend:profiles!friendships_friend_id_fkey (
+            id,
+            username,
+            display_name,
+            avatar_url
+          )
+        `)
         .eq("user_id", user?.id);
-      
+
       if (error) throw error;
-      return data;
+      return data?.map((f) => f.friend) || [];
     },
     enabled: !!user?.id,
   });
 
-  const { data: selectedConversation } = useQuery({
-    queryKey: ["conversation", selectedConversationId],
-    queryFn: async () => {
-      if (!selectedConversationId) return null;
-
-      try {
-        const { data: userData } = await supabase.auth.getUser();
-        if (!userData.user) return null;
-
-        const { data, error }: any = await supabase
-          .from("conversation_participants" as any)
-          .select("profiles (*)")
-          .eq("conversation_id", selectedConversationId)
-          .neq("user_id", userData.user.id)
-          .maybeSingle();
-
-        if (error) throw error;
-        return data?.profiles || null;
-      } catch (error) {
-        console.error("Error fetching conversation:", error);
-        return null;
-      }
-    },
-    enabled: !!selectedConversationId,
-  });
-
-  useEffect(() => {
-    const conversationId = searchParams.get("conversation");
-    if (conversationId) {
-      setSelectedConversationId(conversationId);
-    }
-  }, [searchParams]);
-
-  const handleFriendClick = async (friendId: string) => {
-    const conversationId = await createConversation.mutateAsync(friendId);
-    setSelectedConversationId(conversationId);
-    setSearchParams({ conversation: conversationId });
+  const handleSelectFriend = (friendId: string, profile: Profile) => {
+    setSelectedFriend(profile);
+    setSearchParams({ friend: friendId });
   };
+
+  const handleBack = () => {
+    setSelectedFriend(null);
+    setSearchParams({});
+  };
+
+  const handleStartCall = (type: "audio" | "video") => {
+    if (selectedFriend) {
+      initiateCall(selectedFriend.id, type);
+    }
+  };
+
+  // Get profile for incoming call
+  const [incomingCallerProfile, setIncomingCallerProfile] = useState<Profile | null>(null);
+  
+  useEffect(() => {
+    if (incomingCall) {
+      supabase
+        .from("profiles")
+        .select("id, username, display_name, avatar_url")
+        .eq("id", incomingCall.callerId)
+        .single()
+        .then(({ data }) => {
+          if (data) setIncomingCallerProfile(data);
+        });
+    }
+  }, [incomingCall]);
+
+  // Filter friends by search
+  const filteredFriends = friends?.filter(
+    (f) =>
+      f?.username?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      f?.display_name?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   return (
     <MainLayout>
-      <div className="h-[calc(100vh-8rem)] max-w-screen-xl mx-auto">
-        <div className="grid grid-cols-1 md:grid-cols-3 h-full border rounded-lg overflow-hidden bg-card">
-          {/* Friends List */}
-          <div className="border-r">
-            <div className="p-4 border-b">
-              <h2 className="text-xl font-bold">Friends</h2>
+      {/* Call interface */}
+      <CallInterface profile={selectedFriend || incomingCallerProfile || undefined} />
+
+      <div className="h-[calc(100vh-8rem)] md:h-[calc(100vh-4rem)] flex">
+        {/* Chat list - hide on mobile when chat is open */}
+        <div
+          className={cn(
+            "w-full md:w-80 lg:w-96 border-r bg-card flex flex-col",
+            selectedFriend ? "hidden md:flex" : "flex"
+          )}
+        >
+          {/* Header */}
+          <div className="p-4 border-b">
+            <h1 className="text-xl font-bold mb-4 flex items-center gap-2">
+              <MessageCircle className="h-6 w-6 text-primary" />
+              Messages
+            </h1>
+            
+            {/* Search */}
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search conversations..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9 bg-muted border-0 rounded-full"
+              />
             </div>
-            <ScrollArea className="h-full">
-              <div className="space-y-2 p-4">
-                {friends && friends.length > 0 ? (
-                  friends.map((friendship) => {
-                    const friend = friendship.profiles;
-                    return (
-                      <button
-                        key={friendship.id}
-                        onClick={() => handleFriendClick(friend.id)}
-                        className={cn(
-                          "w-full p-3 rounded-lg hover:bg-accent transition-colors text-left flex items-center gap-3",
-                          selectedConversation?.id === friend.id && "bg-accent"
-                        )}
-                      >
-                        <Avatar>
-                          <AvatarImage src={friend.avatar_url || ""} />
-                          <AvatarFallback>
-                            <UserCircle className="h-6 w-6" />
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="flex-1 min-w-0">
-                          <h3 className="font-semibold truncate">
-                            {friend.display_name || friend.username}
-                          </h3>
-                          <p className="text-sm text-muted-foreground truncate">
-                            @{friend.username}
-                          </p>
-                        </div>
-                      </button>
-                    );
-                  })
+          </div>
+
+          {/* Friends / Chat list */}
+          <ScrollArea className="flex-1">
+            {searchQuery ? (
+              // Show search results
+              <div className="p-2 space-y-1">
+                {filteredFriends && filteredFriends.length > 0 ? (
+                  filteredFriends.map((friend) => (
+                    <button
+                      key={friend?.id}
+                      onClick={() =>
+                        friend && handleSelectFriend(friend.id, friend as Profile)
+                      }
+                      className={cn(
+                        "w-full p-3 rounded-xl flex items-center gap-3 transition-all hover:bg-accent/50",
+                        selectedFriend?.id === friend?.id && "bg-accent"
+                      )}
+                    >
+                      <Avatar className="h-12 w-12">
+                        <AvatarImage src={friend?.avatar_url || ""} />
+                        <AvatarFallback className="bg-primary/10 text-primary">
+                          {friend?.display_name?.[0] || friend?.username?.[0]}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 min-w-0 text-left">
+                        <h3 className="font-semibold truncate">
+                          {friend?.display_name || friend?.username}
+                        </h3>
+                        <p className="text-sm text-muted-foreground truncate">
+                          @{friend?.username}
+                        </p>
+                      </div>
+                    </button>
+                  ))
                 ) : (
-                  <div className="text-center py-8">
-                    <p className="text-muted-foreground">No friends yet</p>
-                    <p className="text-sm text-muted-foreground mt-2">
+                  <div className="text-center py-8 text-muted-foreground">
+                    No friends found
+                  </div>
+                )}
+              </div>
+            ) : (
+              // Show chat list or friends
+              <div className="p-2 space-y-1">
+                {friends && friends.length > 0 ? (
+                  friends.map((friend) => (
+                    <button
+                      key={friend?.id}
+                      onClick={() =>
+                        friend && handleSelectFriend(friend.id, friend as Profile)
+                      }
+                      className={cn(
+                        "w-full p-3 rounded-xl flex items-center gap-3 transition-all hover:bg-accent/50",
+                        selectedFriend?.id === friend?.id && "bg-accent"
+                      )}
+                    >
+                      <Avatar className="h-12 w-12">
+                        <AvatarImage src={friend?.avatar_url || ""} />
+                        <AvatarFallback className="bg-primary/10 text-primary">
+                          {friend?.display_name?.[0] || friend?.username?.[0]}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 min-w-0 text-left">
+                        <h3 className="font-semibold truncate">
+                          {friend?.display_name || friend?.username}
+                        </h3>
+                        <p className="text-sm text-muted-foreground truncate">
+                          @{friend?.username}
+                        </p>
+                      </div>
+                    </button>
+                  ))
+                ) : (
+                  <div className="flex flex-col items-center justify-center py-12 text-center px-4">
+                    <UserCircle className="h-16 w-16 text-muted-foreground/50 mb-4" />
+                    <p className="text-muted-foreground font-medium">No friends yet</p>
+                    <p className="text-sm text-muted-foreground mt-1">
                       Add friends to start chatting
                     </p>
                   </div>
                 )}
               </div>
-            </ScrollArea>
-          </div>
-
-          {/* Chat Window */}
-          <div className="md:col-span-2">
-            {selectedConversationId && selectedConversation ? (
-              <ChatWindow
-                conversationId={selectedConversationId}
-                otherUser={selectedConversation}
-              />
-            ) : (
-              <div className="flex items-center justify-center h-full">
-                <p className="text-muted-foreground">Select a friend to start chatting</p>
-              </div>
             )}
-          </div>
+          </ScrollArea>
+        </div>
+
+        {/* Chat window */}
+        <div className={cn("flex-1", selectedFriend ? "flex" : "hidden md:flex")}>
+          {selectedFriend ? (
+            <FirebaseChatWindow
+              friendId={selectedFriend.id}
+              friendProfile={selectedFriend}
+              onBack={handleBack}
+              onStartCall={handleStartCall}
+            />
+          ) : (
+            <div className="flex-1 flex flex-col items-center justify-center text-center p-8 bg-muted/30">
+              <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+                <MessageCircle className="h-10 w-10 text-primary" />
+              </div>
+              <h2 className="text-xl font-semibold mb-2">Your Messages</h2>
+              <p className="text-muted-foreground max-w-sm">
+                Select a friend from the list to start chatting
+              </p>
+            </div>
+          )}
         </div>
       </div>
     </MainLayout>
