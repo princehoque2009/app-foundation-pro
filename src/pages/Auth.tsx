@@ -5,10 +5,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader } from "@/components/ui/card";
 import { toast } from "@/hooks/use-toast";
 import { z } from "zod";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
+import { Eye, EyeOff, Mail, Lock, User, Sparkles } from "lucide-react";
 import prangonLogo from "@/assets/prangon-logo.png";
 
 const signupSchema = z.object({
@@ -33,6 +33,7 @@ const Auth = () => {
   const [username, setUsername] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
   const { user } = useAuth();
 
@@ -66,7 +67,7 @@ const Auth = () => {
       if (error) throw error;
 
       toast({
-        title: "Success!",
+        title: "Account created!",
         description: "Please check your email to verify your account.",
       });
     } catch (error: any) {
@@ -123,116 +124,218 @@ const Auth = () => {
   };
 
   return (
-    <div 
-      className="min-h-screen flex items-center justify-center p-4"
-      style={{
-        background: "linear-gradient(135deg, hsl(5, 100%, 95%) 0%, hsl(0, 0%, 100%) 50%, hsl(220, 14%, 96%) 100%)"
-      }}
-    >
+    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-background via-background to-primary/5 relative overflow-hidden">
+      {/* Decorative background elements */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-primary/10 rounded-full blur-3xl" />
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-primary/5 rounded-full blur-3xl" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-primary/5 rounded-full blur-3xl" />
+      </div>
+
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
+        initial={{ opacity: 0, y: 30, scale: 0.95 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+        className="w-full max-w-md relative z-10"
       >
-        <Card className="w-full max-w-md shadow-xl border-0 bg-card/95 backdrop-blur">
-          <CardHeader className="text-center space-y-4 pb-2">
-            <motion.img
-              src={prangonLogo}
-              alt="Prangon"
-              className="h-12 mx-auto"
-              initial={{ scale: 0.8 }}
-              animate={{ scale: 1 }}
-              transition={{ delay: 0.2, type: "spring" }}
-            />
-            <CardDescription className="text-base">
-              {isLogin ? "Welcome back! Sign in to continue" : "Create your account to get started"}
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="pt-6">
-            <form onSubmit={isLogin ? handleLogin : handleSignUp} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="email" className="text-sm font-medium">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="you@example.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  className="h-11 rounded-xl bg-muted/50 border-0 focus-visible:ring-2 focus-visible:ring-primary"
-                />
-              </div>
-
-              {!isLogin && (
-                <>
-                  <div className="space-y-2">
-                    <Label htmlFor="username" className="text-sm font-medium">Username</Label>
-                    <Input
-                      id="username"
-                      type="text"
-                      placeholder="cooluser123"
-                      value={username}
-                      onChange={(e) => setUsername(e.target.value)}
-                      required
-                      className="h-11 rounded-xl bg-muted/50 border-0 focus-visible:ring-2 focus-visible:ring-primary"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="displayName" className="text-sm font-medium">Display Name (Optional)</Label>
-                    <Input
-                      id="displayName"
-                      type="text"
-                      placeholder="Your Name"
-                      value={displayName}
-                      onChange={(e) => setDisplayName(e.target.value)}
-                      className="h-11 rounded-xl bg-muted/50 border-0 focus-visible:ring-2 focus-visible:ring-primary"
-                    />
-                  </div>
-                </>
-              )}
-
-              <div className="space-y-2">
-                <Label htmlFor="password" className="text-sm font-medium">Password</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  className="h-11 rounded-xl bg-muted/50 border-0 focus-visible:ring-2 focus-visible:ring-primary"
-                />
-              </div>
-
-              <Button 
-                type="submit" 
-                className="w-full h-11 rounded-xl text-base font-semibold mt-6"
-                disabled={loading}
+        <div className="bg-card/80 backdrop-blur-xl rounded-3xl shadow-2xl border border-border/50 overflow-hidden">
+          {/* Header with logo */}
+          <div className="pt-10 pb-6 px-8 text-center">
+            <motion.div
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
+              className="relative inline-block"
+            >
+              <img
+                src={prangonLogo}
+                alt="Prangon"
+                className="h-14 mx-auto drop-shadow-lg"
+              />
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ delay: 0.5, type: "spring" }}
+                className="absolute -top-1 -right-1"
               >
-                {loading ? (
-                  <div className="flex items-center gap-2">
-                    <div className="w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
-                    <span>Loading...</span>
-                  </div>
-                ) : (
-                  isLogin ? "Sign In" : "Create Account"
-                )}
-              </Button>
-            </form>
+                <Sparkles className="h-5 w-5 text-primary animate-pulse" />
+              </motion.div>
+            </motion.div>
+            
+            <motion.p
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+              className="text-muted-foreground mt-4 text-base"
+            >
+              {isLogin ? "Welcome back! Sign in to continue" : "Create your account to get started"}
+            </motion.p>
+          </div>
 
-            <div className="mt-6 text-center">
+          {/* Form */}
+          <div className="px-8 pb-8">
+            <AnimatePresence mode="wait">
+              <motion.form
+                key={isLogin ? "login" : "signup"}
+                initial={{ opacity: 0, x: isLogin ? -20 : 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: isLogin ? 20 : -20 }}
+                transition={{ duration: 0.3 }}
+                onSubmit={isLogin ? handleLogin : handleSignUp}
+                className="space-y-5"
+              >
+                {/* Email field */}
+                <div className="space-y-2">
+                  <Label htmlFor="email" className="text-sm font-medium text-foreground/80">
+                    Email
+                  </Label>
+                  <div className="relative">
+                    <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground/50" />
+                    <Input
+                      id="email"
+                      type="email"
+                      placeholder="you@example.com"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                      className="h-12 pl-12 rounded-xl bg-muted/30 border-border/50 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
+                    />
+                  </div>
+                </div>
+
+                {/* Username field (signup only) */}
+                {!isLogin && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="space-y-2"
+                  >
+                    <Label htmlFor="username" className="text-sm font-medium text-foreground/80">
+                      Username
+                    </Label>
+                    <div className="relative">
+                      <User className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground/50" />
+                      <Input
+                        id="username"
+                        type="text"
+                        placeholder="cooluser123"
+                        value={username}
+                        onChange={(e) => setUsername(e.target.value)}
+                        required
+                        className="h-12 pl-12 rounded-xl bg-muted/30 border-border/50 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
+                      />
+                    </div>
+                  </motion.div>
+                )}
+
+                {/* Display name field (signup only) */}
+                {!isLogin && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="space-y-2"
+                  >
+                    <Label htmlFor="displayName" className="text-sm font-medium text-foreground/80">
+                      Display Name <span className="text-muted-foreground">(Optional)</span>
+                    </Label>
+                    <div className="relative">
+                      <User className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground/50" />
+                      <Input
+                        id="displayName"
+                        type="text"
+                        placeholder="Your Name"
+                        value={displayName}
+                        onChange={(e) => setDisplayName(e.target.value)}
+                        className="h-12 pl-12 rounded-xl bg-muted/30 border-border/50 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
+                      />
+                    </div>
+                  </motion.div>
+                )}
+
+                {/* Password field */}
+                <div className="space-y-2">
+                  <Label htmlFor="password" className="text-sm font-medium text-foreground/80">
+                    Password
+                  </Label>
+                  <div className="relative">
+                    <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground/50" />
+                    <Input
+                      id="password"
+                      type={showPassword ? "text" : "password"}
+                      placeholder="••••••••"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                      className="h-12 pl-12 pr-12 rounded-xl bg-muted/30 border-border/50 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground/50 hover:text-foreground transition-colors"
+                    >
+                      {showPassword ? (
+                        <EyeOff className="h-5 w-5" />
+                      ) : (
+                        <Eye className="h-5 w-5" />
+                      )}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Submit button */}
+                <Button
+                  type="submit"
+                  className="w-full h-12 rounded-xl text-base font-semibold bg-primary hover:bg-primary/90 shadow-lg shadow-primary/25 transition-all hover:shadow-xl hover:shadow-primary/30 hover:-translate-y-0.5"
+                  disabled={loading}
+                >
+                  {loading ? (
+                    <div className="flex items-center gap-2">
+                      <div className="w-5 h-5 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
+                      <span>Please wait...</span>
+                    </div>
+                  ) : (
+                    isLogin ? "Sign In" : "Create Account"
+                  )}
+                </Button>
+              </motion.form>
+            </AnimatePresence>
+
+            {/* Toggle login/signup */}
+            <div className="mt-8 text-center">
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-border/50" />
+                </div>
+                <div className="relative flex justify-center text-sm">
+                  <span className="px-4 bg-card text-muted-foreground">
+                    {isLogin ? "New to Prangon?" : "Already have an account?"}
+                  </span>
+                </div>
+              </div>
+              
               <button
                 type="button"
-                onClick={() => setIsLogin(!isLogin)}
-                className="text-sm text-muted-foreground hover:text-primary transition-colors"
+                onClick={() => {
+                  setIsLogin(!isLogin);
+                  setEmail("");
+                  setPassword("");
+                  setUsername("");
+                  setDisplayName("");
+                }}
+                className="mt-4 text-primary font-semibold hover:underline transition-all"
               >
-                {isLogin
-                  ? "Don't have an account? Sign up"
-                  : "Already have an account? Sign in"}
+                {isLogin ? "Create an account" : "Sign in instead"}
               </button>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
+
+        {/* Footer text */}
+        <p className="text-center text-xs text-muted-foreground mt-6">
+          By continuing, you agree to our Terms of Service and Privacy Policy
+        </p>
       </motion.div>
     </div>
   );

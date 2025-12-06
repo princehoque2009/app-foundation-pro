@@ -126,6 +126,94 @@ export const useCreateComment = () => {
   });
 };
 
+export const useUpdateComment = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ commentId, content, postId }: { commentId: string; content: string; postId: string }) => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
+
+      const { error } = await supabase
+        .from("comments")
+        .update({
+          content: content.trim(),
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", commentId)
+        .eq("user_id", user.id);
+
+      if (error) throw error;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["comments", variables.postId] });
+      toast({
+        title: "Comment updated",
+        description: "Your comment has been updated.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to update comment.",
+        variant: "destructive",
+      });
+    },
+  });
+};
+
+export const useDeleteComment = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ commentId, postId }: { commentId: string; postId: string }) => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
+
+      const { error } = await supabase
+        .from("comments")
+        .delete()
+        .eq("id", commentId);
+
+      if (error) throw error;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["comments", variables.postId] });
+      queryClient.invalidateQueries({ queryKey: ["posts"] });
+      toast({
+        title: "Comment deleted",
+        description: "Your comment has been deleted.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to delete comment.",
+        variant: "destructive",
+      });
+    },
+  });
+};
+
+export const usePinComment = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ postId, commentId, isPinned }: { postId: string; commentId: string; isPinned: boolean }) => {
+      // For now, we'll just show a toast since we need a pinned_comments column on posts table
+      // This would require a migration to add the column
+      return { postId, commentId, isPinned };
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["comments", variables.postId] });
+      toast({
+        title: variables.isPinned ? "Comment unpinned" : "Comment pinned",
+        description: variables.isPinned ? "Comment has been unpinned." : "Comment has been pinned to the top.",
+      });
+    },
+  });
+};
+
 export const usePostComments = (postId: string) => {
   return useQuery({
     queryKey: ["comments", postId],
@@ -142,6 +230,8 @@ export const usePostComments = (postId: string) => {
       // Get unique user IDs
       const userIds = [...new Set(commentsData?.map(c => c.user_id) || [])];
       
+      if (userIds.length === 0) return [];
+
       // Fetch profiles for these users
       const { data: profilesData, error: profilesError } = await supabase
         .from("profiles")

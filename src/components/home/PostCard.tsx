@@ -1,7 +1,7 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Heart, MessageCircle, Share2, Bookmark, UserCircle } from "lucide-react";
+import { Heart, MessageCircle, Share2, Bookmark, UserCircle, MoreHorizontal } from "lucide-react";
 import { useState } from "react";
 import { useToggleLike, usePostLikes } from "@/hooks/usePostInteractions";
 import { formatDistanceToNow } from "date-fns";
@@ -10,10 +10,11 @@ import { useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { PostMenu } from "./PostMenu";
+import { EditPostDialog } from "./EditPostDialog";
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface PostCardProps {
   id: string;
@@ -33,7 +34,9 @@ interface PostCardProps {
 export const PostCard = ({ id, author, content, image, video, likes, comments, timestamp }: PostCardProps) => {
   const [isSaved, setIsSaved] = useState(false);
   const [showComments, setShowComments] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
   const [showHeartAnimation, setShowHeartAnimation] = useState(false);
+  const [isImageLoaded, setIsImageLoaded] = useState(false);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { user } = useAuth();
@@ -106,10 +109,7 @@ export const PostCard = ({ id, author, content, image, video, likes, comments, t
   };
 
   const handleEdit = () => {
-    toast({
-      title: "Edit feature",
-      description: "Post editing will be available soon!",
-    });
+    setShowEditDialog(true);
   };
 
   const handleShare = async () => {
@@ -135,130 +135,175 @@ export const PostCard = ({ id, author, content, image, video, likes, comments, t
   };
 
   return (
-    <Card className="border-0 shadow-sm mb-4 overflow-hidden animate-fade-in hover-lift">
-      <CardContent className="p-0">
-        {/* Post Header */}
-        <div className="flex items-center justify-between p-4">
-          <div 
-            className="flex items-center gap-3 cursor-pointer"
-            onClick={handleProfileClick}
-          >
-            <Avatar className="h-10 w-10 ring-2 ring-primary/20 hover-scale">
-              <AvatarImage src={author.avatar || undefined} alt={author.name} />
-              <AvatarFallback className="bg-primary/10 text-primary">
-                <UserCircle className="h-6 w-6" />
-              </AvatarFallback>
-            </Avatar>
-            <div>
-              <p className="font-semibold text-sm hover:text-primary transition-colors">{author.name}</p>
-              <p className="text-xs text-muted-foreground">
-                @{author.username} · {formatDistanceToNow(new Date(timestamp), { addSuffix: true })}
-              </p>
+    <>
+      <Card className="border-0 shadow-sm hover:shadow-md mb-4 overflow-hidden animate-fade-in transition-shadow duration-300 rounded-2xl bg-card">
+        <CardContent className="p-0">
+          {/* Post Header */}
+          <div className="flex items-center justify-between p-4">
+            <div 
+              className="flex items-center gap-3 cursor-pointer"
+              onClick={handleProfileClick}
+            >
+              <div className="relative">
+                <div className="p-[2px] rounded-full bg-gradient-to-br from-primary via-primary/80 to-primary/60">
+                  <Avatar className="h-10 w-10 border-2 border-background">
+                    <AvatarImage src={author.avatar || undefined} alt={author.name} />
+                    <AvatarFallback className="bg-primary/10 text-primary">
+                      <UserCircle className="h-6 w-6" />
+                    </AvatarFallback>
+                  </Avatar>
+                </div>
+              </div>
+              <div>
+                <p className="font-semibold text-sm hover:text-primary transition-colors leading-tight">
+                  {author.name}
+                </p>
+                <p className="text-xs text-muted-foreground leading-tight">
+                  {formatDistanceToNow(new Date(timestamp), { addSuffix: true })}
+                </p>
+              </div>
             </div>
+            <PostMenu 
+              postId={id} 
+              postUserId={userProfile?.id || ""} 
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+              onShare={handleShare}
+            />
           </div>
-          <PostMenu 
-            postId={id} 
-            postUserId={userProfile?.id || ""} 
-            onEdit={handleEdit}
-            onDelete={handleDelete}
-            onShare={handleShare}
-          />
-        </div>
 
-        {/* Post Content */}
-        {content && <p className="text-sm px-4 pb-3">{content}</p>}
+          {/* Post Content */}
+          {content && (
+            <p className="text-sm px-4 pb-3 leading-relaxed">{content}</p>
+          )}
 
-        {/* Post Media */}
-        {(image || video) && (
-          <div 
-            className="relative bg-muted cursor-pointer"
-            onDoubleClick={handleDoubleTap}
-          >
-            {image && (
-              <img 
-                src={image} 
-                alt="Post" 
-                className="w-full object-cover max-h-[500px]" 
-                loading="lazy"
-              />
-            )}
-            {video && (
-              <video 
-                src={video} 
-                controls 
-                className="w-full max-h-[500px]"
-                preload="metadata"
-              />
-            )}
-            
-            {/* Double tap heart animation */}
-            {showHeartAnimation && (
-              <motion.div
-                initial={{ scale: 0, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0, opacity: 0 }}
-                className="absolute inset-0 flex items-center justify-center pointer-events-none"
-              >
-                <Heart className="h-24 w-24 text-white fill-white drop-shadow-lg animate-like" />
-              </motion.div>
-            )}
-          </div>
-        )}
+          {/* Post Media */}
+          {(image || video) && (
+            <div 
+              className="relative bg-muted/50 cursor-pointer overflow-hidden"
+              onDoubleClick={handleDoubleTap}
+            >
+              {image && (
+                <>
+                  {!isImageLoaded && (
+                    <div className="w-full h-80 shimmer" />
+                  )}
+                  <img 
+                    src={image} 
+                    alt="Post" 
+                    className={cn(
+                      "w-full object-cover max-h-[500px] transition-opacity duration-300",
+                      isImageLoaded ? "opacity-100" : "opacity-0 h-0"
+                    )}
+                    loading="lazy"
+                    onLoad={() => setIsImageLoaded(true)}
+                  />
+                </>
+              )}
+              {video && (
+                <video 
+                  src={video} 
+                  controls 
+                  className="w-full max-h-[500px]"
+                  preload="metadata"
+                />
+              )}
+              
+              {/* Double tap heart animation */}
+              <AnimatePresence>
+                {showHeartAnimation && (
+                  <motion.div
+                    initial={{ scale: 0, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    exit={{ scale: 1.5, opacity: 0 }}
+                    transition={{ duration: 0.4, ease: "easeOut" }}
+                    className="absolute inset-0 flex items-center justify-center pointer-events-none"
+                  >
+                    <Heart className="h-24 w-24 text-primary fill-primary drop-shadow-2xl" />
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          )}
 
-        {/* Post Actions */}
-        <div className="p-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-1">
+          {/* Post Actions */}
+          <div className="p-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-0.5">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="gap-1.5 h-10 px-3 rounded-full hover:bg-primary/10 transition-all"
+                  onClick={handleLike}
+                  disabled={toggleLike.isPending}
+                >
+                  <Heart
+                    className={cn(
+                      "h-6 w-6 transition-all",
+                      isLiked && "fill-primary text-primary animate-like"
+                    )}
+                  />
+                  <span className={cn(
+                    "text-sm font-semibold tabular-nums",
+                    isLiked && "text-primary"
+                  )}>
+                    {likes}
+                  </span>
+                </Button>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="gap-1.5 h-10 px-3 rounded-full hover:bg-primary/10 transition-all"
+                  onClick={() => setShowComments(true)}
+                >
+                  <MessageCircle className="h-6 w-6" />
+                  <span className="text-sm font-semibold tabular-nums">{comments}</span>
+                </Button>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="h-10 px-3 rounded-full hover:bg-primary/10 transition-all"
+                  onClick={handleShare}
+                >
+                  <Share2 className="h-5 w-5" />
+                </Button>
+              </div>
               <Button
                 variant="ghost"
                 size="sm"
-                className="gap-2 h-9 px-3 rounded-full hover:bg-primary/10"
-                onClick={handleLike}
-                disabled={toggleLike.isPending}
+                className="h-10 px-3 rounded-full hover:bg-primary/10 transition-all"
+                onClick={() => {
+                  setIsSaved(!isSaved);
+                  toast({
+                    title: isSaved ? "Removed from saved" : "Saved",
+                    description: isSaved ? "Post removed from your saved items" : "Post saved to your collection",
+                  });
+                }}
               >
-                <Heart
-                  className={cn(
-                    "h-6 w-6 transition-all",
-                    isLiked && "fill-primary text-primary animate-like"
-                  )}
-                />
-                <span className="text-sm font-medium">{likes}</span>
-              </Button>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="gap-2 h-9 px-3 rounded-full hover:bg-primary/10"
-                onClick={() => setShowComments(true)}
-              >
-                <MessageCircle className="h-6 w-6" />
-                <span className="text-sm font-medium">{comments}</span>
-              </Button>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="h-9 px-3 rounded-full hover:bg-primary/10"
-                onClick={handleShare}
-              >
-                <Share2 className="h-6 w-6" />
+                <Bookmark className={cn(
+                  "h-5 w-5 transition-all",
+                  isSaved && "fill-foreground"
+                )} />
               </Button>
             </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-9 px-3 rounded-full hover:bg-primary/10"
-              onClick={() => setIsSaved(!isSaved)}
-            >
-              <Bookmark className={cn("h-6 w-6 transition-all", isSaved && "fill-foreground")} />
-            </Button>
           </div>
-        </div>
-        
-        <CommentsDialog 
-          postId={id} 
-          open={showComments} 
-          onOpenChange={setShowComments} 
-        />
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+      
+      <CommentsDialog 
+        postId={id} 
+        open={showComments} 
+        onOpenChange={setShowComments} 
+      />
+
+      <EditPostDialog
+        postId={id}
+        currentCaption={content}
+        currentMediaUrl={image || video}
+        currentMediaType={video ? "video" : image ? "image" : undefined}
+        open={showEditDialog}
+        onOpenChange={setShowEditDialog}
+      />
+    </>
   );
 };
