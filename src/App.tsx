@@ -21,6 +21,9 @@ import Friends from "./pages/Friends";
 import Settings from "./pages/Settings";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
+import Menu from "./pages/Menu";
+import HelpSupport from "./pages/HelpSupport";
+import Admin from "./pages/Admin";
 
 const queryClient = new QueryClient();
 
@@ -61,6 +64,9 @@ const App = () => {
               <Route path="/live" element={<ProtectedRoute><Live /></ProtectedRoute>} />
               <Route path="/friends" element={<ProtectedRoute><Friends /></ProtectedRoute>} />
               <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+              <Route path="/menu" element={<ProtectedRoute><Menu /></ProtectedRoute>} />
+              <Route path="/help" element={<ProtectedRoute><HelpSupport /></ProtectedRoute>} />
+              <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </AuthProvider>
