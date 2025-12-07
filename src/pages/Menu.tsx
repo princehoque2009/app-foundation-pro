@@ -95,21 +95,15 @@ const menuItems = [
 
 const settingsItems = [
   {
-    id: "settings",
-    icon: Settings,
-    label: "Settings & Privacy",
-    path: "/settings",
-  },
-  {
-    id: "security",
-    icon: Shield,
-    label: "Security",
-    path: "/settings",
-  },
-  {
     id: "help",
     icon: HelpCircle,
     label: "Help & Support",
+    path: "/help",
+  },
+  {
+    id: "settings",
+    icon: Settings,
+    label: "Settings & Privacy",
     path: "/settings",
   },
 ];
