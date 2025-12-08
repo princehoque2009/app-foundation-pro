@@ -24,6 +24,8 @@ import NotFound from "./pages/NotFound";
 import Menu from "./pages/Menu";
 import HelpSupport from "./pages/HelpSupport";
 import Admin from "./pages/Admin";
+import Groups from "./pages/Groups";
+import GroupChat from "./pages/GroupChat";
 
 const queryClient = new QueryClient();
 
@@ -67,6 +69,8 @@ const App = () => {
               <Route path="/menu" element={<ProtectedRoute><Menu /></ProtectedRoute>} />
               <Route path="/help" element={<ProtectedRoute><HelpSupport /></ProtectedRoute>} />
               <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
+              <Route path="/groups" element={<ProtectedRoute><Groups /></ProtectedRoute>} />
+              <Route path="/groups/:groupId" element={<ProtectedRoute><GroupChat /></ProtectedRoute>} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </AuthProvider>

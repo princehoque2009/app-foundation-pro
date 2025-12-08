@@ -11,6 +11,7 @@ import {
   Bell,
   MessageCircle,
   User,
+  Users,
   Film,
   Clock,
   FileText,
@@ -36,6 +37,15 @@ const menuItems = [
     path: "/saved",
     color: "text-amber-500",
     bgColor: "bg-amber-500/10",
+  },
+  {
+    id: "groups",
+    icon: Users,
+    label: "Groups",
+    description: "Your group chats",
+    path: "/groups",
+    color: "text-indigo-500",
+    bgColor: "bg-indigo-500/10",
   },
   {
     id: "notifications",
@@ -74,6 +84,15 @@ const menuItems = [
     bgColor: "bg-pink-500/10",
   },
   {
+    id: "friends",
+    icon: UserCircle,
+    label: "Friends",
+    description: "Manage your connections",
+    path: "/friends",
+    color: "text-green-500",
+    bgColor: "bg-green-500/10",
+  },
+  {
     id: "activity",
     icon: Clock,
     label: "Activity Log",
@@ -81,15 +100,6 @@ const menuItems = [
     path: "/notifications",
     color: "text-cyan-500",
     bgColor: "bg-cyan-500/10",
-  },
-  {
-    id: "posts",
-    icon: FileText,
-    label: "My Posts",
-    description: "View all your posts",
-    path: "/profile",
-    color: "text-green-500",
-    bgColor: "bg-green-500/10",
   },
 ];
 
