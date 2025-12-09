@@ -27,6 +27,8 @@ import {
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { VerifiedBadge } from "@/components/ui/VerifiedBadge";
+import { useIsAdmin } from "@/hooks/useAdmin";
 
 const menuItems = [
   {
@@ -122,6 +124,7 @@ const Menu = () => {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
   const { theme, setTheme } = useTheme();
+  const { data: isAdmin } = useIsAdmin();
 
   const { data: profile } = useQuery({
     queryKey: ["profile", user?.id],
@@ -204,8 +207,9 @@ const Menu = () => {
                 </AvatarFallback>
               </Avatar>
               <div className="flex-1 min-w-0">
-                <h2 className="font-semibold text-lg truncate">
+                <h2 className="font-semibold text-lg truncate flex items-center gap-2">
                   {profile?.display_name || profile?.username || "User"}
+                  {profile?.is_verified && <VerifiedBadge size="md" />}
                 </h2>
                 <p className="text-muted-foreground text-sm truncate">
                   @{profile?.username}
@@ -274,6 +278,18 @@ const Menu = () => {
         {/* Settings Section */}
         <motion.div variants={itemVariants}>
           <Card className="overflow-hidden border-0 shadow-sm">
+            {isAdmin && (
+              <div
+                className="flex items-center justify-between p-4 cursor-pointer hover:bg-muted/50 transition-colors border-b border-border"
+                onClick={() => navigate("/admin")}
+              >
+                <div className="flex items-center gap-3">
+                  <Shield className="h-5 w-5 text-primary" />
+                  <span className="font-medium text-sm text-primary">Admin Panel</span>
+                </div>
+                <ChevronRight className="h-5 w-5 text-muted-foreground" />
+              </div>
+            )}
             {settingsItems.map((item, index) => (
               <div
                 key={item.id}
