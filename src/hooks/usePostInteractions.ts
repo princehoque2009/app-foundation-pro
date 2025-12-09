@@ -200,15 +200,45 @@ export const usePinComment = () => {
 
   return useMutation({
     mutationFn: async ({ postId, commentId, isPinned }: { postId: string; commentId: string; isPinned: boolean }) => {
-      // For now, we'll just show a toast since we need a pinned_comments column on posts table
-      // This would require a migration to add the column
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
+
+      // Verify user owns the post
+      const { data: post, error: postError } = await supabase
+        .from("posts")
+        .select("user_id")
+        .eq("id", postId)
+        .single();
+
+      if (postError) throw postError;
+      if (post.user_id !== user.id) throw new Error("Only post owner can pin comments");
+
+      // Update post with pinned comment
+      const { error } = await supabase
+        .from("posts")
+        .update({
+          pinned_comment_id: isPinned ? null : commentId,
+        })
+        .eq("id", postId)
+        .eq("user_id", user.id);
+
+      if (error) throw error;
       return { postId, commentId, isPinned };
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["comments", variables.postId] });
+      queryClient.invalidateQueries({ queryKey: ["posts"] });
+      queryClient.invalidateQueries({ queryKey: ["post", variables.postId] });
       toast({
         title: variables.isPinned ? "Comment unpinned" : "Comment pinned",
         description: variables.isPinned ? "Comment has been unpinned." : "Comment has been pinned to the top.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to pin comment.",
+        variant: "destructive",
       });
     },
   });

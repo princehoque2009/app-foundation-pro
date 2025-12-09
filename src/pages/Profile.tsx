@@ -10,6 +10,7 @@ import { Settings, UserCircle } from "lucide-react";
 import { EditProfileDialog } from "@/components/profile/EditProfileDialog";
 import { PostCard } from "@/components/home/PostCard";
 import { toast } from "@/hooks/use-toast";
+import { VerifiedBadge } from "@/components/ui/VerifiedBadge";
 
 const Profile = () => {
   const { user } = useAuth();
@@ -62,7 +63,10 @@ const Profile = () => {
             </Avatar>
             
             <div className="flex-1">
-              <h1 className="text-2xl font-bold">{profile?.display_name || profile?.username}</h1>
+              <h1 className="text-2xl font-bold flex items-center gap-2">
+                {profile?.display_name || profile?.username}
+                {profile?.is_verified && <VerifiedBadge size="lg" />}
+              </h1>
               <p className="text-muted-foreground">@{profile?.username}</p>
               {profile?.bio && (
                 <p className="mt-2 text-sm">{profile.bio}</p>

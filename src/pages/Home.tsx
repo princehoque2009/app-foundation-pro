@@ -34,6 +34,7 @@ const Home = () => {
                   name: post.profiles.display_name || post.profiles.username,
                   username: post.profiles.username,
                   avatar: post.profiles.avatar_url || undefined,
+                  isVerified: post.profiles.is_verified,
                 }}
                 content={post.caption || ""}
                 image={post.media_type === "image" ? post.media_url || undefined : undefined}

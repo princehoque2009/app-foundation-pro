@@ -15,6 +15,7 @@ import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
+import { VerifiedBadge } from "@/components/ui/VerifiedBadge";
 
 interface PostCardProps {
   id: string;
@@ -22,6 +23,7 @@ interface PostCardProps {
     name: string;
     avatar?: string;
     username: string;
+    isVerified?: boolean;
   };
   content: string;
   image?: string;
@@ -155,8 +157,9 @@ export const PostCard = ({ id, author, content, image, video, likes, comments, t
                 </div>
               </div>
               <div>
-                <p className="font-semibold text-sm hover:text-primary transition-colors leading-tight">
+                <p className="font-semibold text-sm hover:text-primary transition-colors leading-tight flex items-center gap-1">
                   {author.name}
+                  {author.isVerified && <VerifiedBadge size="sm" />}
                 </p>
                 <p className="text-xs text-muted-foreground leading-tight">
                   {formatDistanceToNow(new Date(timestamp), { addSuffix: true })}

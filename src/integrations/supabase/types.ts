@@ -521,6 +521,7 @@ export type Database = {
           likes_count: number | null
           media_type: string | null
           media_url: string | null
+          pinned_comment_id: string | null
           updated_at: string
           user_id: string
         }
@@ -533,6 +534,7 @@ export type Database = {
           likes_count?: number | null
           media_type?: string | null
           media_url?: string | null
+          pinned_comment_id?: string | null
           updated_at?: string
           user_id: string
         }
@@ -545,10 +547,18 @@ export type Database = {
           likes_count?: number | null
           media_type?: string | null
           media_url?: string | null
+          pinned_comment_id?: string | null
           updated_at?: string
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "posts_pinned_comment_id_fkey"
+            columns: ["pinned_comment_id"]
+            isOneToOne: false
+            referencedRelation: "comments"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "posts_user_id_fkey"
             columns: ["user_id"]

@@ -16,6 +16,7 @@ export interface Post {
     username: string;
     display_name: string | null;
     avatar_url: string | null;
+    is_verified: boolean;
   };
 }
 
@@ -30,7 +31,8 @@ export const usePosts = (isReel = false) => {
           profiles:user_id (
             username,
             display_name,
-            avatar_url
+            avatar_url,
+            is_verified
           )
         `)
         .eq("is_reel", isReel)

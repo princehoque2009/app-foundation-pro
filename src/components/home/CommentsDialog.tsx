@@ -17,6 +17,9 @@ import { cn } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { motion, AnimatePresence } from "framer-motion";
+import { VerifiedBadge } from "@/components/ui/VerifiedBadge";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 interface CommentsDialogProps {
   postId: string;
@@ -136,10 +139,11 @@ const CommentItem = ({ comment, onReply, replies, level = 0, postOwnerId, pinned
               <div className="bg-muted/40 rounded-2xl px-4 py-2.5 inline-block max-w-full">
                 <div className="flex items-center gap-2">
                   <span 
-                    className="font-semibold text-sm cursor-pointer hover:text-primary transition-colors"
+                    className="font-semibold text-sm cursor-pointer hover:text-primary transition-colors flex items-center gap-1"
                     onClick={handleProfileClick}
                   >
                     {comment.profiles?.display_name || comment.profiles?.username}
+                    {comment.profiles?.is_verified && <VerifiedBadge size="sm" />}
                   </span>
                   {isEdited && (
                     <span className="text-[10px] text-muted-foreground">(edited)</span>
@@ -259,9 +263,23 @@ export const CommentsDialog = ({ postId, open, onOpenChange }: CommentsDialogPro
   const createComment = useCreateComment();
   const { user } = useAuth();
 
-  // TODO: Fetch post owner ID and pinned comments from post data
-  const postOwnerId = user?.id; // This should come from the post
-  const pinnedCommentIds: string[] = []; // This should come from the post
+  // Fetch post to get owner and pinned comment
+  const { data: post } = useQuery({
+    queryKey: ["post", postId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("posts")
+        .select("user_id, pinned_comment_id")
+        .eq("id", postId)
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    enabled: open,
+  });
+
+  const postOwnerId = post?.user_id;
+  const pinnedCommentIds = post?.pinned_comment_id ? [post.pinned_comment_id] : [];
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

@@ -22,6 +22,7 @@ import {
 import { cn } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
 import { Message } from "@/services/messagingService";
+import { VerifiedBadge } from "@/components/ui/VerifiedBadge";
 
 interface FirebaseChatWindowProps {
   friendId: string;
@@ -30,6 +31,7 @@ interface FirebaseChatWindowProps {
     username: string;
     display_name?: string;
     avatar_url?: string;
+    is_verified?: boolean;
   };
   onBack?: () => void;
   onStartCall?: (type: "audio" | "video") => void;
@@ -147,8 +149,9 @@ export const FirebaseChatWindow = ({
         </div>
 
         <div className="flex-1">
-          <h3 className="font-semibold">
+          <h3 className="font-semibold flex items-center gap-1">
             {friendProfile.display_name || friendProfile.username}
+            {friendProfile.is_verified && <VerifiedBadge size="sm" />}
           </h3>
           <p className="text-xs text-muted-foreground">
             {friendStatus.online

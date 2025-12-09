@@ -4,6 +4,8 @@ import { AccountSettings } from "@/components/settings/AccountSettings";
 import { PrivacySettings } from "@/components/settings/PrivacySettings";
 import { NotificationSettings } from "@/components/settings/NotificationSettings";
 import { VerificationRequest } from "@/components/settings/VerificationRequest";
+import { PrivacyTerms } from "@/components/settings/PrivacyTerms";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 
 const Settings = () => {
   return (
@@ -12,12 +14,16 @@ const Settings = () => {
         <h1 className="text-2xl font-bold mb-6">Settings</h1>
         
         <Tabs defaultValue="account" className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="account">Account</TabsTrigger>
-            <TabsTrigger value="privacy">Privacy</TabsTrigger>
-            <TabsTrigger value="notifications">Notifications</TabsTrigger>
-            <TabsTrigger value="verification">Verification</TabsTrigger>
-          </TabsList>
+          <ScrollArea className="w-full whitespace-nowrap">
+            <TabsList className="inline-flex w-max">
+              <TabsTrigger value="account">Account</TabsTrigger>
+              <TabsTrigger value="privacy">Privacy</TabsTrigger>
+              <TabsTrigger value="notifications">Notifications</TabsTrigger>
+              <TabsTrigger value="verification">Verification</TabsTrigger>
+              <TabsTrigger value="terms">Privacy & Terms</TabsTrigger>
+            </TabsList>
+            <ScrollBar orientation="horizontal" />
+          </ScrollArea>
           
           <TabsContent value="account" className="mt-6">
             <AccountSettings />
@@ -33,6 +39,10 @@ const Settings = () => {
           
           <TabsContent value="verification" className="mt-6">
             <VerificationRequest />
+          </TabsContent>
+          
+          <TabsContent value="terms" className="mt-6">
+            <PrivacyTerms />
           </TabsContent>
         </Tabs>
       </div>
