@@ -7,6 +7,7 @@ import { toast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
 import { useTheme } from "next-themes";
 import {
+  Star,
   Bookmark,
   Bell,
   MessageCircle,
@@ -24,6 +25,7 @@ import {
   HelpCircle,
   UserCircle,
   ArrowLeft,
+  Megaphone,
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -32,11 +34,11 @@ import { useIsAdmin } from "@/hooks/useAdmin";
 
 const menuItems = [
   {
-    id: "saved",
-    icon: Bookmark,
-    label: "Saved Posts",
-    description: "View your bookmarked content",
-    path: "/saved",
+    id: "favourites",
+    icon: Star,
+    label: "Favourites",
+    description: "Your saved posts",
+    path: "/favourites",
     color: "text-amber-500",
     bgColor: "bg-amber-500/10",
   },

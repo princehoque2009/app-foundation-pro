@@ -16,6 +16,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { VerifiedBadge } from "@/components/ui/VerifiedBadge";
+import { useSavedPosts, useIsPostSaved } from "@/hooks/useSavedPosts";
 
 interface PostCardProps {
   id: string;
@@ -34,7 +35,6 @@ interface PostCardProps {
 }
 
 export const PostCard = ({ id, author, content, image, video, likes, comments, timestamp }: PostCardProps) => {
-  const [isSaved, setIsSaved] = useState(false);
   const [showComments, setShowComments] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showHeartAnimation, setShowHeartAnimation] = useState(false);
@@ -45,6 +45,8 @@ export const PostCard = ({ id, author, content, image, video, likes, comments, t
   
   const { data: likeData } = usePostLikes(id);
   const toggleLike = useToggleLike(id);
+  const { savePost, unsavePost } = useSavedPosts();
+  const { data: isSaved } = useIsPostSaved(id);
   
   const isLiked = likeData?.isLiked || false;
 
@@ -276,16 +278,17 @@ export const PostCard = ({ id, author, content, image, video, likes, comments, t
                 size="sm"
                 className="h-10 px-3 rounded-full hover:bg-primary/10 transition-all"
                 onClick={() => {
-                  setIsSaved(!isSaved);
-                  toast({
-                    title: isSaved ? "Removed from saved" : "Saved",
-                    description: isSaved ? "Post removed from your saved items" : "Post saved to your collection",
-                  });
+                  if (isSaved) {
+                    unsavePost.mutate(id);
+                  } else {
+                    savePost.mutate(id);
+                  }
                 }}
+                disabled={savePost.isPending || unsavePost.isPending}
               >
                 <Bookmark className={cn(
                   "h-5 w-5 transition-all",
-                  isSaved && "fill-foreground"
+                  isSaved && "fill-primary text-primary"
                 )} />
               </Button>
             </div>

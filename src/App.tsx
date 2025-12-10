@@ -26,7 +26,7 @@ import HelpSupport from "./pages/HelpSupport";
 import Admin from "./pages/Admin";
 import Groups from "./pages/Groups";
 import GroupChat from "./pages/GroupChat";
-
+import Favourites from "./pages/Favourites";
 const queryClient = new QueryClient();
 
 const App = () => {
@@ -71,6 +71,7 @@ const App = () => {
               <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
               <Route path="/groups" element={<ProtectedRoute><Groups /></ProtectedRoute>} />
               <Route path="/groups/:groupId" element={<ProtectedRoute><GroupChat /></ProtectedRoute>} />
+              <Route path="/favourites" element={<ProtectedRoute><Favourites /></ProtectedRoute>} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </AuthProvider>
