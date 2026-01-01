@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -10,13 +10,37 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
-import { Flag, Eye, Trash2, AlertTriangle, Ban, Check, X, Loader2, UserCircle } from "lucide-react";
+import { Flag, Eye, Trash2, Check, X, Loader2, UserCircle } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
+
+interface Report {
+  id: string;
+  reporter_id: string;
+  reported_user_id: string | null;
+  reported_post_id: string | null;
+  reported_comment_id: string | null;
+  report_type: string;
+  description: string | null;
+  status: string;
+  admin_notes: string | null;
+  created_at: string;
+  updated_at: string;
+  reporter_profile?: {
+    display_name: string | null;
+    username: string;
+    avatar_url: string | null;
+  } | null;
+  reported_user_profile?: {
+    display_name: string | null;
+    username: string;
+    avatar_url: string | null;
+  } | null;
+}
 
 export const AdminReports = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
-  const [selectedReport, setSelectedReport] = useState<any>(null);
+  const [selectedReport, setSelectedReport] = useState<Report | null>(null);
   const [adminNotes, setAdminNotes] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
 
@@ -34,7 +58,24 @@ export const AdminReports = () => {
 
       const { data, error } = await query;
       if (error) throw error;
-      return data;
+      
+      // Fetch profiles for reporters and reported users
+      const reporterIds = [...new Set(data?.map(r => r.reporter_id) || [])];
+      const reportedUserIds = [...new Set(data?.map(r => r.reported_user_id).filter(Boolean) || [])];
+      const allUserIds = [...new Set([...reporterIds, ...reportedUserIds])];
+      
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("id, display_name, username, avatar_url")
+        .in("id", allUserIds);
+      
+      const profileMap = new Map(profiles?.map(p => [p.id, p]) || []);
+      
+      return data?.map(report => ({
+        ...report,
+        reporter_profile: profileMap.get(report.reporter_id) || null,
+        reported_user_profile: report.reported_user_id ? profileMap.get(report.reported_user_id) || null : null
+      })) as Report[];
     },
   });
 
@@ -166,21 +207,25 @@ export const AdminReports = () => {
                     <div className="flex items-center gap-2 text-sm">
                       <span className="text-muted-foreground">Reported by:</span>
                       <Avatar className="h-6 w-6">
-                        <AvatarImage src={report.reporter?.avatar_url} />
+                        <AvatarImage src={report.reporter_profile?.avatar_url || undefined} />
                         <AvatarFallback><UserCircle className="h-4 w-4" /></AvatarFallback>
                       </Avatar>
-                      <span className="font-medium">{report.reporter?.display_name || report.reporter?.username}</span>
+                      <span className="font-medium">
+                        {report.reporter_profile?.display_name || report.reporter_profile?.username || "Unknown"}
+                      </span>
                     </div>
 
                     {/* Reported User */}
-                    {report.reported_user && (
+                    {report.reported_user_profile && (
                       <div className="flex items-center gap-2 text-sm">
                         <span className="text-muted-foreground">Against:</span>
                         <Avatar className="h-6 w-6">
-                          <AvatarImage src={report.reported_user?.avatar_url} />
+                          <AvatarImage src={report.reported_user_profile?.avatar_url || undefined} />
                           <AvatarFallback><UserCircle className="h-4 w-4" /></AvatarFallback>
                         </Avatar>
-                        <span className="font-medium">{report.reported_user?.display_name || report.reported_user?.username}</span>
+                        <span className="font-medium">
+                          {report.reported_user_profile?.display_name || report.reported_user_profile?.username || "Unknown"}
+                        </span>
                       </div>
                     )}
 
@@ -231,46 +276,6 @@ export const AdminReports = () => {
                   <p className="text-sm"><strong>Description:</strong> {selectedReport.description}</p>
                 )}
               </div>
-
-              {/* Reported Content Preview */}
-              {selectedReport.reported_post && (
-                <div className="border rounded-lg p-3 space-y-2">
-                  <p className="text-sm font-medium">Reported Post:</p>
-                  <p className="text-sm text-muted-foreground">{selectedReport.reported_post.caption}</p>
-                  {selectedReport.reported_post.media_url && (
-                    <img 
-                      src={selectedReport.reported_post.media_url} 
-                      alt="Reported content" 
-                      className="w-full max-h-40 object-cover rounded"
-                    />
-                  )}
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    onClick={() => deleteContent.mutate({ type: "post", id: selectedReport.reported_post.id })}
-                    disabled={deleteContent.isPending}
-                  >
-                    <Trash2 className="h-4 w-4 mr-1" />
-                    Delete Post
-                  </Button>
-                </div>
-              )}
-
-              {selectedReport.reported_comment && (
-                <div className="border rounded-lg p-3 space-y-2">
-                  <p className="text-sm font-medium">Reported Comment:</p>
-                  <p className="text-sm text-muted-foreground">{selectedReport.reported_comment.content}</p>
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    onClick={() => deleteContent.mutate({ type: "comment", id: selectedReport.reported_comment.id })}
-                    disabled={deleteContent.isPending}
-                  >
-                    <Trash2 className="h-4 w-4 mr-1" />
-                    Delete Comment
-                  </Button>
-                </div>
-              )}
 
               {/* Admin Notes */}
               <div>

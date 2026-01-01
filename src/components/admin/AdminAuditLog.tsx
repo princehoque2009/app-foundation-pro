@@ -7,6 +7,21 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { History, UserCircle, Shield, Flag, BadgeCheck, MessageSquare, Trash2, Loader2 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 
+interface AdminLog {
+  id: string;
+  admin_id: string;
+  action_type: string;
+  target_type: string | null;
+  target_id: string | null;
+  details: Record<string, any> | null;
+  created_at: string | null;
+  admin_profile?: {
+    display_name: string | null;
+    username: string;
+    avatar_url: string | null;
+  } | null;
+}
+
 export const AdminAuditLog = () => {
   const { data: logs, isLoading } = useQuery({
     queryKey: ["admin-audit-logs"],
@@ -18,7 +33,20 @@ export const AdminAuditLog = () => {
         .limit(100);
 
       if (error) throw error;
-      return data;
+      
+      // Fetch admin profiles separately
+      const adminIds = [...new Set(data?.map(log => log.admin_id) || [])];
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("id, display_name, username, avatar_url")
+        .in("id", adminIds);
+      
+      const profileMap = new Map(profiles?.map(p => [p.id, p]) || []);
+      
+      return data?.map(log => ({
+        ...log,
+        admin_profile: profileMap.get(log.admin_id) || null
+      })) as AdminLog[];
     },
   });
 
@@ -98,17 +126,17 @@ export const AdminAuditLog = () => {
                               {formatActionType(log.action_type)}
                             </Badge>
                             <span className="text-xs text-muted-foreground">
-                              {formatDistanceToNow(new Date(log.created_at), { addSuffix: true })}
+                              {log.created_at && formatDistanceToNow(new Date(log.created_at), { addSuffix: true })}
                             </span>
                           </div>
 
                           <div className="flex items-center gap-2 text-sm">
                             <Avatar className="h-6 w-6">
-                              <AvatarImage src={log.admin?.avatar_url} />
+                              <AvatarImage src={log.admin_profile?.avatar_url || undefined} />
                               <AvatarFallback><UserCircle className="h-4 w-4" /></AvatarFallback>
                             </Avatar>
                             <span className="font-medium">
-                              {log.admin?.display_name || log.admin?.username || "System"}
+                              {log.admin_profile?.display_name || log.admin_profile?.username || "System"}
                             </span>
                           </div>
 
