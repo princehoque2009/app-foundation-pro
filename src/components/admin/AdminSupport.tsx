@@ -10,13 +10,30 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
-import { MessageSquare, UserCircle, Check, Clock, Loader2, Send } from "lucide-react";
+import { MessageSquare, UserCircle, Check, Clock, Loader2 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
+
+interface SupportTicket {
+  id: string;
+  user_id: string;
+  subject: string;
+  description: string;
+  category: string;
+  status: string;
+  admin_response: string | null;
+  created_at: string;
+  updated_at: string;
+  user_profile?: {
+    display_name: string | null;
+    username: string;
+    avatar_url: string | null;
+  } | null;
+}
 
 export const AdminSupport = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
-  const [selectedTicket, setSelectedTicket] = useState<any>(null);
+  const [selectedTicket, setSelectedTicket] = useState<SupportTicket | null>(null);
   const [adminResponse, setAdminResponse] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
 
@@ -34,7 +51,20 @@ export const AdminSupport = () => {
 
       const { data, error } = await query;
       if (error) throw error;
-      return data;
+      
+      // Fetch user profiles separately
+      const userIds = [...new Set(data?.map(t => t.user_id) || [])];
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("id, display_name, username, avatar_url")
+        .in("id", userIds);
+      
+      const profileMap = new Map(profiles?.map(p => [p.id, p]) || []);
+      
+      return data?.map(ticket => ({
+        ...ticket,
+        user_profile: profileMap.get(ticket.user_id) || null
+      })) as SupportTicket[];
     },
   });
 
@@ -160,10 +190,12 @@ export const AdminSupport = () => {
                     {/* User Info */}
                     <div className="flex items-center gap-2 text-sm">
                       <Avatar className="h-6 w-6">
-                        <AvatarImage src={ticket.profile?.avatar_url} />
+                        <AvatarImage src={ticket.user_profile?.avatar_url || undefined} />
                         <AvatarFallback><UserCircle className="h-4 w-4" /></AvatarFallback>
                       </Avatar>
-                      <span className="font-medium">{ticket.profile?.display_name || ticket.profile?.username}</span>
+                      <span className="font-medium">
+                        {ticket.user_profile?.display_name || ticket.user_profile?.username || "Unknown"}
+                      </span>
                     </div>
 
                     {/* Subject & Description */}
@@ -217,12 +249,14 @@ export const AdminSupport = () => {
               <div className="space-y-3">
                 <div className="flex items-center gap-2">
                   <Avatar className="h-8 w-8">
-                    <AvatarImage src={selectedTicket.profile?.avatar_url} />
+                    <AvatarImage src={selectedTicket.user_profile?.avatar_url || undefined} />
                     <AvatarFallback><UserCircle className="h-4 w-4" /></AvatarFallback>
                   </Avatar>
                   <div>
-                    <p className="font-medium">{selectedTicket.profile?.display_name || selectedTicket.profile?.username}</p>
-                    <p className="text-xs text-muted-foreground">@{selectedTicket.profile?.username}</p>
+                    <p className="font-medium">
+                      {selectedTicket.user_profile?.display_name || selectedTicket.user_profile?.username || "Unknown"}
+                    </p>
+                    <p className="text-xs text-muted-foreground">@{selectedTicket.user_profile?.username}</p>
                   </div>
                 </div>
 
