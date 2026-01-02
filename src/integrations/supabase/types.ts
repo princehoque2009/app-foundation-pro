@@ -601,40 +601,49 @@ export type Database = {
       profiles: {
         Row: {
           account_type: string | null
+          auth_provider: string | null
           avatar_url: string | null
           bio: string | null
           created_at: string
+          date_of_birth: string | null
           display_name: string | null
           followers_count: number | null
           following_count: number | null
           id: string
           is_verified: boolean
+          phone_number: string | null
           updated_at: string
           username: string
         }
         Insert: {
           account_type?: string | null
+          auth_provider?: string | null
           avatar_url?: string | null
           bio?: string | null
           created_at?: string
+          date_of_birth?: string | null
           display_name?: string | null
           followers_count?: number | null
           following_count?: number | null
           id: string
           is_verified?: boolean
+          phone_number?: string | null
           updated_at?: string
           username: string
         }
         Update: {
           account_type?: string | null
+          auth_provider?: string | null
           avatar_url?: string | null
           bio?: string | null
           created_at?: string
+          date_of_birth?: string | null
           display_name?: string | null
           followers_count?: number | null
           following_count?: number | null
           id?: string
           is_verified?: boolean
+          phone_number?: string | null
           updated_at?: string
           username?: string
         }
