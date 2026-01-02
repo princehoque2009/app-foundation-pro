@@ -44,6 +44,33 @@ export type Database = {
         }
         Relationships: []
       }
+      app_settings: {
+        Row: {
+          description: string | null
+          id: string
+          setting_key: string
+          setting_value: Json
+          updated_at: string | null
+          updated_by: string | null
+        }
+        Insert: {
+          description?: string | null
+          id?: string
+          setting_key: string
+          setting_value?: Json
+          updated_at?: string | null
+          updated_by?: string | null
+        }
+        Update: {
+          description?: string | null
+          id?: string
+          setting_key?: string
+          setting_value?: Json
+          updated_at?: string | null
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       blocked_users: {
         Row: {
           blocked_user_id: string
@@ -604,14 +631,20 @@ export type Database = {
           auth_provider: string | null
           avatar_url: string | null
           bio: string | null
+          can_create_groups: boolean | null
           created_at: string
           date_of_birth: string | null
           display_name: string | null
           followers_count: number | null
           following_count: number | null
           id: string
+          is_suspended: boolean | null
           is_verified: boolean
+          messaging_disabled: boolean | null
           phone_number: string | null
+          posting_disabled: boolean | null
+          suspended_until: string | null
+          suspension_reason: string | null
           updated_at: string
           username: string
         }
@@ -620,14 +653,20 @@ export type Database = {
           auth_provider?: string | null
           avatar_url?: string | null
           bio?: string | null
+          can_create_groups?: boolean | null
           created_at?: string
           date_of_birth?: string | null
           display_name?: string | null
           followers_count?: number | null
           following_count?: number | null
           id: string
+          is_suspended?: boolean | null
           is_verified?: boolean
+          messaging_disabled?: boolean | null
           phone_number?: string | null
+          posting_disabled?: boolean | null
+          suspended_until?: string | null
+          suspension_reason?: string | null
           updated_at?: string
           username: string
         }
@@ -636,14 +675,20 @@ export type Database = {
           auth_provider?: string | null
           avatar_url?: string | null
           bio?: string | null
+          can_create_groups?: boolean | null
           created_at?: string
           date_of_birth?: string | null
           display_name?: string | null
           followers_count?: number | null
           following_count?: number | null
           id?: string
+          is_suspended?: boolean | null
           is_verified?: boolean
+          messaging_disabled?: boolean | null
           phone_number?: string | null
+          posting_disabled?: boolean | null
+          suspended_until?: string | null
+          suspension_reason?: string | null
           updated_at?: string
           username?: string
         }
