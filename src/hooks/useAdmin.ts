@@ -2,6 +2,10 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 
+/**
+ * Hook to check if the current user is an admin.
+ * Uses direct database query for contexts where RolesProvider may not be available.
+ */
 export const useIsAdmin = () => {
   const { user } = useAuth();
   
@@ -23,6 +27,7 @@ export const useIsAdmin = () => {
       return data === true;
     },
     enabled: !!user?.id,
-    staleTime: 1000 * 60 * 5, // Cache for 5 minutes
+    staleTime: 1000 * 60, // Cache for 1 minute (reduced for faster updates)
+    refetchOnWindowFocus: true, // Refetch on window focus for real-time updates
   });
 };
