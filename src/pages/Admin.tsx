@@ -1,9 +1,5 @@
-import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/contexts/AuthContext";
-import { toast } from "@/hooks/use-toast";
+import { useState } from "react";
+import { useRoles } from "@/contexts/RolesContext";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { AdminDashboard } from "@/components/admin/AdminDashboard";
 import { AdminUserManagement } from "@/components/admin/AdminUserManagement";
@@ -15,37 +11,11 @@ import { AdminAppSettings } from "@/components/admin/AdminAppSettings";
 import { AdminLogsViewer } from "@/components/admin/AdminLogsViewer";
 
 const Admin = () => {
-  const navigate = useNavigate();
-  const { user } = useAuth();
+  const { isAdmin, loading } = useRoles();
   const [activeSection, setActiveSection] = useState("dashboard");
 
-  // Check if user is admin
-  const { data: isAdmin, isLoading: checkingAdmin } = useQuery({
-    queryKey: ["is-admin", user?.id],
-    queryFn: async () => {
-      const { data, error } = await supabase.rpc("has_role", {
-        _user_id: user?.id,
-        _role: "admin",
-      });
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!user?.id,
-  });
-
-  // Redirect non-admins
-  useEffect(() => {
-    if (!checkingAdmin && !isAdmin) {
-      toast({
-        title: "Access Denied",
-        description: "You don't have permission to access this page.",
-        variant: "destructive",
-      });
-      navigate("/");
-    }
-  }, [isAdmin, checkingAdmin, navigate]);
-
-  if (checkingAdmin) {
+  // Loading state is handled by ProtectedRoute with requireAdmin
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" />
@@ -53,6 +23,7 @@ const Admin = () => {
     );
   }
 
+  // Access control is now handled by ProtectedRoute with requireAdmin prop
   if (!isAdmin) return null;
 
   const renderContent = () => {

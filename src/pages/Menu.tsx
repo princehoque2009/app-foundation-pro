@@ -30,7 +30,7 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { VerifiedBadge } from "@/components/ui/VerifiedBadge";
-import { useIsAdmin } from "@/hooks/useAdmin";
+import { useRoles } from "@/contexts/RolesContext";
 
 const menuItems = [
   {
@@ -126,7 +126,7 @@ const Menu = () => {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
   const { theme, setTheme } = useTheme();
-  const { data: isAdmin } = useIsAdmin();
+  const { isAdmin } = useRoles();
 
   const { data: profile } = useQuery({
     queryKey: ["profile", user?.id],

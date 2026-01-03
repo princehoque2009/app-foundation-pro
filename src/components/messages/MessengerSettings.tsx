@@ -7,7 +7,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Label } from "@/components/ui/label";
-import { Slider } from "@/components/ui/slider";
+import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   Settings,
   Palette,
@@ -16,9 +17,8 @@ import {
   MessageSquare,
   Image,
   RotateCcw,
-  Sun,
-  Moon,
-  Smartphone,
+  Lock,
+  AlertTriangle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -43,7 +43,13 @@ const CHAT_BACKGROUNDS = [
 ];
 
 export const MessengerSettings = ({ trigger }: MessengerSettingsProps) => {
-  const { settings, updateSettings, resetSettings } = useMessengerSettings();
+  const { 
+    settings, 
+    adminOverrides, 
+    updateSettings, 
+    resetSettings,
+    isDisabledByAdmin 
+  } = useMessengerSettings();
   const [activeSection, setActiveSection] = useState<string>("appearance");
 
   const sections = [
@@ -53,6 +59,20 @@ export const MessengerSettings = ({ trigger }: MessengerSettingsProps) => {
     { id: "behavior", label: "Behavior", icon: MessageSquare },
     { id: "media", label: "Media", icon: Image },
   ];
+
+  // Helper component for admin-disabled features
+  const AdminDisabledBadge = () => (
+    <Badge variant="outline" className="ml-2 text-xs gap-1 text-orange-600 border-orange-300 bg-orange-50 dark:bg-orange-950/20">
+      <Lock className="h-3 w-3" />
+      Disabled by Admin
+    </Badge>
+  );
+
+  const hasAnyDisabled = !adminOverrides.messaging_enabled || 
+    !adminOverrides.group_chats_enabled || 
+    !adminOverrides.voice_messages_enabled || 
+    !adminOverrides.calls_enabled || 
+    !adminOverrides.message_requests_enabled;
 
   return (
     <Sheet>
@@ -71,18 +91,30 @@ export const MessengerSettings = ({ trigger }: MessengerSettingsProps) => {
           </SheetTitle>
         </SheetHeader>
 
-        <div className="flex h-[calc(100vh-80px)]">
-          {/* Section tabs */}
-          <div className="w-14 border-r bg-muted/30 py-2">
+        {/* Admin Notice */}
+        {hasAnyDisabled && (
+          <div className="px-4 pt-3">
+            <Alert className="border-orange-300 bg-orange-50 dark:bg-orange-950/20">
+              <AlertTriangle className="h-4 w-4 text-orange-600" />
+              <AlertDescription className="text-xs text-orange-700 dark:text-orange-400">
+                Some features are currently disabled by the administrator.
+              </AlertDescription>
+            </Alert>
+          </div>
+        )}
+
+        <div className="flex h-[calc(100vh-120px)]">
+          {/* Section tabs - Mobile optimized */}
+          <div className="w-14 border-r bg-muted/30 py-2 shrink-0">
             {sections.map((section) => (
               <button
                 key={section.id}
                 onClick={() => setActiveSection(section.id)}
                 className={cn(
-                  "w-full p-3 flex flex-col items-center gap-1 text-xs transition-colors",
+                  "w-full p-3 flex flex-col items-center gap-1 text-xs transition-colors touch-manipulation",
                   activeSection === section.id
                     ? "text-primary bg-primary/10"
-                    : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted active:bg-muted"
                 )}
               >
                 <section.icon className="h-5 w-5" />
@@ -90,7 +122,7 @@ export const MessengerSettings = ({ trigger }: MessengerSettingsProps) => {
             ))}
           </div>
 
-          {/* Settings content */}
+          {/* Settings content - Mobile optimized */}
           <ScrollArea className="flex-1">
             <div className="p-4 space-y-6">
               {/* Appearance */}
@@ -107,7 +139,7 @@ export const MessengerSettings = ({ trigger }: MessengerSettingsProps) => {
                           key={theme.id}
                           onClick={() => updateSettings({ theme: theme.id as any })}
                           className={cn(
-                            "w-10 h-10 rounded-full transition-all",
+                            "w-10 h-10 rounded-full transition-all touch-manipulation active:scale-95",
                             theme.color,
                             settings.theme === theme.id
                               ? "ring-2 ring-primary ring-offset-2"
@@ -129,7 +161,7 @@ export const MessengerSettings = ({ trigger }: MessengerSettingsProps) => {
                           key={bg.id || "none"}
                           onClick={() => updateSettings({ chatBackground: bg.id })}
                           className={cn(
-                            "h-16 rounded-lg transition-all border-2",
+                            "h-16 rounded-lg transition-all border-2 touch-manipulation active:scale-95",
                             bg.preview,
                             settings.chatBackground === bg.id
                               ? "border-primary"
@@ -148,7 +180,7 @@ export const MessengerSettings = ({ trigger }: MessengerSettingsProps) => {
                       value={settings.bubbleStyle}
                       onValueChange={(v) => updateSettings({ bubbleStyle: v as any })}
                     >
-                      <SelectTrigger>
+                      <SelectTrigger className="h-12">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -165,7 +197,7 @@ export const MessengerSettings = ({ trigger }: MessengerSettingsProps) => {
                       value={settings.fontSize}
                       onValueChange={(v) => updateSettings({ fontSize: v as any })}
                     >
-                      <SelectTrigger>
+                      <SelectTrigger className="h-12">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -181,46 +213,52 @@ export const MessengerSettings = ({ trigger }: MessengerSettingsProps) => {
               {/* Privacy */}
               {activeSection === "privacy" && (
                 <div className="space-y-6 animate-fade-in">
-                  <div className="flex items-center justify-between">
-                    <div>
+                  <div className="flex items-center justify-between min-h-[48px]">
+                    <div className="flex-1">
                       <Label className="font-medium">Read Receipts</Label>
-                      <p className="text-xs text-muted-foreground">
+                      <p className="text-xs text-muted-foreground mt-1">
                         Let others see when you've read their messages
                       </p>
                     </div>
                     <Switch
                       checked={settings.readReceipts}
                       onCheckedChange={(v) => updateSettings({ readReceipts: v })}
+                      className="ml-4"
                     />
                   </div>
 
                   <Separator />
 
-                  <div className="flex items-center justify-between">
-                    <div>
+                  <div className="flex items-center justify-between min-h-[48px]">
+                    <div className="flex-1">
                       <Label className="font-medium">Typing Indicator</Label>
-                      <p className="text-xs text-muted-foreground">
+                      <p className="text-xs text-muted-foreground mt-1">
                         Show when you're typing a message
                       </p>
                     </div>
                     <Switch
                       checked={settings.typingIndicator}
                       onCheckedChange={(v) => updateSettings({ typingIndicator: v })}
+                      className="ml-4"
                     />
                   </div>
 
                   <Separator />
 
-                  <div>
-                    <Label className="font-medium mb-2 block">Message Requests</Label>
-                    <p className="text-xs text-muted-foreground mb-3">
+                  <div className={cn(isDisabledByAdmin("message_requests_enabled") && "opacity-60")}>
+                    <div className="flex items-center">
+                      <Label className="font-medium">Message Requests</Label>
+                      {isDisabledByAdmin("message_requests_enabled") && <AdminDisabledBadge />}
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1 mb-3">
                       Who can send you message requests
                     </p>
                     <Select
                       value={settings.messageRequests}
                       onValueChange={(v) => updateSettings({ messageRequests: v as any })}
+                      disabled={isDisabledByAdmin("message_requests_enabled")}
                     >
-                      <SelectTrigger>
+                      <SelectTrigger className="h-12">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -236,46 +274,56 @@ export const MessengerSettings = ({ trigger }: MessengerSettingsProps) => {
               {/* Notifications */}
               {activeSection === "notifications" && (
                 <div className="space-y-6 animate-fade-in">
-                  <div className="flex items-center justify-between">
-                    <div>
+                  <div className="flex items-center justify-between min-h-[48px]">
+                    <div className="flex-1">
                       <Label className="font-medium">Message Alerts</Label>
-                      <p className="text-xs text-muted-foreground">
+                      <p className="text-xs text-muted-foreground mt-1">
                         Get notified for new messages
                       </p>
                     </div>
                     <Switch
                       checked={settings.messageAlerts}
                       onCheckedChange={(v) => updateSettings({ messageAlerts: v })}
+                      className="ml-4"
                     />
                   </div>
 
                   <Separator />
 
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <Label className="font-medium">Group Mentions</Label>
-                      <p className="text-xs text-muted-foreground">
+                  <div className={cn(
+                    "flex items-center justify-between min-h-[48px]",
+                    isDisabledByAdmin("group_chats_enabled") && "opacity-60"
+                  )}>
+                    <div className="flex-1">
+                      <div className="flex items-center">
+                        <Label className="font-medium">Group Mentions</Label>
+                        {isDisabledByAdmin("group_chats_enabled") && <AdminDisabledBadge />}
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-1">
                         Get notified when mentioned in groups
                       </p>
                     </div>
                     <Switch
                       checked={settings.groupMentions}
                       onCheckedChange={(v) => updateSettings({ groupMentions: v })}
+                      disabled={isDisabledByAdmin("group_chats_enabled")}
+                      className="ml-4"
                     />
                   </div>
 
                   <Separator />
 
-                  <div className="flex items-center justify-between">
-                    <div>
+                  <div className="flex items-center justify-between min-h-[48px]">
+                    <div className="flex-1">
                       <Label className="font-medium">Reaction Alerts</Label>
-                      <p className="text-xs text-muted-foreground">
+                      <p className="text-xs text-muted-foreground mt-1">
                         Get notified for message reactions
                       </p>
                     </div>
                     <Switch
                       checked={settings.reactionAlerts}
                       onCheckedChange={(v) => updateSettings({ reactionAlerts: v })}
+                      className="ml-4"
                     />
                   </div>
                 </div>
@@ -284,46 +332,49 @@ export const MessengerSettings = ({ trigger }: MessengerSettingsProps) => {
               {/* Behavior */}
               {activeSection === "behavior" && (
                 <div className="space-y-6 animate-fade-in">
-                  <div className="flex items-center justify-between">
-                    <div>
+                  <div className="flex items-center justify-between min-h-[48px]">
+                    <div className="flex-1">
                       <Label className="font-medium">Enter to Send</Label>
-                      <p className="text-xs text-muted-foreground">
+                      <p className="text-xs text-muted-foreground mt-1">
                         Press Enter to send messages
                       </p>
                     </div>
                     <Switch
                       checked={settings.enterToSend}
                       onCheckedChange={(v) => updateSettings({ enterToSend: v })}
+                      className="ml-4"
                     />
                   </div>
 
                   <Separator />
 
-                  <div className="flex items-center justify-between">
-                    <div>
+                  <div className="flex items-center justify-between min-h-[48px]">
+                    <div className="flex-1">
                       <Label className="font-medium">Auto-Scroll</Label>
-                      <p className="text-xs text-muted-foreground">
+                      <p className="text-xs text-muted-foreground mt-1">
                         Automatically scroll to new messages
                       </p>
                     </div>
                     <Switch
                       checked={settings.autoScroll}
                       onCheckedChange={(v) => updateSettings({ autoScroll: v })}
+                      className="ml-4"
                     />
                   </div>
 
                   <Separator />
 
-                  <div className="flex items-center justify-between">
-                    <div>
+                  <div className="flex items-center justify-between min-h-[48px]">
+                    <div className="flex-1">
                       <Label className="font-medium">Save Drafts</Label>
-                      <p className="text-xs text-muted-foreground">
+                      <p className="text-xs text-muted-foreground mt-1">
                         Save unsent messages as drafts
                       </p>
                     </div>
                     <Switch
                       checked={settings.saveDrafts}
                       onCheckedChange={(v) => updateSettings({ saveDrafts: v })}
+                      className="ml-4"
                     />
                   </div>
                 </div>
@@ -332,16 +383,17 @@ export const MessengerSettings = ({ trigger }: MessengerSettingsProps) => {
               {/* Media */}
               {activeSection === "media" && (
                 <div className="space-y-6 animate-fade-in">
-                  <div className="flex items-center justify-between">
-                    <div>
+                  <div className="flex items-center justify-between min-h-[48px]">
+                    <div className="flex-1">
                       <Label className="font-medium">Auto-Download Media</Label>
-                      <p className="text-xs text-muted-foreground">
+                      <p className="text-xs text-muted-foreground mt-1">
                         Automatically download images and videos
                       </p>
                     </div>
                     <Switch
                       checked={settings.autoDownloadMedia}
                       onCheckedChange={(v) => updateSettings({ autoDownloadMedia: v })}
+                      className="ml-4"
                     />
                   </div>
 
@@ -356,7 +408,7 @@ export const MessengerSettings = ({ trigger }: MessengerSettingsProps) => {
                       value={settings.mediaQuality}
                       onValueChange={(v) => updateSettings({ mediaQuality: v as any })}
                     >
-                      <SelectTrigger>
+                      <SelectTrigger className="h-12">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -373,7 +425,7 @@ export const MessengerSettings = ({ trigger }: MessengerSettingsProps) => {
               <Separator />
               <Button
                 variant="outline"
-                className="w-full"
+                className="w-full h-12 touch-manipulation"
                 onClick={resetSettings}
               >
                 <RotateCcw className="h-4 w-4 mr-2" />

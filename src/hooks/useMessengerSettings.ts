@@ -1,5 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useAppSettings } from "@/contexts/AppSettingsContext";
+import { toast } from "@/hooks/use-toast";
 
 export interface MessengerSettings {
   // Appearance
@@ -29,6 +31,14 @@ export interface MessengerSettings {
   mediaQuality: "low" | "medium" | "high";
 }
 
+interface AdminOverrides {
+  messaging_enabled: boolean;
+  group_chats_enabled: boolean;
+  voice_messages_enabled: boolean;
+  calls_enabled: boolean;
+  message_requests_enabled: boolean;
+}
+
 const DEFAULT_SETTINGS: MessengerSettings = {
   theme: "default",
   bubbleStyle: "rounded",
@@ -50,6 +60,7 @@ const DEFAULT_SETTINGS: MessengerSettings = {
 
 export const useMessengerSettings = () => {
   const { user } = useAuth();
+  const { settings: appSettings, isFeatureEnabled } = useAppSettings();
   const storageKey = user?.id ? `messenger_settings_${user.id}` : null;
   
   const [settings, setSettings] = useState<MessengerSettings>(() => {
@@ -62,6 +73,15 @@ export const useMessengerSettings = () => {
       return DEFAULT_SETTINGS;
     }
   });
+
+  // Admin overrides from app settings
+  const adminOverrides: AdminOverrides = {
+    messaging_enabled: isFeatureEnabled("messaging_enabled"),
+    group_chats_enabled: isFeatureEnabled("group_chats_enabled"),
+    voice_messages_enabled: isFeatureEnabled("voice_messages_enabled"),
+    calls_enabled: isFeatureEnabled("calls_enabled"),
+    message_requests_enabled: isFeatureEnabled("message_requests_enabled"),
+  };
   
   // Load settings when user changes
   useEffect(() => {
@@ -77,43 +97,75 @@ export const useMessengerSettings = () => {
     }
   }, [storageKey]);
   
-  const updateSettings = (updates: Partial<MessengerSettings>) => {
+  const updateSettings = useCallback((updates: Partial<MessengerSettings>) => {
     setSettings(prev => {
       const newSettings = { ...prev, ...updates };
       if (storageKey) {
         localStorage.setItem(storageKey, JSON.stringify(newSettings));
       }
+      
+      // Show immediate feedback
+      toast({
+        title: "Setting updated",
+        description: "Your preference has been saved.",
+      });
+      
       return newSettings;
     });
-  };
+  }, [storageKey]);
   
-  const resetSettings = () => {
+  const resetSettings = useCallback(() => {
     setSettings(DEFAULT_SETTINGS);
     if (storageKey) {
       localStorage.removeItem(storageKey);
     }
-  };
+    toast({
+      title: "Settings reset",
+      description: "All messenger settings have been reset to defaults.",
+    });
+  }, [storageKey]);
   
-  const muteChat = (chatId: string) => {
+  const muteChat = useCallback((chatId: string) => {
     updateSettings({
       mutedChats: [...settings.mutedChats.filter(id => id !== chatId), chatId]
     });
-  };
+  }, [settings.mutedChats, updateSettings]);
   
-  const unmuteChat = (chatId: string) => {
+  const unmuteChat = useCallback((chatId: string) => {
     updateSettings({
       mutedChats: settings.mutedChats.filter(id => id !== chatId)
     });
-  };
+  }, [settings.mutedChats, updateSettings]);
   
-  const isChatMuted = (chatId: string) => settings.mutedChats.includes(chatId);
+  const isChatMuted = useCallback((chatId: string) => {
+    return settings.mutedChats.includes(chatId);
+  }, [settings.mutedChats]);
+
+  // Check if a feature is disabled by admin
+  const isDisabledByAdmin = useCallback((feature: keyof AdminOverrides): boolean => {
+    return !adminOverrides[feature];
+  }, [adminOverrides]);
+
+  // Get effective value considering admin overrides
+  const getEffectiveValue = useCallback(<K extends keyof MessengerSettings>(
+    key: K,
+    adminFeature?: keyof AdminOverrides
+  ): MessengerSettings[K] | null => {
+    if (adminFeature && isDisabledByAdmin(adminFeature)) {
+      return null; // Feature is disabled by admin
+    }
+    return settings[key];
+  }, [settings, isDisabledByAdmin]);
   
   return {
     settings,
+    adminOverrides,
     updateSettings,
     resetSettings,
     muteChat,
     unmuteChat,
     isChatMuted,
+    isDisabledByAdmin,
+    getEffectiveValue,
   };
 };
