@@ -29,6 +29,9 @@ import Admin from "./pages/Admin";
 import Groups from "./pages/Groups";
 import GroupChat from "./pages/GroupChat";
 import Favourites from "./pages/Favourites";
+import SupportPanel from "./pages/SupportPanel";
+import ModeratorPanel from "./pages/ModeratorPanel";
+import AdvisorPanel from "./pages/AdvisorPanel";
 
 const queryClient = new QueryClient();
 
@@ -74,6 +77,9 @@ const App = () => {
                   <Route path="/menu" element={<ProtectedRoute><Menu /></ProtectedRoute>} />
                   <Route path="/help" element={<ProtectedRoute><HelpSupport /></ProtectedRoute>} />
                   <Route path="/admin" element={<ProtectedRoute requireAdmin><Admin /></ProtectedRoute>} />
+                  <Route path="/support-panel" element={<ProtectedRoute requireSupport><SupportPanel /></ProtectedRoute>} />
+                  <Route path="/moderator-panel" element={<ProtectedRoute requireModerator><ModeratorPanel /></ProtectedRoute>} />
+                  <Route path="/advisor-panel" element={<ProtectedRoute requireAdvisor><AdvisorPanel /></ProtectedRoute>} />
                   <Route path="/groups" element={<ProtectedRoute><Groups /></ProtectedRoute>} />
                   <Route path="/groups/:groupId" element={<ProtectedRoute><GroupChat /></ProtectedRoute>} />
                   <Route path="/favourites" element={<ProtectedRoute><Favourites /></ProtectedRoute>} />

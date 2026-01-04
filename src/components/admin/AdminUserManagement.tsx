@@ -30,6 +30,8 @@ import {
   Mail,
   Phone,
   Shield,
+  UserPlus,
+  UserMinus,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -45,6 +47,8 @@ export const AdminUserManagement = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedUser, setSelectedUser] = useState<any>(null);
   const [actionDialog, setActionDialog] = useState<{ type: string; user: any } | null>(null);
+  const [roleDialog, setRoleDialog] = useState<{ user: any } | null>(null);
+  const [selectedRole, setSelectedRole] = useState<string>("");
   const [actionReason, setActionReason] = useState("");
   const [suspendDuration, setSuspendDuration] = useState("7");
 
@@ -79,9 +83,79 @@ export const AdminUserManagement = () => {
   });
 
   const getUserRole = (userId: string) => {
-    const role = userRoles?.find((r: any) => r.user_id === userId);
-    return role?.role || "user";
+    const roles = userRoles?.filter((r: any) => r.user_id === userId).map((r: any) => r.role) || [];
+    return roles.length > 0 ? roles : ["user"];
   };
+
+  // Role assignment mutation
+  const assignRole = useMutation({
+    mutationFn: async ({ userId, role }: { userId: string; role: "admin" | "moderator" | "user" | "advisor" | "support" }) => {
+      // Check if role already exists
+      const { data: existing } = await supabase
+        .from("user_roles")
+        .select("id")
+        .eq("user_id", userId)
+        .eq("role", role)
+        .maybeSingle();
+
+      if (existing) {
+        throw new Error("User already has this role");
+      }
+
+      const { error } = await supabase
+        .from("user_roles")
+        .insert([{ user_id: userId, role }]);
+
+      if (error) throw error;
+
+      // Log admin action
+      await supabase.from("admin_logs").insert({
+        admin_id: user?.id,
+        action_type: "role_assigned",
+        target_id: userId,
+        target_type: "user",
+        details: { role },
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-user-roles"] });
+      setRoleDialog(null);
+      setSelectedRole("");
+      toast({ title: "Role assigned successfully" });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
+  });
+
+  // Role removal mutation
+  const removeRole = useMutation({
+    mutationFn: async ({ userId, role }: { userId: string; role: "admin" | "moderator" | "user" | "advisor" | "support" }) => {
+      const { error } = await supabase
+        .from("user_roles")
+        .delete()
+        .eq("user_id", userId)
+        .eq("role", role);
+
+      if (error) throw error;
+
+      // Log admin action
+      await supabase.from("admin_logs").insert({
+        admin_id: user?.id,
+        action_type: "role_removed",
+        target_id: userId,
+        target_type: "user",
+        details: { role },
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-user-roles"] });
+      toast({ title: "Role removed successfully" });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
+  });
 
   // Admin action mutation
   const adminAction = useMutation({
@@ -287,7 +361,7 @@ export const AdminUserManagement = () => {
                         )}
                         <span className="flex items-center gap-1">
                           <Shield className="h-3 w-3" />
-                          {getUserRole(u.id)}
+                          {getUserRole(u.id).join(", ")}
                         </span>
                       </div>
                     </div>
@@ -369,6 +443,13 @@ export const AdminUserManagement = () => {
                               </DropdownMenuItem>
                             </>
                           )}
+
+                          <DropdownMenuSeparator />
+                          
+                          <DropdownMenuItem onClick={() => setRoleDialog({ user: u })}>
+                            <UserPlus className="h-4 w-4 mr-2 text-primary" />
+                            Manage Roles
+                          </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </div>
@@ -509,6 +590,82 @@ export const AdminUserManagement = () => {
                   disabled={!actionReason.trim()}
                 >
                   Confirm
+                </Button>
+              </DialogFooter>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Role Management Dialog */}
+      <Dialog open={!!roleDialog} onOpenChange={() => setRoleDialog(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Manage Roles</DialogTitle>
+          </DialogHeader>
+          {roleDialog && (
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                Managing roles for: <strong>@{roleDialog.user.username}</strong>
+              </p>
+
+              {/* Current Roles */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Current Roles</label>
+                <div className="flex flex-wrap gap-2">
+                  {getUserRole(roleDialog.user.id).map((role: string) => (
+                    <Badge key={role} variant="secondary" className="flex items-center gap-1">
+                      {role}
+                      {role !== "user" && (
+                        <button
+                          onClick={() => removeRole.mutate({ 
+                            userId: roleDialog.user.id, 
+                            role: role as "admin" | "moderator" | "user" | "advisor" | "support" 
+                          })}
+                          className="ml-1 hover:text-destructive"
+                        >
+                          <UserMinus className="h-3 w-3" />
+                        </button>
+                      )}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+
+              {/* Add Role */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Add Role</label>
+                <div className="flex gap-2">
+                  <Select value={selectedRole} onValueChange={setSelectedRole}>
+                    <SelectTrigger className="flex-1">
+                      <SelectValue placeholder="Select a role" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="admin">Admin</SelectItem>
+                      <SelectItem value="moderator">Moderator</SelectItem>
+                      <SelectItem value="advisor">Advisor</SelectItem>
+                      <SelectItem value="support">Support</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Button
+                    onClick={() => {
+                      if (selectedRole) {
+                        assignRole.mutate({ 
+                          userId: roleDialog.user.id, 
+                          role: selectedRole as "admin" | "moderator" | "user" | "advisor" | "support" 
+                        });
+                      }
+                    }}
+                    disabled={!selectedRole || assignRole.isPending}
+                  >
+                    <UserPlus className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setRoleDialog(null)}>
+                  Done
                 </Button>
               </DialogFooter>
             </div>

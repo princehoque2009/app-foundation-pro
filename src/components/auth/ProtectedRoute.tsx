@@ -9,16 +9,22 @@ interface ProtectedRouteProps {
   children: ReactNode;
   requireAdmin?: boolean;
   requireModerator?: boolean;
+  requireAdvisor?: boolean;
+  requireSupport?: boolean;
+  requireAnyRole?: ("admin" | "moderator" | "advisor" | "support")[];
 }
 
 export const ProtectedRoute = ({
   children,
   requireAdmin = false,
   requireModerator = false,
+  requireAdvisor = false,
+  requireSupport = false,
+  requireAnyRole,
 }: ProtectedRouteProps) => {
   const { user, loading: authLoading } = useAuth();
   const { settings, loading: settingsLoading, refetch: refetchSettings } = useAppSettings();
-  const { isAdmin, isModerator, loading: rolesLoading } = useRoles();
+  const { isAdmin, isModerator, isAdvisor, isSupport, hasAnyRole, loading: rolesLoading } = useRoles();
   const location = useLocation();
 
   // Show loading while checking auth
@@ -50,8 +56,9 @@ export const ProtectedRoute = ({
     );
   }
 
-  // Check maintenance mode - only admins can bypass
-  if (settings.maintenance_mode && !isAdmin) {
+  // Check maintenance mode - admins, moderators, advisors, support can bypass
+  const canBypassMaintenance = isAdmin || isModerator || isAdvisor || isSupport;
+  if (settings.maintenance_mode && !canBypassMaintenance) {
     return <Maintenance onRefresh={refetchSettings} />;
   }
 
@@ -62,6 +69,21 @@ export const ProtectedRoute = ({
 
   if (requireModerator && !isModerator) {
     return <Navigate to="/" replace />;
+  }
+
+  if (requireAdvisor && !isAdvisor) {
+    return <Navigate to="/" replace />;
+  }
+
+  if (requireSupport && !isSupport) {
+    return <Navigate to="/" replace />;
+  }
+
+  // Check if user has any of the specified roles
+  if (requireAnyRole && requireAnyRole.length > 0) {
+    if (!hasAnyRole(requireAnyRole)) {
+      return <Navigate to="/" replace />;
+    }
   }
 
   return <>{children}</>;
