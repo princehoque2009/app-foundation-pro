@@ -26,6 +26,9 @@ import {
   UserCircle,
   ArrowLeft,
   Megaphone,
+  Headphones,
+  BarChart3,
+  Flag,
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -126,7 +129,7 @@ const Menu = () => {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
   const { theme, setTheme } = useTheme();
-  const { isAdmin } = useRoles();
+  const { isAdmin, isModerator, isAdvisor, isSupport } = useRoles();
 
   const { data: profile } = useQuery({
     queryKey: ["profile", user?.id],
@@ -280,6 +283,7 @@ const Menu = () => {
         {/* Settings Section */}
         <motion.div variants={itemVariants}>
           <Card className="overflow-hidden border-0 shadow-sm">
+            {/* Role-based panel links */}
             {isAdmin && (
               <div
                 className="flex items-center justify-between p-4 cursor-pointer hover:bg-muted/50 transition-colors border-b border-border"
@@ -288,6 +292,42 @@ const Menu = () => {
                 <div className="flex items-center gap-3">
                   <Shield className="h-5 w-5 text-primary" />
                   <span className="font-medium text-sm text-primary">Admin Panel</span>
+                </div>
+                <ChevronRight className="h-5 w-5 text-muted-foreground" />
+              </div>
+            )}
+            {isSupport && !isAdmin && (
+              <div
+                className="flex items-center justify-between p-4 cursor-pointer hover:bg-muted/50 transition-colors border-b border-border"
+                onClick={() => navigate("/support-panel")}
+              >
+                <div className="flex items-center gap-3">
+                  <Headphones className="h-5 w-5 text-green-500" />
+                  <span className="font-medium text-sm text-green-600">Support Panel</span>
+                </div>
+                <ChevronRight className="h-5 w-5 text-muted-foreground" />
+              </div>
+            )}
+            {isModerator && !isAdmin && (
+              <div
+                className="flex items-center justify-between p-4 cursor-pointer hover:bg-muted/50 transition-colors border-b border-border"
+                onClick={() => navigate("/moderator-panel")}
+              >
+                <div className="flex items-center gap-3">
+                  <Flag className="h-5 w-5 text-orange-500" />
+                  <span className="font-medium text-sm text-orange-600">Moderator Panel</span>
+                </div>
+                <ChevronRight className="h-5 w-5 text-muted-foreground" />
+              </div>
+            )}
+            {isAdvisor && !isAdmin && (
+              <div
+                className="flex items-center justify-between p-4 cursor-pointer hover:bg-muted/50 transition-colors border-b border-border"
+                onClick={() => navigate("/advisor-panel")}
+              >
+                <div className="flex items-center gap-3">
+                  <BarChart3 className="h-5 w-5 text-blue-500" />
+                  <span className="font-medium text-sm text-blue-600">Advisor Panel</span>
                 </div>
                 <ChevronRight className="h-5 w-5 text-muted-foreground" />
               </div>

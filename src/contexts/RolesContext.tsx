@@ -2,14 +2,17 @@ import { createContext, useContext, useEffect, useState, ReactNode, useCallback 
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 
-type AppRole = "admin" | "moderator" | "user";
+type AppRole = "admin" | "moderator" | "user" | "advisor" | "support";
 
 interface RolesContextType {
   roles: AppRole[];
   loading: boolean;
   isAdmin: boolean;
   isModerator: boolean;
+  isAdvisor: boolean;
+  isSupport: boolean;
   hasRole: (role: AppRole) => boolean;
+  hasAnyRole: (roles: AppRole[]) => boolean;
   refetch: () => Promise<void>;
 }
 
@@ -81,8 +84,13 @@ export const RolesProvider = ({ children }: { children: ReactNode }) => {
   }, [user?.id, fetchRoles]);
 
   const hasRole = (role: AppRole): boolean => roles.includes(role);
+  const hasAnyRole = (checkRoles: AppRole[]): boolean => 
+    checkRoles.some((role) => roles.includes(role));
+  
   const isAdmin = roles.includes("admin");
   const isModerator = roles.includes("moderator") || isAdmin;
+  const isAdvisor = roles.includes("advisor") || isAdmin;
+  const isSupport = roles.includes("support") || isAdmin;
 
   return (
     <RolesContext.Provider
@@ -91,7 +99,10 @@ export const RolesProvider = ({ children }: { children: ReactNode }) => {
         loading: authLoading || loading,
         isAdmin,
         isModerator,
+        isAdvisor,
+        isSupport,
         hasRole,
+        hasAnyRole,
         refetch: fetchRoles,
       }}
     >
@@ -109,7 +120,10 @@ export const useRoles = () => {
       loading: false,
       isAdmin: false,
       isModerator: false,
+      isAdvisor: false,
+      isSupport: false,
       hasRole: () => false,
+      hasAnyRole: () => false,
       refetch: async () => {},
     };
   }
