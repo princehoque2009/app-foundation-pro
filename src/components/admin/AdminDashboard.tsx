@@ -1,9 +1,12 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, FileText, Flag, BadgeCheck, MessageSquare, UserX, TrendingUp, Activity } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Users, FileText, Flag, BadgeCheck, MessageSquare, TrendingUp, Activity, Zap } from "lucide-react";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
-import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell, AreaChart, Area } from "recharts";
+import { AdminActivityFeed } from "./AdminActivityFeed";
+import { AdminOnlineUsers } from "./AdminOnlineUsers";
 
 export const AdminDashboard = () => {
   // Fetch dashboard stats
@@ -16,12 +19,14 @@ export const AdminDashboard = () => {
         { count: pendingReports },
         { count: pendingVerifications },
         { count: supportTickets },
+        { count: newUsersToday },
       ] = await Promise.all([
         supabase.from("profiles").select("*", { count: "exact", head: true }),
         supabase.from("posts").select("*", { count: "exact", head: true }),
         supabase.from("reports").select("*", { count: "exact", head: true }).eq("status", "pending"),
         supabase.from("verification_requests").select("*", { count: "exact", head: true }).eq("status", "pending"),
         supabase.from("support_tickets").select("*", { count: "exact", head: true }).eq("status", "open"),
+        supabase.from("profiles").select("*", { count: "exact", head: true }).gte("created_at", new Date(new Date().setHours(0, 0, 0, 0)).toISOString()),
       ]);
 
       return {
@@ -30,6 +35,7 @@ export const AdminDashboard = () => {
         pendingReports: pendingReports || 0,
         pendingVerifications: pendingVerifications || 0,
         supportTickets: supportTickets || 0,
+        newUsersToday: newUsersToday || 0,
       };
     },
   });
@@ -69,11 +75,43 @@ export const AdminDashboard = () => {
   };
 
   const statCards = [
-    { title: "Total Users", value: stats?.totalUsers || 0, icon: Users, color: "text-blue-500", bgColor: "bg-blue-500/10" },
-    { title: "Total Posts", value: stats?.totalPosts || 0, icon: FileText, color: "text-green-500", bgColor: "bg-green-500/10" },
-    { title: "Pending Reports", value: stats?.pendingReports || 0, icon: Flag, color: "text-red-500", bgColor: "bg-red-500/10" },
-    { title: "Verification Requests", value: stats?.pendingVerifications || 0, icon: BadgeCheck, color: "text-primary", bgColor: "bg-primary/10" },
-    { title: "Support Tickets", value: stats?.supportTickets || 0, icon: MessageSquare, color: "text-orange-500", bgColor: "bg-orange-500/10" },
+    { 
+      title: "Total Users", 
+      value: stats?.totalUsers || 0, 
+      icon: Users, 
+      color: "text-blue-500", 
+      bgColor: "bg-blue-500/10",
+      change: `+${stats?.newUsersToday || 0} today`,
+    },
+    { 
+      title: "Total Posts", 
+      value: stats?.totalPosts || 0, 
+      icon: FileText, 
+      color: "text-green-500", 
+      bgColor: "bg-green-500/10" 
+    },
+    { 
+      title: "Pending Reports", 
+      value: stats?.pendingReports || 0, 
+      icon: Flag, 
+      color: "text-red-500", 
+      bgColor: "bg-red-500/10",
+      urgent: (stats?.pendingReports || 0) > 0,
+    },
+    { 
+      title: "Verifications", 
+      value: stats?.pendingVerifications || 0, 
+      icon: BadgeCheck, 
+      color: "text-primary", 
+      bgColor: "bg-primary/10" 
+    },
+    { 
+      title: "Support Tickets", 
+      value: stats?.supportTickets || 0, 
+      icon: MessageSquare, 
+      color: "text-orange-500", 
+      bgColor: "bg-orange-500/10" 
+    },
   ];
 
   return (
@@ -81,7 +119,7 @@ export const AdminDashboard = () => {
       {/* Stats Grid */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
         {statCards.map((stat, i) => (
-          <Card key={i} className="border-0 shadow-sm hover:shadow-md transition-shadow">
+          <Card key={i} className={`border-0 shadow-sm hover:shadow-md transition-all ${stat.urgent ? 'ring-2 ring-red-500/50' : ''}`}>
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
                 <div className={`p-2.5 rounded-xl ${stat.bgColor}`}>
@@ -90,11 +128,20 @@ export const AdminDashboard = () => {
                 <div>
                   <p className="text-2xl font-bold">{stat.value}</p>
                   <p className="text-xs text-muted-foreground">{stat.title}</p>
+                  {stat.change && (
+                    <p className="text-xs text-green-500 font-medium mt-0.5">{stat.change}</p>
+                  )}
                 </div>
               </div>
             </CardContent>
           </Card>
         ))}
+      </div>
+
+      {/* Live Panels Row */}
+      <div className="grid md:grid-cols-2 gap-6">
+        <AdminActivityFeed />
+        <AdminOnlineUsers />
       </div>
 
       {/* Charts Row */}
@@ -110,19 +157,24 @@ export const AdminDashboard = () => {
           <CardContent>
             <ChartContainer config={chartConfig} className="h-[250px] w-full">
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={userGrowthData}>
+                <AreaChart data={userGrowthData}>
+                  <defs>
+                    <linearGradient id="userGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3}/>
+                      <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
                   <XAxis dataKey="name" tick={{ fontSize: 12 }} axisLine={false} tickLine={false} />
                   <YAxis tick={{ fontSize: 12 }} axisLine={false} tickLine={false} />
                   <ChartTooltip content={<ChartTooltipContent />} />
-                  <Line 
+                  <Area 
                     type="monotone" 
                     dataKey="users" 
                     stroke="hsl(var(--primary))" 
-                    strokeWidth={3}
-                    dot={{ fill: "hsl(var(--primary))", strokeWidth: 2 }}
-                    activeDot={{ r: 6 }}
+                    strokeWidth={2}
+                    fill="url(#userGradient)"
                   />
-                </LineChart>
+                </AreaChart>
               </ResponsiveContainer>
             </ChartContainer>
           </CardContent>

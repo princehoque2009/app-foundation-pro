@@ -4,6 +4,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { ThemeProvider } from "next-themes";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { AppSettingsProvider } from "@/contexts/AppSettingsContext";
 import { RolesProvider } from "@/contexts/RolesContext";
@@ -52,15 +53,16 @@ const App = () => {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        {showSplash && <SplashScreen onComplete={handleSplashComplete} />}
-        <BrowserRouter>
-          <AuthProvider>
-            <AppSettingsProvider>
-              <RolesProvider>
-                <Routes>
+      <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          {showSplash && <SplashScreen onComplete={handleSplashComplete} />}
+          <BrowserRouter>
+            <AuthProvider>
+              <AppSettingsProvider>
+                <RolesProvider>
+                  <Routes>
                   <Route path="/auth" element={<Auth />} />
                   <Route path="/" element={<ProtectedRoute><Home /></ProtectedRoute>} />
                   <Route path="/reels" element={<ProtectedRoute><Reels /></ProtectedRoute>} />
@@ -84,12 +86,13 @@ const App = () => {
                   <Route path="/groups/:groupId" element={<ProtectedRoute><GroupChat /></ProtectedRoute>} />
                   <Route path="/favourites" element={<ProtectedRoute><Favourites /></ProtectedRoute>} />
                   <Route path="*" element={<NotFound />} />
-                </Routes>
-              </RolesProvider>
-            </AppSettingsProvider>
-          </AuthProvider>
-        </BrowserRouter>
-      </TooltipProvider>
+                  </Routes>
+                </RolesProvider>
+              </AppSettingsProvider>
+            </AuthProvider>
+          </BrowserRouter>
+        </TooltipProvider>
+      </ThemeProvider>
     </QueryClientProvider>
   );
 };
