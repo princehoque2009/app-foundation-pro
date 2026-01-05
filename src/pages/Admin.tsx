@@ -9,6 +9,7 @@ import { AdminVerifications } from "@/components/admin/AdminVerifications";
 import { AdminNotifications } from "@/components/admin/AdminNotifications";
 import { AdminAppSettings } from "@/components/admin/AdminAppSettings";
 import { AdminLogsViewer } from "@/components/admin/AdminLogsViewer";
+import { AdminAnnouncements } from "@/components/admin/AdminAnnouncements";
 
 const Admin = () => {
   const { isAdmin, loading } = useRoles();
@@ -39,7 +40,12 @@ const Admin = () => {
       case "verification":
         return <AdminVerifications />;
       case "notifications":
-        return <AdminNotifications />;
+        return (
+          <div className="space-y-6">
+            <AdminAnnouncements />
+            <AdminNotifications />
+          </div>
+        );
       case "settings":
         return <AdminAppSettings />;
       case "logs":
