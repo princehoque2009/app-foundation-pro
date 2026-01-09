@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { MainLayout } from "@/components/layout/MainLayout";
@@ -9,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { UserCircle, MessageCircle, UserPlus, UserMinus } from "lucide-react";
 import { PostCard } from "@/components/home/PostCard";
 import { ProfileAboutSection } from "@/components/profile/ProfileAboutSection";
+import { ProfileCreations } from "@/components/profile/ProfileCreations";
 import { toast } from "@/hooks/use-toast";
 import { useConversations } from "@/hooks/useConversations";
 import { VerifiedBadge } from "@/components/ui/VerifiedBadge";
@@ -86,6 +88,21 @@ const UserProfile = () => {
     },
     enabled: !!userId,
   });
+
+  // Transform posts into creations format
+  const creations = useMemo(() => {
+    return posts?.map(post => ({
+      id: post.id,
+      type: post.is_reel ? "reel" as const : post.media_type === "video" ? "video" as const : "image" as const,
+      thumbnail: post.media_url || undefined,
+      caption: post.caption || undefined,
+      likes: post.likes_count || 0,
+      isPinned: false,
+    })) || [];
+  }, [posts]);
+
+  const regularPosts = posts?.filter(post => !post.is_reel) || [];
+  const reelPosts = posts?.filter(post => post.is_reel) || [];
 
   const sendFriendRequest = useMutation({
     mutationFn: async () => {
@@ -205,14 +222,25 @@ const UserProfile = () => {
         </div>
 
         {/* About Section - Publicly Visible */}
-        <ProfileAboutSection
-          bio={profile?.bio}
-          dateOfBirth={profile?.date_of_birth}
-          createdAt={profile?.created_at}
-          postsCount={posts?.length || 0}
-          followersCount={profile?.followers_count || 0}
-          followingCount={profile?.following_count || 0}
-        />
+        <div className="mb-6">
+          <ProfileAboutSection
+            bio={profile?.bio}
+            dateOfBirth={profile?.date_of_birth}
+            createdAt={profile?.created_at}
+            postsCount={posts?.length || 0}
+            followersCount={profile?.followers_count || 0}
+            followingCount={profile?.following_count || 0}
+          />
+        </div>
+
+        {/* Creations Section - Publicly Visible */}
+        <div className="mb-6">
+          <ProfileCreations
+            creations={creations}
+            totalPosts={regularPosts.length}
+            totalReels={reelPosts.length}
+          />
+        </div>
 
         {/* Posts Tabs */}
         <Tabs defaultValue="posts" className="w-full">
@@ -222,7 +250,7 @@ const UserProfile = () => {
           </TabsList>
           
           <TabsContent value="posts" className="space-y-4 mt-4">
-            {posts?.filter(post => !post.is_reel).map((post) => (
+            {regularPosts.map((post) => (
               <PostCard 
                 key={post.id}
                 id={post.id}
@@ -239,13 +267,13 @@ const UserProfile = () => {
                 timestamp={post.created_at}
               />
             ))}
-            {(!posts || posts.filter(post => !post.is_reel).length === 0) && (
+            {regularPosts.length === 0 && (
               <p className="text-center text-muted-foreground py-8">No posts yet</p>
             )}
           </TabsContent>
           
           <TabsContent value="reels" className="space-y-4 mt-4">
-            {posts?.filter(post => post.is_reel).map((post) => (
+            {reelPosts.map((post) => (
               <PostCard 
                 key={post.id}
                 id={post.id}
@@ -262,7 +290,7 @@ const UserProfile = () => {
                 timestamp={post.created_at}
               />
             ))}
-            {(!posts || posts.filter(post => post.is_reel).length === 0) && (
+            {reelPosts.length === 0 && (
               <p className="text-center text-muted-foreground py-8">No reels yet</p>
             )}
           </TabsContent>

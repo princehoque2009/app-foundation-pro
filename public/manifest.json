@@ -4,8 +4,8 @@
   "description": "A next-generation social networking platform",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#FF6F61",
+  "background_color": "#0F0F14",
+  "theme_color": "#FF4F5A",
   "orientation": "portrait-primary",
   "icons": [
     {
