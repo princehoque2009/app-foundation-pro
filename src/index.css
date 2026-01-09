@@ -21,9 +21,9 @@
     --popover: 0 0% 89%;
     --popover-foreground: 0 0% 9%;
 
-    /* Prangon Brand Colors - Electric Coral #FF6F61 */
-    --primary: 354 100% 66.0784%;
-    --primary-foreground: 151 80% 95%;
+    /* Prangon Brand Colors - Electric Coral #FF4F5A */
+    --primary: 355 100% 65%;
+    --primary-foreground: 0 0% 100%;
 
     --secondary: 0 0% 81.5686%;
     --secondary-foreground: 0 0% 98%;
@@ -46,15 +46,15 @@
 
     --radius: 1.125rem;
 
-    /* Prangon Theme Colors */
-    --electric-coral: 5 100% 69%;
-    --coral-light: 5 100% 85%;
-    --coral-dark: 5 100% 55%;
+    /* Prangon Theme Colors - Electric Coral #FF4F5A */
+    --electric-coral: 355 100% 65%;
+    --coral-light: 355 100% 80%;
+    --coral-dark: 355 100% 50%;
 
     /* Gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(5, 100%, 69%), hsl(15, 100%, 65%));
+    --gradient-primary: linear-gradient(135deg, hsl(355, 100%, 65%), hsl(15, 100%, 65%));
     --gradient-secondary: linear-gradient(135deg, hsl(220, 14%, 96%), hsl(220, 14%, 92%));
-    --gradient-coral: linear-gradient(135deg, hsl(5, 100%, 69%) 0%, hsl(15, 100%, 75%) 50%, hsl(25, 100%, 70%) 100%);
+    --gradient-coral: linear-gradient(135deg, hsl(355, 100%, 65%) 0%, hsl(15, 100%, 70%) 50%, hsl(25, 100%, 65%) 100%);
 
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 0 0% 9%;
@@ -95,8 +95,8 @@
     --popover: 0 0% 15%;
     --popover-foreground: 0 0% 98%;
 
-    /* Prangon Brand Colors - Electric Coral MUST STAY THE SAME */
-    --primary: 5 100% 69%;
+    /* Prangon Brand Colors - Electric Coral #FF4F5A MUST STAY THE SAME */
+    --primary: 355 100% 65%;
     --primary-foreground: 0 0% 100%;
 
     --secondary: 0 0% 20%;
