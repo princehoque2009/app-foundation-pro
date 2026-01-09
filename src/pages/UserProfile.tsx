@@ -8,8 +8,10 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { UserCircle, MessageCircle, UserPlus, UserMinus } from "lucide-react";
 import { PostCard } from "@/components/home/PostCard";
+import { ProfileAboutSection } from "@/components/profile/ProfileAboutSection";
 import { toast } from "@/hooks/use-toast";
 import { useConversations } from "@/hooks/useConversations";
+import { VerifiedBadge } from "@/components/ui/VerifiedBadge";
 
 const UserProfile = () => {
   const { userId } = useParams();
@@ -153,7 +155,10 @@ const UserProfile = () => {
             </Avatar>
             
             <div className="flex-1">
-              <h1 className="text-2xl font-bold">{profile?.display_name || profile?.username}</h1>
+              <h1 className="text-2xl font-bold flex items-center gap-2">
+                {profile?.display_name || profile?.username}
+                {profile?.is_verified && <VerifiedBadge size="lg" />}
+              </h1>
               <p className="text-muted-foreground">@{profile?.username}</p>
               {profile?.bio && (
                 <p className="mt-2 text-sm">{profile.bio}</p>
@@ -198,6 +203,16 @@ const UserProfile = () => {
             </div>
           </div>
         </div>
+
+        {/* About Section - Publicly Visible */}
+        <ProfileAboutSection
+          bio={profile?.bio}
+          dateOfBirth={profile?.date_of_birth}
+          createdAt={profile?.created_at}
+          postsCount={posts?.length || 0}
+          followersCount={profile?.followers_count || 0}
+          followingCount={profile?.following_count || 0}
+        />
 
         {/* Posts Tabs */}
         <Tabs defaultValue="posts" className="w-full">

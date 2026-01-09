@@ -86,27 +86,27 @@
   }
 
   .dark {
-    --background: 0 0% 9%;
+    --background: 0 0% 7%;
     --foreground: 0 0% 98%;
 
-    --card: 0 0% 14%;
+    --card: 0 0% 12%;
     --card-foreground: 0 0% 98%;
 
-    --popover: 0 0% 25%;
+    --popover: 0 0% 15%;
     --popover-foreground: 0 0% 98%;
 
-    /* Prangon Brand Colors - Electric Coral Dark Mode */
-    --primary: 158 64% 51%;
-    --primary-foreground: 165 91% 9%;
+    /* Prangon Brand Colors - Electric Coral MUST STAY THE SAME */
+    --primary: 5 100% 69%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 0 0% 45%;
+    --secondary: 0 0% 20%;
     --secondary-foreground: 0 0% 98%;
 
-    --muted: 0 0% 45%;
-    --muted-foreground: 0 0% 98%;
+    --muted: 0 0% 18%;
+    --muted-foreground: 0 0% 65%;
 
-    --accent: 178 84% 10%;
-    --accent-foreground: 172 66% 50%;
+    --accent: 5 30% 15%;
+    --accent-foreground: 5 100% 75%;
 
     --success: 160 84% 39%;
     --success-foreground: 0 0% 100%;
@@ -114,41 +114,41 @@
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 85% 97%;
 
-    --border: 0 0% 32%;
-    --input: 0 0% 32%;
-    --ring: 158 64% 51%;
+    --border: 0 0% 20%;
+    --input: 0 0% 20%;
+    --ring: 5 100% 69%;
 
-    /* Prangon Theme Colors - Dark Mode */
-    --electric-coral: 5 100% 65%;
+    /* Prangon Theme Colors - Dark Mode (Electric Coral stays same) */
+    --electric-coral: 5 100% 69%;
     --coral-light: 5 100% 75%;
     --coral-dark: 5 100% 55%;
 
-    --gradient-primary: linear-gradient(135deg, hsl(5, 100%, 65%), hsl(15, 100%, 60%));
-    --gradient-coral: linear-gradient(135deg, hsl(5, 100%, 65%) 0%, hsl(15, 100%, 70%) 50%, hsl(25, 100%, 65%) 100%);
+    --gradient-primary: linear-gradient(135deg, hsl(5, 100%, 69%), hsl(15, 100%, 65%));
+    --gradient-coral: linear-gradient(135deg, hsl(5, 100%, 69%) 0%, hsl(15, 100%, 75%) 50%, hsl(25, 100%, 70%) 100%);
 
-    --sidebar-background: 240 5.9% 10%;
+    --sidebar-background: 0 0% 10%;
     --sidebar-foreground: 0 0% 98%;
-    --sidebar-primary: 158 64% 51%;
-    --sidebar-primary-foreground: 165 91% 9%;
-    --sidebar-accent: 172 66% 50%;
-    --sidebar-accent-foreground: 178 84% 10%;
-    --sidebar-border: 0 0% 32%;
-    --sidebar-ring: 158 64% 51%;
+    --sidebar-primary: 5 100% 69%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 5 30% 20%;
+    --sidebar-accent-foreground: 5 100% 75%;
+    --sidebar-border: 0 0% 20%;
+    --sidebar-ring: 5 100% 69%;
     --radius: 1.125rem;
-    --shadow-sm: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 1px 2px -1px hsl(0 0% 0% / 0.1);
-    --shadow: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 1px 2px -1px hsl(0 0% 0% / 0.1);
-    --shadow-md: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 2px 4px -1px hsl(0 0% 0% / 0.1);
-    --shadow-lg: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 4px 6px -1px hsl(0 0% 0% / 0.1);
-    --chart-1: 156 71% 66%;
-    --chart-2: 141 76% 73%;
-    --chart-3: 170 76% 64%;
-    --chart-4: 81 84% 67%;
+    --shadow-sm: 0 1px 3px 0px hsl(0 0% 0% / 0.3), 0 1px 2px -1px hsl(0 0% 0% / 0.3);
+    --shadow: 0 1px 3px 0px hsl(0 0% 0% / 0.3), 0 1px 2px -1px hsl(0 0% 0% / 0.3);
+    --shadow-md: 0 1px 3px 0px hsl(0 0% 0% / 0.3), 0 2px 4px -1px hsl(0 0% 0% / 0.3);
+    --shadow-lg: 0 1px 3px 0px hsl(0 0% 0% / 0.3), 0 4px 6px -1px hsl(0 0% 0% / 0.3);
+    --chart-1: 5 100% 69%;
+    --chart-2: 15 100% 65%;
+    --chart-3: 25 100% 70%;
+    --chart-4: 350 90% 65%;
     --chart-5: 0 0% 45%;
-    --sidebar: 0 0% 14%;
-    --shadow-2xs: 0 1px 3px 0px hsl(0 0% 0% / 0.05);
-    --shadow-xs: 0 1px 3px 0px hsl(0 0% 0% / 0.05);
-    --shadow-xl: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 8px 10px -1px hsl(0 0% 0% / 0.1);
-    --shadow-2xl: 0 1px 3px 0px hsl(0 0% 0% / 0.25);
+    --sidebar: 0 0% 12%;
+    --shadow-2xs: 0 1px 3px 0px hsl(0 0% 0% / 0.2);
+    --shadow-xs: 0 1px 3px 0px hsl(0 0% 0% / 0.2);
+    --shadow-xl: 0 1px 3px 0px hsl(0 0% 0% / 0.3), 0 8px 10px -1px hsl(0 0% 0% / 0.3);
+    --shadow-2xl: 0 1px 3px 0px hsl(0 0% 0% / 0.5);
   }
 }
 

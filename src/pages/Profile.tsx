@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Settings, UserCircle } from "lucide-react";
 import { EditProfileDialog } from "@/components/profile/EditProfileDialog";
+import { ProfileAboutSection } from "@/components/profile/ProfileAboutSection";
 import { PostCard } from "@/components/home/PostCard";
 import { toast } from "@/hooks/use-toast";
 import { VerifiedBadge } from "@/components/ui/VerifiedBadge";
@@ -100,6 +101,16 @@ const Profile = () => {
             </div>
           </div>
         </div>
+
+        {/* About Section - Publicly Visible */}
+        <ProfileAboutSection
+          bio={profile?.bio}
+          dateOfBirth={profile?.date_of_birth}
+          createdAt={profile?.created_at}
+          postsCount={posts?.length || 0}
+          followersCount={profile?.followers_count || 0}
+          followingCount={profile?.following_count || 0}
+        />
 
         {/* Posts Tabs */}
         <Tabs defaultValue="posts" className="w-full">
