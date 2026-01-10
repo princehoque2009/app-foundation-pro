@@ -10,6 +10,7 @@ import { AdminNotifications } from "@/components/admin/AdminNotifications";
 import { AdminAppSettings } from "@/components/admin/AdminAppSettings";
 import { AdminLogsViewer } from "@/components/admin/AdminLogsViewer";
 import { AdminAnnouncements } from "@/components/admin/AdminAnnouncements";
+import { AdminRevenue } from "@/components/admin/AdminRevenue";
 
 const Admin = () => {
   const { isAdmin, loading } = useRoles();
@@ -48,6 +49,8 @@ const Admin = () => {
         );
       case "settings":
         return <AdminAppSettings />;
+      case "revenue":
+        return <AdminRevenue />;
       case "logs":
         return <AdminLogsViewer />;
       default:

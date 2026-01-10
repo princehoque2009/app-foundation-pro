@@ -147,6 +147,7 @@ const Profile = () => {
             postsCount={posts?.length || 0}
             followersCount={profile?.followers_count || 0}
             followingCount={profile?.following_count || 0}
+            country={profile?.country}
           />
         </div>
 

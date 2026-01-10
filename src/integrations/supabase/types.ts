@@ -632,6 +632,7 @@ export type Database = {
           avatar_url: string | null
           bio: string | null
           can_create_groups: boolean | null
+          country: string | null
           created_at: string
           date_of_birth: string | null
           display_name: string | null
@@ -654,6 +655,7 @@ export type Database = {
           avatar_url?: string | null
           bio?: string | null
           can_create_groups?: boolean | null
+          country?: string | null
           created_at?: string
           date_of_birth?: string | null
           display_name?: string | null
@@ -676,6 +678,7 @@ export type Database = {
           avatar_url?: string | null
           bio?: string | null
           can_create_groups?: boolean | null
+          country?: string | null
           created_at?: string
           date_of_birth?: string | null
           display_name?: string | null
