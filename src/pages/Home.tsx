@@ -3,6 +3,10 @@ import { Stories } from "@/components/home/Stories";
 import { PostCard } from "@/components/home/PostCard";
 import { usePosts } from "@/hooks/usePosts";
 import { Loader2 } from "lucide-react";
+import { InFeedAd } from "@/components/ads/AdBanner";
+import { Fragment } from "react";
+
+const AD_INTERVAL = 7; // Show ad after every 7 posts
 
 const Home = () => {
   const { data: posts, isLoading } = usePosts(false);
@@ -26,23 +30,28 @@ const Home = () => {
               <p className="text-muted-foreground">No posts yet. Be the first to share!</p>
             </div>
           ) : (
-            posts?.map((post) => (
-              <PostCard
-                key={post.id}
-                id={post.id}
-                author={{
-                  name: post.profiles.display_name || post.profiles.username,
-                  username: post.profiles.username,
-                  avatar: post.profiles.avatar_url || undefined,
-                  isVerified: post.profiles.is_verified,
-                }}
-                content={post.caption || ""}
-                image={post.media_type === "image" ? post.media_url || undefined : undefined}
-                video={post.media_type === "video" ? post.media_url || undefined : undefined}
-                likes={post.likes_count}
-                comments={post.comments_count}
-                timestamp={post.created_at}
-              />
+            posts?.map((post, index) => (
+              <Fragment key={post.id}>
+                <PostCard
+                  id={post.id}
+                  author={{
+                    name: post.profiles.display_name || post.profiles.username,
+                    username: post.profiles.username,
+                    avatar: post.profiles.avatar_url || undefined,
+                    isVerified: post.profiles.is_verified,
+                  }}
+                  content={post.caption || ""}
+                  image={post.media_type === "image" ? post.media_url || undefined : undefined}
+                  video={post.media_type === "video" ? post.media_url || undefined : undefined}
+                  likes={post.likes_count}
+                  comments={post.comments_count}
+                  timestamp={post.created_at}
+                />
+                {/* Show ad after every AD_INTERVAL posts */}
+                {(index + 1) % AD_INTERVAL === 0 && index < posts.length - 1 && (
+                  <InFeedAd key={`ad-${index}`} />
+                )}
+              </Fragment>
             ))
           )}
         </div>
