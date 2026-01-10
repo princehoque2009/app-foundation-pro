@@ -23,6 +23,7 @@ import {
   X,
   ChevronRight,
   Activity,
+  DollarSign,
 } from "lucide-react";
 
 interface AdminLayoutProps {
@@ -38,6 +39,7 @@ const sidebarItems = [
   { id: "reports", label: "Content & Reports", icon: FileText },
   { id: "verification", label: "Verification", icon: BadgeCheck },
   { id: "notifications", label: "Notifications", icon: Bell },
+  { id: "revenue", label: "Revenue", icon: DollarSign },
   { id: "settings", label: "App Settings", icon: Settings },
   { id: "logs", label: "Logs & Security", icon: Activity },
 ];

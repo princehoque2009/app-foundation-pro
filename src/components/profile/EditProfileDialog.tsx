@@ -6,10 +6,13 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/hooks/use-toast";
-import { UserCircle, Upload } from "lucide-react";
+import { UserCircle, Upload, MapPin } from "lucide-react";
+import { countries, getCountryFlag } from "@/lib/countries";
 
 interface EditProfileDialogProps {
   profile: any;
@@ -23,6 +26,7 @@ export const EditProfileDialog = ({ profile, open, onOpenChange }: EditProfileDi
   const [displayName, setDisplayName] = useState(profile?.display_name || "");
   const [username, setUsername] = useState(profile?.username || "");
   const [bio, setBio] = useState(profile?.bio || "");
+  const [country, setCountry] = useState(profile?.country || "");
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState(profile?.avatar_url || "");
 
@@ -55,6 +59,7 @@ export const EditProfileDialog = ({ profile, open, onOpenChange }: EditProfileDi
           display_name: displayName,
           username,
           bio,
+          country,
           avatar_url,
         })
         .eq("id", user?.id);
@@ -190,8 +195,32 @@ export const EditProfileDialog = ({ profile, open, onOpenChange }: EditProfileDi
               value={bio}
               onChange={(e) => setBio(e.target.value)}
               placeholder="Tell us about yourself"
-              rows={4}
+              rows={3}
             />
+          </div>
+
+          <div>
+            <Label htmlFor="country" className="flex items-center gap-2">
+              <MapPin className="h-4 w-4" />
+              Country
+            </Label>
+            <Select value={country} onValueChange={setCountry}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select your country" />
+              </SelectTrigger>
+              <SelectContent>
+                <ScrollArea className="h-[200px]">
+                  {countries.map((c) => (
+                    <SelectItem key={c.code} value={c.code}>
+                      <span className="flex items-center gap-2">
+                        <span>{getCountryFlag(c.code)}</span>
+                        <span>{c.name}</span>
+                      </span>
+                    </SelectItem>
+                  ))}
+                </ScrollArea>
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="flex gap-2 justify-end">
