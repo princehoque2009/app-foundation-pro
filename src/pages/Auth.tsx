@@ -9,6 +9,7 @@ import { toast } from "@/hooks/use-toast";
 import { z } from "zod";
 import { motion, AnimatePresence } from "framer-motion";
 import { Eye, EyeOff, Mail, Lock, User, Sparkles, Calendar, Shield } from "lucide-react";
+import { GoogleAuthButton } from "@/components/auth/GoogleAuthButton";
 import prangonLogo from "@/assets/prangon-logo.png";
 
 // Calculate age from DOB
@@ -362,6 +363,22 @@ const Auth = () => {
                     isLogin ? "Sign In" : "Create Account"
                   )}
                 </Button>
+
+                {/* Divider */}
+                <div className="relative my-2">
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-border/50" />
+                  </div>
+                  <div className="relative flex justify-center text-sm">
+                    <span className="px-4 bg-card text-muted-foreground">or</span>
+                  </div>
+                </div>
+
+                {/* Google Auth Button */}
+                <GoogleAuthButton 
+                  mode={isLogin ? "login" : "signup"} 
+                  className="h-12 rounded-xl"
+                />
               </motion.form>
             </AnimatePresence>
 
