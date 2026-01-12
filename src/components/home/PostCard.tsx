@@ -1,7 +1,7 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Heart, MessageCircle, Share2, Bookmark, UserCircle, MoreHorizontal } from "lucide-react";
+import { Heart, MessageCircle, Share2, Bookmark, UserCircle } from "lucide-react";
 import { useState } from "react";
 import { useToggleLike, usePostLikes } from "@/hooks/usePostInteractions";
 import { formatDistanceToNow } from "date-fns";
@@ -17,6 +17,10 @@ import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { VerifiedBadge } from "@/components/ui/VerifiedBadge";
 import { useSavedPosts, useIsPostSaved } from "@/hooks/useSavedPosts";
+import { UserRoleBadges } from "@/components/ui/RoleBadge";
+import { useUserRoles } from "@/hooks/useUserRoles";
+import { MediaCarousel } from "./MediaCarousel";
+import { PostMedia } from "@/hooks/usePosts";
 
 interface PostCardProps {
   id: string;
@@ -25,18 +29,27 @@ interface PostCardProps {
     avatar?: string;
     username: string;
     isVerified?: boolean;
+    userId?: string;
   };
   content: string;
   image?: string;
   video?: string;
+  mediaItems?: PostMedia[];
   likes: number;
   comments: number;
   timestamp: string;
 }
 
-export const PostCard = ({ id, author, content, image, video, likes, comments, timestamp }: PostCardProps) => {
+export const PostCard = ({ id, author, content, image, video, mediaItems, likes, comments, timestamp }: PostCardProps) => {
   const [showComments, setShowComments] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
+  const [showHeartAnimation, setShowHeartAnimation] = useState(false);
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+  
+  // Fetch user roles for role badge
+  const { data: userRoles } = useUserRoles({ userId: author.userId });
   const [showHeartAnimation, setShowHeartAnimation] = useState(false);
   const [isImageLoaded, setIsImageLoaded] = useState(false);
   const navigate = useNavigate();
@@ -159,13 +172,20 @@ export const PostCard = ({ id, author, content, image, video, likes, comments, t
                 </div>
               </div>
               <div>
-                <p className="font-semibold text-sm hover:text-primary transition-colors leading-tight flex items-center gap-1">
-                  {author.name}
-                  {author.isVerified && <VerifiedBadge size="sm" />}
-                </p>
-                <p className="text-xs text-muted-foreground leading-tight">
-                  {formatDistanceToNow(new Date(timestamp), { addSuffix: true })}
-                </p>
+                <div className="flex items-center gap-1.5">
+                  <p className="font-semibold text-sm hover:text-primary transition-colors leading-tight flex items-center gap-1">
+                    {author.name}
+                    {author.isVerified && <VerifiedBadge size="sm" />}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <p className="text-xs text-muted-foreground leading-tight">
+                    {formatDistanceToNow(new Date(timestamp), { addSuffix: true })}
+                  </p>
+                  {userRoles && userRoles.length > 0 && (
+                    <UserRoleBadges roles={userRoles as any} size="sm" />
+                  )}
+                </div>
               </div>
             </div>
             <PostMenu 

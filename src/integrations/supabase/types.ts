@@ -14,6 +14,44 @@ export type Database = {
   }
   public: {
     Tables: {
+      ad_analytics: {
+        Row: {
+          ad_id: string
+          country: string | null
+          created_at: string
+          device_type: string | null
+          event_type: string
+          id: string
+          user_id: string | null
+        }
+        Insert: {
+          ad_id: string
+          country?: string | null
+          created_at?: string
+          device_type?: string | null
+          event_type: string
+          id?: string
+          user_id?: string | null
+        }
+        Update: {
+          ad_id?: string
+          country?: string | null
+          created_at?: string
+          device_type?: string | null
+          event_type?: string
+          id?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ad_analytics_ad_id_fkey"
+            columns: ["ad_id"]
+            isOneToOne: false
+            referencedRelation: "advertisements"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       admin_logs: {
         Row: {
           action_type: string
@@ -43,6 +81,77 @@ export type Database = {
           target_type?: string | null
         }
         Relationships: []
+      }
+      advertisements: {
+        Row: {
+          ad_type: string
+          clicks: number
+          created_at: string
+          created_by: string
+          daily_impression_limit: number | null
+          description: string | null
+          end_date: string | null
+          id: string
+          impressions: number
+          is_active: boolean
+          media_url: string | null
+          start_date: string | null
+          target_content_types: string[] | null
+          target_countries: string[] | null
+          target_roles: string[] | null
+          target_url: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          ad_type: string
+          clicks?: number
+          created_at?: string
+          created_by: string
+          daily_impression_limit?: number | null
+          description?: string | null
+          end_date?: string | null
+          id?: string
+          impressions?: number
+          is_active?: boolean
+          media_url?: string | null
+          start_date?: string | null
+          target_content_types?: string[] | null
+          target_countries?: string[] | null
+          target_roles?: string[] | null
+          target_url?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          ad_type?: string
+          clicks?: number
+          created_at?: string
+          created_by?: string
+          daily_impression_limit?: number | null
+          description?: string | null
+          end_date?: string | null
+          id?: string
+          impressions?: number
+          is_active?: boolean
+          media_url?: string | null
+          start_date?: string | null
+          target_content_types?: string[] | null
+          target_countries?: string[] | null
+          target_roles?: string[] | null
+          target_url?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "advertisements_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       app_settings: {
         Row: {
@@ -564,6 +673,41 @@ export type Database = {
             columns: ["from_user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      post_media: {
+        Row: {
+          created_at: string
+          display_order: number
+          id: string
+          media_type: string
+          media_url: string
+          post_id: string
+        }
+        Insert: {
+          created_at?: string
+          display_order?: number
+          id?: string
+          media_type: string
+          media_url: string
+          post_id: string
+        }
+        Update: {
+          created_at?: string
+          display_order?: number
+          id?: string
+          media_type?: string
+          media_url?: string
+          post_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "post_media_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
             referencedColumns: ["id"]
           },
         ]

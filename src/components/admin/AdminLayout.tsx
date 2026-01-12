@@ -39,6 +39,7 @@ const sidebarItems = [
   { id: "reports", label: "Content & Reports", icon: FileText },
   { id: "verification", label: "Verification", icon: BadgeCheck },
   { id: "notifications", label: "Notifications", icon: Bell },
+  { id: "advertisements", label: "Advertisements", icon: Activity },
   { id: "revenue", label: "Revenue", icon: DollarSign },
   { id: "settings", label: "App Settings", icon: Settings },
   { id: "logs", label: "Logs & Security", icon: Activity },
