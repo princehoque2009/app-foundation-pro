@@ -39,10 +39,12 @@ const Home = () => {
                     username: post.profiles.username,
                     avatar: post.profiles.avatar_url || undefined,
                     isVerified: post.profiles.is_verified,
+                    userId: post.user_id,
                   }}
                   content={post.caption || ""}
                   image={post.media_type === "image" ? post.media_url || undefined : undefined}
                   video={post.media_type === "video" ? post.media_url || undefined : undefined}
+                  mediaItems={post.post_media}
                   likes={post.likes_count}
                   comments={post.comments_count}
                   timestamp={post.created_at}
