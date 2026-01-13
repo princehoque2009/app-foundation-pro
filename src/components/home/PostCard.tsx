@@ -50,11 +50,7 @@ export const PostCard = ({ id, author, content, image, video, mediaItems, likes,
   
   // Fetch user roles for role badge
   const { data: userRoles } = useUserRoles({ userId: author.userId });
-  const [showHeartAnimation, setShowHeartAnimation] = useState(false);
   const [isImageLoaded, setIsImageLoaded] = useState(false);
-  const navigate = useNavigate();
-  const queryClient = useQueryClient();
-  const { user } = useAuth();
   
   const { data: likeData } = usePostLikes(id);
   const toggleLike = useToggleLike(id);
