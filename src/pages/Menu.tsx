@@ -29,6 +29,19 @@ import {
   Headphones,
   BarChart3,
   Flag,
+  Share2,
+  Link2,
+  VolumeX,
+  Ban,
+  AlertTriangle,
+  MessageSquare,
+  Info,
+  Scale,
+  Cookie,
+  BookOpen,
+  Building2,
+  Copy,
+  ExternalLink,
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -125,6 +138,33 @@ const settingsItems = [
   },
 ];
 
+const legalItems = [
+  {
+    id: "community",
+    icon: Scale,
+    label: "Community Standards",
+    path: "/community-standards",
+  },
+  {
+    id: "cookies",
+    icon: Cookie,
+    label: "Cookies Policy",
+    path: "/cookies-policy",
+  },
+  {
+    id: "privacy",
+    icon: BookOpen,
+    label: "Learn How to Manage Your Information",
+    path: "/manage-info",
+  },
+  {
+    id: "about",
+    icon: Building2,
+    label: "About Prangon",
+    path: "/about",
+  },
+];
+
 const Menu = () => {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
@@ -157,6 +197,46 @@ const Menu = () => {
 
   const toggleTheme = () => {
     setTheme(theme === "dark" ? "light" : "dark");
+  };
+
+  const handleShareProfile = async () => {
+    const profileUrl = `${window.location.origin}/profile/${user?.id}`;
+    
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: `${profile?.display_name || profile?.username}'s Profile`,
+          text: `Check out ${profile?.display_name || profile?.username} on Prangon!`,
+          url: profileUrl,
+        });
+      } catch (err) {
+        // User cancelled or error
+        console.log("Share cancelled");
+      }
+    } else {
+      // Fallback to copy
+      await navigator.clipboard.writeText(profileUrl);
+      toast({
+        title: "Link copied!",
+        description: "Profile link copied to clipboard.",
+      });
+    }
+  };
+
+  const handleCopyLink = async () => {
+    const profileUrl = `${window.location.origin}/profile/${user?.id}`;
+    await navigator.clipboard.writeText(profileUrl);
+    toast({
+      title: "Link copied!",
+      description: "Profile link copied to clipboard.",
+    });
+  };
+
+  const handleFeedback = () => {
+    toast({
+      title: "Feedback",
+      description: "Thank you for your interest! Feedback feature coming soon.",
+    });
   };
 
   const containerVariants = {
@@ -224,6 +304,50 @@ const Menu = () => {
                 </p>
               </div>
               <ChevronRight className="h-5 w-5 text-muted-foreground" />
+            </div>
+          </Card>
+        </motion.div>
+
+        {/* Quick Actions */}
+        <motion.div variants={itemVariants}>
+          <Card className="p-2 border-0 shadow-sm">
+            <div className="grid grid-cols-4 gap-1">
+              <button
+                onClick={handleShareProfile}
+                className="flex flex-col items-center gap-1.5 p-3 rounded-xl hover:bg-muted transition-colors"
+              >
+                <div className="p-2 rounded-full bg-blue-500/10">
+                  <Share2 className="h-4 w-4 text-blue-500" />
+                </div>
+                <span className="text-xs text-muted-foreground">Share</span>
+              </button>
+              <button
+                onClick={handleCopyLink}
+                className="flex flex-col items-center gap-1.5 p-3 rounded-xl hover:bg-muted transition-colors"
+              >
+                <div className="p-2 rounded-full bg-green-500/10">
+                  <Copy className="h-4 w-4 text-green-500" />
+                </div>
+                <span className="text-xs text-muted-foreground">Copy Link</span>
+              </button>
+              <button
+                onClick={handleFeedback}
+                className="flex flex-col items-center gap-1.5 p-3 rounded-xl hover:bg-muted transition-colors"
+              >
+                <div className="p-2 rounded-full bg-amber-500/10">
+                  <MessageSquare className="h-4 w-4 text-amber-500" />
+                </div>
+                <span className="text-xs text-muted-foreground">Feedback</span>
+              </button>
+              <button
+                onClick={() => navigate("/about")}
+                className="flex flex-col items-center gap-1.5 p-3 rounded-xl hover:bg-muted transition-colors"
+              >
+                <div className="p-2 rounded-full bg-purple-500/10">
+                  <Info className="h-4 w-4 text-purple-500" />
+                </div>
+                <span className="text-xs text-muted-foreground">App Info</span>
+              </button>
             </div>
           </Card>
         </motion.div>
@@ -350,6 +474,30 @@ const Menu = () => {
           </Card>
         </motion.div>
 
+        {/* Legal & Info Section */}
+        <motion.div variants={itemVariants}>
+          <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2 px-1">
+            Legal & Information
+          </h3>
+          <Card className="overflow-hidden border-0 shadow-sm">
+            {legalItems.map((item, index) => (
+              <div
+                key={item.id}
+                className={`flex items-center justify-between p-4 cursor-pointer hover:bg-muted/50 transition-colors ${
+                  index !== legalItems.length - 1 ? "border-b border-border" : ""
+                }`}
+                onClick={() => navigate(item.path)}
+              >
+                <div className="flex items-center gap-3">
+                  <item.icon className="h-5 w-5 text-muted-foreground" />
+                  <span className="font-medium text-sm">{item.label}</span>
+                </div>
+                <ChevronRight className="h-5 w-5 text-muted-foreground" />
+              </div>
+            ))}
+          </Card>
+        </motion.div>
+
         {/* Logout */}
         <motion.div variants={itemVariants}>
           <Card
@@ -372,7 +520,10 @@ const Menu = () => {
 
         {/* App Version */}
         <motion.div variants={itemVariants} className="text-center pt-4">
-          <p className="text-xs text-muted-foreground">Prangon v1.2.0</p>
+          <p className="text-xs text-muted-foreground">Prangon v1.3.8</p>
+          <p className="text-[10px] text-muted-foreground/60 mt-1">
+            © 2024 Prangon. All rights reserved.
+          </p>
         </motion.div>
       </motion.div>
     </div>
