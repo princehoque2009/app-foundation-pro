@@ -2,9 +2,11 @@ import { ArrowLeft, Heart, Globe, Shield, Users } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import prangonLogo from "@/assets/prangon-logo.png";
+import { getVersionInfo } from "@/lib/version";
 
 const About = () => {
   const navigate = useNavigate();
+  const versionInfo = getVersionInfo();
 
   return (
     <div className="min-h-screen bg-background">
@@ -28,8 +30,8 @@ const About = () => {
             alt="Prangon Logo"
             className="w-24 h-24 mx-auto rounded-2xl shadow-lg"
           />
-          <h1 className="text-2xl font-bold mt-4">Prangon</h1>
-          <p className="text-muted-foreground">Version 1.3.8</p>
+          <h1 className="text-2xl font-bold mt-4">{versionInfo.name}</h1>
+          <p className="text-muted-foreground">Version {versionInfo.version}</p>
         </div>
 
         {/* Mission */}
@@ -129,7 +131,7 @@ const About = () => {
         {/* Footer */}
         <div className="text-center pt-6 border-t space-y-2">
           <p className="text-sm text-muted-foreground">
-            © 2024 Prangon. All rights reserved.
+            {versionInfo.copyright}
           </p>
           <p className="text-xs text-muted-foreground/60">
             Made with ❤️ for connecting people

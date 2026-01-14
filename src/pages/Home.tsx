@@ -2,8 +2,8 @@ import { MainLayout } from "@/components/layout/MainLayout";
 import { Stories } from "@/components/home/Stories";
 import { PostCard } from "@/components/home/PostCard";
 import { usePosts } from "@/hooks/usePosts";
-import { Loader2 } from "lucide-react";
-import { InFeedAd } from "@/components/ads/AdBanner";
+import { PostSkeleton, StorySkeleton } from "@/components/ui/Shimmer";
+import { SmartFeedAd } from "@/components/ads/SmartFeedAd";
 import { Fragment } from "react";
 
 const AD_INTERVAL = 7; // Show ad after every 7 posts
@@ -13,17 +13,19 @@ const Home = () => {
 
   return (
     <MainLayout>
-      <div className="bg-gradient-to-b from-background to-muted/20 min-h-screen">
+      <div className="bg-gradient-to-b from-background to-muted/20 min-h-screen select-none">
         {/* Stories Section */}
         <div className="bg-card border-b border-border py-4">
-          <Stories />
+          {isLoading ? <StorySkeleton /> : <Stories />}
         </div>
 
         {/* Posts Feed */}
         <div className="max-w-2xl mx-auto px-4 py-4">
           {isLoading ? (
-            <div className="flex justify-center py-12">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <div className="space-y-4">
+              <PostSkeleton />
+              <PostSkeleton />
+              <PostSkeleton />
             </div>
           ) : posts?.length === 0 ? (
             <div className="text-center py-12">
@@ -51,7 +53,7 @@ const Home = () => {
                 />
                 {/* Show ad after every AD_INTERVAL posts */}
                 {(index + 1) % AD_INTERVAL === 0 && index < posts.length - 1 && (
-                  <InFeedAd key={`ad-${index}`} />
+                  <SmartFeedAd key={`ad-${index}`} className="mb-4" />
                 )}
               </Fragment>
             ))

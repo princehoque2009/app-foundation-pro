@@ -193,16 +193,43 @@ export const PostCard = ({ id, author, content, image, video, mediaItems, likes,
             />
           </div>
 
-          {/* Post Content */}
+          {/* Post Content - with content protection */}
           {content && (
-            <p className="text-sm px-4 pb-3 leading-relaxed">{content}</p>
+            <p className="text-sm px-4 pb-3 leading-relaxed select-none pointer-events-none">{content}</p>
           )}
 
-          {/* Post Media */}
-          {(image || video) && (
+          {/* Post Media - Multi-media carousel or single media */}
+          {mediaItems && mediaItems.length > 0 ? (
             <div 
-              className="relative bg-muted/50 cursor-pointer overflow-hidden"
+              className="relative bg-muted/50 cursor-pointer overflow-hidden select-none"
               onDoubleClick={handleDoubleTap}
+              onContextMenu={(e) => e.preventDefault()}
+            >
+              <MediaCarousel 
+                media={mediaItems} 
+                onDoubleClick={handleDoubleTap}
+              />
+              
+              {/* Double tap heart animation */}
+              <AnimatePresence>
+                {showHeartAnimation && (
+                  <motion.div
+                    initial={{ scale: 0, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    exit={{ scale: 1.5, opacity: 0 }}
+                    transition={{ duration: 0.4, ease: "easeOut" }}
+                    className="absolute inset-0 flex items-center justify-center pointer-events-none z-10"
+                  >
+                    <Heart className="h-24 w-24 text-primary fill-primary drop-shadow-2xl" />
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          ) : (image || video) && (
+            <div 
+              className="relative bg-muted/50 cursor-pointer overflow-hidden select-none"
+              onDoubleClick={handleDoubleTap}
+              onContextMenu={(e) => e.preventDefault()}
             >
               {image && (
                 <>
@@ -213,11 +240,12 @@ export const PostCard = ({ id, author, content, image, video, mediaItems, likes,
                     src={image} 
                     alt="Post" 
                     className={cn(
-                      "w-full object-cover max-h-[500px] transition-opacity duration-300",
+                      "w-full object-cover max-h-[500px] transition-opacity duration-300 pointer-events-none",
                       isImageLoaded ? "opacity-100" : "opacity-0 h-0"
                     )}
                     loading="lazy"
                     onLoad={() => setIsImageLoaded(true)}
+                    draggable={false}
                   />
                 </>
               )}
@@ -227,6 +255,7 @@ export const PostCard = ({ id, author, content, image, video, mediaItems, likes,
                   controls 
                   className="w-full max-h-[500px]"
                   preload="metadata"
+                  controlsList="nodownload"
                 />
               )}
               

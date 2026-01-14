@@ -439,4 +439,53 @@
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }
+
+  /* Button press feedback */
+  .press-effect {
+    transition: transform 0.1s ease, opacity 0.1s ease;
+  }
+
+  .press-effect:active {
+    transform: scale(0.95);
+    opacity: 0.9;
+  }
+
+  /* Ringing animation for calls */
+  .animate-ring {
+    animation: ring 1s ease-in-out infinite;
+  }
+
+  @keyframes ring {
+    0%, 100% { transform: rotate(0deg); }
+    10% { transform: rotate(15deg); }
+    20% { transform: rotate(-15deg); }
+    30% { transform: rotate(15deg); }
+    40% { transform: rotate(-15deg); }
+    50% { transform: rotate(0deg); }
+  }
+
+  /* Pulse scale for incoming call */
+  .animate-pulse-scale {
+    animation: pulseScale 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  @keyframes pulseScale {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+  }
+
+  /* Content protection - prevent copy/save */
+  .protect-content {
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+    pointer-events: none;
+  }
+
+  /* Smooth page transitions */
+  .smooth-transition {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
 }
