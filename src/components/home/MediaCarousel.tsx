@@ -78,6 +78,8 @@ export const MediaCarousel = ({ media, onDoubleClick, className }: MediaCarousel
                 controls
                 className="w-full max-h-[500px]"
                 preload="metadata"
+                controlsList="nodownload"
+                onContextMenu={(e) => e.preventDefault()}
               />
             </div>
           ) : (
@@ -89,11 +91,13 @@ export const MediaCarousel = ({ media, onDoubleClick, className }: MediaCarousel
                 src={currentMedia.media_url}
                 alt={`Post media ${currentIndex + 1}`}
                 className={cn(
-                  "w-full object-cover max-h-[500px] transition-opacity duration-300",
+                  "w-full object-cover max-h-[500px] transition-opacity duration-300 pointer-events-none select-none",
                   isImageLoaded ? "opacity-100" : "opacity-0 h-0"
                 )}
                 loading="lazy"
                 onLoad={() => setIsImageLoaded(true)}
+                draggable={false}
+                onContextMenu={(e) => e.preventDefault()}
               />
             </>
           )}

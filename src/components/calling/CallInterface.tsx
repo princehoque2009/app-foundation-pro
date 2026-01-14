@@ -134,20 +134,23 @@ export const CallInterface = ({ profile }: CallInterfaceProps) => {
     return (
       <div className="fixed inset-0 z-50 bg-background/95 backdrop-blur-sm flex items-center justify-center">
         <AudioElement />
-        <div className="bg-card rounded-3xl p-8 shadow-2xl max-w-sm w-full mx-4 animate-bounce-in">
+        <div className="bg-card rounded-3xl p-8 shadow-2xl max-w-sm w-full mx-4 animate-fade-in">
           <div className="text-center">
-            <div className="relative mx-auto w-24 h-24 mb-6">
-              <Avatar className="w-full h-full ring-4 ring-primary/50 animate-pulse">
+            <div className="relative mx-auto w-28 h-28 mb-6">
+              {/* Pulse rings */}
+              <div className="absolute inset-0 rounded-full bg-primary/20 animate-ping" />
+              <div className="absolute inset-2 rounded-full bg-primary/30 animate-pulse" />
+              <Avatar className="w-full h-full ring-4 ring-primary/50 relative z-10 animate-pulse-scale">
                 <AvatarImage src={profile?.avatar_url || ""} />
-                <AvatarFallback className="text-2xl">
+                <AvatarFallback className="text-2xl bg-primary/10">
                   {profile?.display_name?.[0] || profile?.username?.[0] || "?"}
                 </AvatarFallback>
               </Avatar>
-              <div className="absolute -bottom-1 -right-1 p-2 bg-primary rounded-full">
+              <div className="absolute -bottom-1 -right-1 p-2.5 bg-primary rounded-full z-20 animate-ring">
                 {incomingCall.type === "video" ? (
-                  <Video className="h-4 w-4 text-primary-foreground" />
+                  <Video className="h-5 w-5 text-primary-foreground" />
                 ) : (
-                  <Phone className="h-4 w-4 text-primary-foreground" />
+                  <Phone className="h-5 w-5 text-primary-foreground" />
                 )}
               </div>
             </div>
@@ -155,26 +158,32 @@ export const CallInterface = ({ profile }: CallInterfaceProps) => {
             <h2 className="text-xl font-bold mb-1">
               {profile?.display_name || profile?.username || "Incoming Call"}
             </h2>
-            <p className="text-muted-foreground mb-8">
+            <p className="text-muted-foreground mb-8 animate-pulse">
               Incoming {incomingCall.type} call...
             </p>
 
-            <div className="flex justify-center gap-6">
-              <Button
-                variant="destructive"
-                size="lg"
-                className="h-14 w-14 rounded-full"
-                onClick={declineCall}
-              >
-                <X className="h-6 w-6" />
-              </Button>
-              <Button
-                size="lg"
-                className="h-14 w-14 rounded-full bg-green-500 hover:bg-green-600"
-                onClick={answerCall}
-              >
-                <Phone className="h-6 w-6" />
-              </Button>
+            <div className="flex justify-center gap-8">
+              <div className="flex flex-col items-center gap-2">
+                <Button
+                  variant="destructive"
+                  size="lg"
+                  className="h-16 w-16 rounded-full press-effect shadow-lg shadow-destructive/30"
+                  onClick={declineCall}
+                >
+                  <X className="h-7 w-7" />
+                </Button>
+                <span className="text-xs text-muted-foreground">Decline</span>
+              </div>
+              <div className="flex flex-col items-center gap-2">
+                <Button
+                  size="lg"
+                  className="h-16 w-16 rounded-full bg-green-500 hover:bg-green-600 press-effect shadow-lg shadow-green-500/30"
+                  onClick={answerCall}
+                >
+                  <Phone className="h-7 w-7" />
+                </Button>
+                <span className="text-xs text-muted-foreground">Answer</span>
+              </div>
             </div>
           </div>
         </div>

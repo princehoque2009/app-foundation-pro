@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { getVersionInfo } from "@/lib/version";
 import { Card } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "@/hooks/use-toast";
@@ -520,9 +521,9 @@ const Menu = () => {
 
         {/* App Version */}
         <motion.div variants={itemVariants} className="text-center pt-4">
-          <p className="text-xs text-muted-foreground">Prangon v1.3.8</p>
+          <p className="text-xs text-muted-foreground">{getVersionInfo().fullVersion}</p>
           <p className="text-[10px] text-muted-foreground/60 mt-1">
-            © 2024 Prangon. All rights reserved.
+            {getVersionInfo().copyright}
           </p>
         </motion.div>
       </motion.div>
