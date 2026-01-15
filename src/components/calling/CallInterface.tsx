@@ -116,7 +116,7 @@ export const CallInterface = ({ profile }: CallInterfaceProps) => {
     if (currentCall?.status === "ringing") return "Ringing...";
     if (connectionState === "connecting") return "Connecting...";
     if (connectionState === "connected" || callDuration > 0) return formatDuration(callDuration);
-    return "Waiting...";
+    return "Calling...";
   };
 
   // Hidden audio element for audio playback
@@ -129,60 +129,62 @@ export const CallInterface = ({ profile }: CallInterfaceProps) => {
     />
   );
 
-  // Incoming call modal
+  // Incoming call modal - fullscreen with safe areas
   if (incomingCall && !currentCall) {
     return (
-      <div className="fixed inset-0 z-50 bg-background/95 backdrop-blur-sm flex items-center justify-center">
+      <div className="fixed inset-0 z-[100] bg-background flex flex-col" style={{ paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'env(safe-area-inset-bottom)' }}>
         <AudioElement />
-        <div className="bg-card rounded-3xl p-8 shadow-2xl max-w-sm w-full mx-4 animate-fade-in">
-          <div className="text-center">
-            <div className="relative mx-auto w-28 h-28 mb-6">
-              {/* Pulse rings */}
-              <div className="absolute inset-0 rounded-full bg-primary/20 animate-ping" />
-              <div className="absolute inset-2 rounded-full bg-primary/30 animate-pulse" />
-              <Avatar className="w-full h-full ring-4 ring-primary/50 relative z-10 animate-pulse-scale">
-                <AvatarImage src={profile?.avatar_url || ""} />
-                <AvatarFallback className="text-2xl bg-primary/10">
-                  {profile?.display_name?.[0] || profile?.username?.[0] || "?"}
-                </AvatarFallback>
-              </Avatar>
-              <div className="absolute -bottom-1 -right-1 p-2.5 bg-primary rounded-full z-20 animate-ring">
-                {incomingCall.type === "video" ? (
-                  <Video className="h-5 w-5 text-primary-foreground" />
-                ) : (
-                  <Phone className="h-5 w-5 text-primary-foreground" />
-                )}
+        <div className="flex-1 flex items-center justify-center px-4">
+          <div className="bg-card rounded-3xl p-8 shadow-2xl max-w-sm w-full animate-fade-in">
+            <div className="text-center">
+              <div className="relative mx-auto w-28 h-28 mb-6">
+                {/* Pulse rings */}
+                <div className="absolute inset-0 rounded-full bg-primary/20 animate-ping" />
+                <div className="absolute inset-2 rounded-full bg-primary/30 animate-pulse" />
+                <Avatar className="w-full h-full ring-4 ring-primary/50 relative z-10 animate-pulse-scale">
+                  <AvatarImage src={profile?.avatar_url || ""} />
+                  <AvatarFallback className="text-2xl bg-primary/10">
+                    {profile?.display_name?.[0] || profile?.username?.[0] || "?"}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="absolute -bottom-1 -right-1 p-2.5 bg-primary rounded-full z-20 animate-ring">
+                  {incomingCall.type === "video" ? (
+                    <Video className="h-5 w-5 text-primary-foreground" />
+                  ) : (
+                    <Phone className="h-5 w-5 text-primary-foreground" />
+                  )}
+                </div>
               </div>
-            </div>
 
-            <h2 className="text-xl font-bold mb-1">
-              {profile?.display_name || profile?.username || "Incoming Call"}
-            </h2>
-            <p className="text-muted-foreground mb-8 animate-pulse">
-              Incoming {incomingCall.type} call...
-            </p>
+              <h2 className="text-xl font-bold mb-1">
+                {profile?.display_name || profile?.username || "Incoming Call"}
+              </h2>
+              <p className="text-muted-foreground mb-8 animate-pulse">
+                Incoming {incomingCall.type} call...
+              </p>
 
-            <div className="flex justify-center gap-8">
-              <div className="flex flex-col items-center gap-2">
-                <Button
-                  variant="destructive"
-                  size="lg"
-                  className="h-16 w-16 rounded-full press-effect shadow-lg shadow-destructive/30"
-                  onClick={declineCall}
-                >
-                  <X className="h-7 w-7" />
-                </Button>
-                <span className="text-xs text-muted-foreground">Decline</span>
-              </div>
-              <div className="flex flex-col items-center gap-2">
-                <Button
-                  size="lg"
-                  className="h-16 w-16 rounded-full bg-green-500 hover:bg-green-600 press-effect shadow-lg shadow-green-500/30"
-                  onClick={answerCall}
-                >
-                  <Phone className="h-7 w-7" />
-                </Button>
-                <span className="text-xs text-muted-foreground">Answer</span>
+              <div className="flex justify-center gap-8">
+                <div className="flex flex-col items-center gap-2">
+                  <Button
+                    variant="destructive"
+                    size="lg"
+                    className="h-16 w-16 rounded-full press-effect shadow-lg shadow-destructive/30"
+                    onClick={declineCall}
+                  >
+                    <X className="h-7 w-7" />
+                  </Button>
+                  <span className="text-xs text-muted-foreground">Decline</span>
+                </div>
+                <div className="flex flex-col items-center gap-2">
+                  <Button
+                    size="lg"
+                    className="h-16 w-16 rounded-full bg-green-500 hover:bg-green-600 press-effect shadow-lg shadow-green-500/30"
+                    onClick={answerCall}
+                  >
+                    <Phone className="h-7 w-7" />
+                  </Button>
+                  <span className="text-xs text-muted-foreground">Answer</span>
+                </div>
               </div>
             </div>
           </div>
@@ -191,70 +193,92 @@ export const CallInterface = ({ profile }: CallInterfaceProps) => {
     );
   }
 
-  // Active call interface
+  // Active call interface - fullscreen with proper safe areas
   if (currentCall) {
     const isVideoCall = currentCall.type === "video";
 
     return (
-      <div className="fixed inset-0 z-50 bg-background">
+      <div 
+        className="fixed inset-0 z-[100] bg-background flex flex-col"
+        style={{ 
+          paddingTop: 'env(safe-area-inset-top)', 
+          paddingBottom: 'env(safe-area-inset-bottom)',
+          paddingLeft: 'env(safe-area-inset-left)',
+          paddingRight: 'env(safe-area-inset-right)'
+        }}
+      >
         <AudioElement />
         
         {isVideoCall ? (
-          // Video call UI
-          <div className="relative h-full">
-            {/* Remote video (full screen) */}
-            <video
-              ref={remoteVideoRef}
-              autoPlay
-              playsInline
-              className="w-full h-full object-cover bg-black"
-            />
-
-            {/* No video placeholder */}
-            {(!remoteStream || remoteStream.getVideoTracks().length === 0) && (
-              <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-b from-primary/20 to-background">
-                <Avatar className="w-32 h-32 ring-4 ring-primary/30">
-                  <AvatarImage src={profile?.avatar_url || ""} />
-                  <AvatarFallback className="text-4xl">
-                    {profile?.display_name?.[0] || profile?.username?.[0] || "?"}
-                  </AvatarFallback>
-                </Avatar>
-              </div>
-            )}
-
-            {/* Local video (picture-in-picture) */}
-            <div className="absolute top-4 right-4 w-32 h-44 rounded-2xl overflow-hidden shadow-lg bg-black">
+          // Video call UI - fullscreen layout
+          <div className="relative flex-1 flex flex-col">
+            {/* Remote video (main view) */}
+            <div className="flex-1 relative bg-black">
               <video
-                ref={localVideoRef}
+                ref={remoteVideoRef}
                 autoPlay
                 playsInline
-                muted
-                className={cn(
-                  "w-full h-full object-cover",
-                  isVideoOff && "hidden"
-                )}
+                className="w-full h-full object-cover"
               />
-              {isVideoOff && (
-                <div className="w-full h-full flex items-center justify-center bg-muted">
-                  <VideoOff className="h-8 w-8 text-muted-foreground" />
+
+              {/* No video placeholder */}
+              {(!remoteStream || remoteStream.getVideoTracks().length === 0) && (
+                <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-b from-primary/20 to-background">
+                  <Avatar className="w-32 h-32 ring-4 ring-primary/30">
+                    <AvatarImage src={profile?.avatar_url || ""} />
+                    <AvatarFallback className="text-4xl">
+                      {profile?.display_name?.[0] || profile?.username?.[0] || "?"}
+                    </AvatarFallback>
+                  </Avatar>
                 </div>
               )}
-            </div>
 
-            {/* Controls overlay */}
-            <div className="absolute bottom-0 left-0 right-0 p-8 bg-gradient-to-t from-black/80 to-transparent">
-              <div className="text-center text-white mb-6">
-                <h3 className="font-semibold">
-                  {profile?.display_name || profile?.username || "Call"}
-                </h3>
-                <p className="text-sm opacity-80">{getStatusText()}</p>
+              {/* Local video (picture-in-picture) - positioned with safe area */}
+              <div 
+                className="absolute w-28 h-40 rounded-2xl overflow-hidden shadow-lg bg-black border-2 border-background"
+                style={{ top: '16px', right: '16px' }}
+              >
+                <video
+                  ref={localVideoRef}
+                  autoPlay
+                  playsInline
+                  muted
+                  className={cn(
+                    "w-full h-full object-cover",
+                    isVideoOff && "hidden"
+                  )}
+                />
+                {isVideoOff && (
+                  <div className="w-full h-full flex items-center justify-center bg-muted">
+                    <VideoOff className="h-8 w-8 text-muted-foreground" />
+                  </div>
+                )}
               </div>
 
-              <div className="flex justify-center gap-4">
+              {/* Call status overlay at top */}
+              <div className="absolute top-4 left-4 right-20 z-10">
+                <div className="bg-black/50 backdrop-blur-sm rounded-full px-4 py-2 inline-flex items-center gap-2">
+                  <div className={cn(
+                    "w-2 h-2 rounded-full",
+                    connectionState === "connected" ? "bg-green-500" : "bg-yellow-500 animate-pulse"
+                  )} />
+                  <span className="text-white text-sm font-medium">
+                    {profile?.display_name || profile?.username}
+                  </span>
+                  <span className="text-white/80 text-sm">
+                    {getStatusText()}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Controls - fixed at bottom with safe padding */}
+            <div className="bg-background/95 backdrop-blur-sm border-t border-border px-6 py-6">
+              <div className="flex justify-center gap-4 max-w-md mx-auto">
                 <Button
                   variant={isMuted ? "destructive" : "secondary"}
                   size="lg"
-                  className="h-14 w-14 rounded-full"
+                  className="h-14 w-14 rounded-full press-effect"
                   onClick={handleToggleAudio}
                 >
                   {isMuted ? (
@@ -267,7 +291,7 @@ export const CallInterface = ({ profile }: CallInterfaceProps) => {
                 <Button
                   variant={isVideoOff ? "destructive" : "secondary"}
                   size="lg"
-                  className="h-14 w-14 rounded-full"
+                  className="h-14 w-14 rounded-full press-effect"
                   onClick={handleToggleVideo}
                 >
                   {isVideoOff ? (
@@ -280,7 +304,7 @@ export const CallInterface = ({ profile }: CallInterfaceProps) => {
                 <Button
                   variant={isSpeakerOff ? "destructive" : "secondary"}
                   size="lg"
-                  className="h-14 w-14 rounded-full"
+                  className="h-14 w-14 rounded-full press-effect"
                   onClick={handleToggleSpeaker}
                 >
                   {isSpeakerOff ? (
@@ -293,7 +317,7 @@ export const CallInterface = ({ profile }: CallInterfaceProps) => {
                 <Button
                   variant="destructive"
                   size="lg"
-                  className="h-14 w-14 rounded-full"
+                  className="h-14 w-14 rounded-full press-effect"
                   onClick={hangUp}
                 >
                   <PhoneOff className="h-6 w-6" />
@@ -302,55 +326,91 @@ export const CallInterface = ({ profile }: CallInterfaceProps) => {
             </div>
           </div>
         ) : (
-          // Audio call UI
-          <div className="h-full flex flex-col items-center justify-center bg-gradient-to-b from-primary/20 to-background">
-            <Avatar className="w-32 h-32 mb-6 ring-4 ring-primary/30">
-              <AvatarImage src={profile?.avatar_url || ""} />
-              <AvatarFallback className="text-4xl">
-                {profile?.display_name?.[0] || profile?.username?.[0] || "?"}
-              </AvatarFallback>
-            </Avatar>
+          // Audio call UI - centered layout with bottom controls
+          <div className="flex-1 flex flex-col">
+            {/* Main content area */}
+            <div className="flex-1 flex flex-col items-center justify-center bg-gradient-to-b from-primary/10 to-background px-6">
+              {/* Status indicator */}
+              <div className="mb-8">
+                <div className={cn(
+                  "inline-flex items-center gap-2 px-4 py-2 rounded-full",
+                  connectionState === "connected" ? "bg-green-500/20 text-green-600" : "bg-yellow-500/20 text-yellow-600"
+                )}>
+                  <div className={cn(
+                    "w-2 h-2 rounded-full",
+                    connectionState === "connected" ? "bg-green-500" : "bg-yellow-500 animate-pulse"
+                  )} />
+                  <span className="text-sm font-medium">
+                    {connectionState === "connected" ? "Connected" : "Connecting..."}
+                  </span>
+                </div>
+              </div>
 
-            <h2 className="text-2xl font-bold mb-2">
-              {profile?.display_name || profile?.username || "Call"}
-            </h2>
-            <p className="text-muted-foreground mb-12">{getStatusText()}</p>
+              {/* Profile avatar */}
+              <Avatar className="w-32 h-32 mb-6 ring-4 ring-primary/30">
+                <AvatarImage src={profile?.avatar_url || ""} />
+                <AvatarFallback className="text-4xl">
+                  {profile?.display_name?.[0] || profile?.username?.[0] || "?"}
+                </AvatarFallback>
+              </Avatar>
 
-            <div className="flex gap-6">
-              <Button
-                variant={isMuted ? "destructive" : "secondary"}
-                size="lg"
-                className="h-16 w-16 rounded-full"
-                onClick={handleToggleAudio}
-              >
-                {isMuted ? (
-                  <MicOff className="h-7 w-7" />
-                ) : (
-                  <Mic className="h-7 w-7" />
-                )}
-              </Button>
+              <h2 className="text-2xl font-bold mb-2">
+                {profile?.display_name || profile?.username || "Call"}
+              </h2>
+              <p className="text-muted-foreground text-lg">{getStatusText()}</p>
+            </div>
 
-              <Button
-                variant={isSpeakerOff ? "destructive" : "secondary"}
-                size="lg"
-                className="h-16 w-16 rounded-full"
-                onClick={handleToggleSpeaker}
-              >
-                {isSpeakerOff ? (
-                  <VolumeX className="h-7 w-7" />
-                ) : (
-                  <Volume2 className="h-7 w-7" />
-                )}
-              </Button>
+            {/* Controls - fixed at bottom with safe padding */}
+            <div className="bg-background/95 backdrop-blur-sm border-t border-border px-6 py-6">
+              <div className="flex justify-center gap-6 max-w-md mx-auto">
+                <div className="flex flex-col items-center gap-1">
+                  <Button
+                    variant={isMuted ? "destructive" : "secondary"}
+                    size="lg"
+                    className="h-16 w-16 rounded-full press-effect"
+                    onClick={handleToggleAudio}
+                  >
+                    {isMuted ? (
+                      <MicOff className="h-7 w-7" />
+                    ) : (
+                      <Mic className="h-7 w-7" />
+                    )}
+                  </Button>
+                  <span className="text-xs text-muted-foreground">
+                    {isMuted ? "Unmute" : "Mute"}
+                  </span>
+                </div>
 
-              <Button
-                variant="destructive"
-                size="lg"
-                className="h-16 w-16 rounded-full"
-                onClick={hangUp}
-              >
-                <PhoneOff className="h-7 w-7" />
-              </Button>
+                <div className="flex flex-col items-center gap-1">
+                  <Button
+                    variant={isSpeakerOff ? "destructive" : "secondary"}
+                    size="lg"
+                    className="h-16 w-16 rounded-full press-effect"
+                    onClick={handleToggleSpeaker}
+                  >
+                    {isSpeakerOff ? (
+                      <VolumeX className="h-7 w-7" />
+                    ) : (
+                      <Volume2 className="h-7 w-7" />
+                    )}
+                  </Button>
+                  <span className="text-xs text-muted-foreground">
+                    {isSpeakerOff ? "Speaker Off" : "Speaker"}
+                  </span>
+                </div>
+
+                <div className="flex flex-col items-center gap-1">
+                  <Button
+                    variant="destructive"
+                    size="lg"
+                    className="h-16 w-16 rounded-full press-effect"
+                    onClick={hangUp}
+                  >
+                    <PhoneOff className="h-7 w-7" />
+                  </Button>
+                  <span className="text-xs text-muted-foreground">End</span>
+                </div>
+              </div>
             </div>
           </div>
         )}
