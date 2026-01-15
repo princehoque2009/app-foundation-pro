@@ -8,9 +8,11 @@ import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
 import { z } from "zod";
 import { motion, AnimatePresence } from "framer-motion";
-import { Eye, EyeOff, Mail, Lock, User, Sparkles, Calendar, Shield } from "lucide-react";
+import { Eye, EyeOff, Mail, Lock, User, Sparkles, Calendar, Shield, ArrowLeft, ArrowRight, CheckCircle } from "lucide-react";
 import { GoogleAuthButton } from "@/components/auth/GoogleAuthButton";
+import { PhoneAuthButton } from "@/components/auth/PhoneAuthButton";
 import prangonLogo from "@/assets/prangon-logo.png";
+import { Progress } from "@/components/ui/progress";
 
 // Calculate age from DOB
 const calculateAge = (dob: Date): number => {
@@ -23,34 +25,44 @@ const calculateAge = (dob: Date): number => {
   return age;
 };
 
-const signupSchema = z.object({
-  email: z.string().email("Invalid email address"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
-  username: z.string()
-    .min(3, "Username must be at least 3 characters")
-    .max(30, "Username must be less than 30 characters")
-    .regex(/^[a-zA-Z0-9_]+$/, "Username can only contain letters, numbers, and underscores"),
-  displayName: z.string().min(1, "Full name is required"),
-  dateOfBirth: z.string().refine((val) => {
-    const date = new Date(val);
-    if (isNaN(date.getTime())) return false;
-    const age = calculateAge(date);
-    return age >= 13; // Minimum age requirement
-  }, "You must be at least 13 years old to use Prangon"),
-});
+const emailSchema = z.string().email("Invalid email address");
+const passwordSchema = z.string().min(6, "Password must be at least 6 characters");
+const usernameSchema = z.string()
+  .min(3, "Username must be at least 3 characters")
+  .max(30, "Username must be less than 30 characters")
+  .regex(/^[a-zA-Z0-9_]+$/, "Only letters, numbers, and underscores");
+const displayNameSchema = z.string().min(1, "Full name is required");
+const dateOfBirthSchema = z.string().refine((val) => {
+  const date = new Date(val);
+  if (isNaN(date.getTime())) return false;
+  const age = calculateAge(date);
+  return age >= 13;
+}, "You must be at least 13 years old");
 
 const loginSchema = z.object({
-  email: z.string().email("Invalid email address"),
+  email: emailSchema,
   password: z.string().min(1, "Password is required"),
 });
 
+type SignupStep = "auth" | "identity" | "profile" | "complete";
+
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
+  const [signupStep, setSignupStep] = useState<SignupStep>("auth");
+  
+  // Auth step data
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [username, setUsername] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [authMethod, setAuthMethod] = useState<"email" | "phone" | "google" | null>(null);
+  
+  // Identity step data
   const [displayName, setDisplayName] = useState("");
+  const [username, setUsername] = useState("");
+  
+  // Profile step data
   const [dateOfBirth, setDateOfBirth] = useState("");
+  
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
@@ -62,56 +74,13 @@ const Auth = () => {
     }
   }, [user, navigate]);
 
-  const handleSignUp = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-
-    try {
-      const validated = signupSchema.parse({ 
-        email, 
-        password, 
-        username, 
-        displayName,
-        dateOfBirth 
-      });
-      
-      const redirectUrl = `${window.location.origin}/`;
-      
-      const { error } = await supabase.auth.signUp({
-        email: validated.email,
-        password: validated.password,
-        options: {
-          emailRedirectTo: redirectUrl,
-          data: {
-            username: validated.username,
-            display_name: validated.displayName,
-            date_of_birth: validated.dateOfBirth,
-          },
-        },
-      });
-
-      if (error) throw error;
-
-      toast({
-        title: "Account created!",
-        description: "Please check your email to verify your account.",
-      });
-    } catch (error: any) {
-      if (error instanceof z.ZodError) {
-        toast({
-          title: "Validation Error",
-          description: error.errors[0].message,
-          variant: "destructive",
-        });
-      } else {
-        toast({
-          title: "Error",
-          description: error.message || "Failed to sign up",
-          variant: "destructive",
-        });
-      }
-    } finally {
-      setLoading(false);
+  const getStepProgress = () => {
+    switch (signupStep) {
+      case "auth": return 25;
+      case "identity": return 50;
+      case "profile": return 75;
+      case "complete": return 100;
+      default: return 0;
     }
   };
 
@@ -149,12 +118,182 @@ const Auth = () => {
     }
   };
 
-  // Get max date (13 years ago) for DOB input
+  const handleEmailSignup = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    try {
+      emailSchema.parse(email);
+      passwordSchema.parse(password);
+      setAuthMethod("email");
+      setSignupStep("identity");
+    } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        toast({
+          title: "Validation Error",
+          description: error.errors[0].message,
+          variant: "destructive",
+        });
+      }
+    }
+  };
+
+  const handlePhoneAuthSuccess = async (firebaseUser: any, phone: string) => {
+    setPhoneNumber(phone);
+    setAuthMethod("phone");
+    setSignupStep("identity");
+  };
+
+  const handleIdentitySubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    try {
+      displayNameSchema.parse(displayName);
+      usernameSchema.parse(username);
+      
+      // Check if username is available
+      const { data: existingUser } = await supabase
+        .from("profiles")
+        .select("id")
+        .eq("username", username)
+        .maybeSingle();
+      
+      if (existingUser) {
+        toast({
+          title: "Username taken",
+          description: "This username is already in use",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      setSignupStep("profile");
+    } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        toast({
+          title: "Validation Error",
+          description: error.errors[0].message,
+          variant: "destructive",
+        });
+      }
+    }
+  };
+
+  const handleProfileSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+      dateOfBirthSchema.parse(dateOfBirth);
+      
+      if (authMethod === "email") {
+        const redirectUrl = `${window.location.origin}/`;
+        
+        const { error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            emailRedirectTo: redirectUrl,
+            data: {
+              username,
+              display_name: displayName,
+              date_of_birth: dateOfBirth,
+            },
+          },
+        });
+
+        if (error) throw error;
+
+        setSignupStep("complete");
+      } else if (authMethod === "phone") {
+        // For phone auth, we need to link with Supabase
+        // Create a profile entry directly since Firebase handles auth
+        const { error } = await supabase.auth.signUp({
+          email: `${username}@prangon.phone`,
+          password: crypto.randomUUID(),
+          options: {
+            data: {
+              username,
+              display_name: displayName,
+              date_of_birth: dateOfBirth,
+              phone_number: phoneNumber,
+              auth_provider: "phone",
+            },
+          },
+        });
+
+        if (error && !error.message.includes("already registered")) {
+          throw error;
+        }
+
+        setSignupStep("complete");
+      }
+    } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        toast({
+          title: "Validation Error",
+          description: error.errors[0].message,
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: error.message || "Failed to create account",
+          variant: "destructive",
+        });
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleBackToAuth = () => {
+    setSignupStep("auth");
+    setAuthMethod(null);
+  };
+
   const getMaxDate = () => {
     const today = new Date();
     today.setFullYear(today.getFullYear() - 13);
     return today.toISOString().split('T')[0];
   };
+
+  const resetForm = () => {
+    setIsLogin(true);
+    setSignupStep("auth");
+    setEmail("");
+    setPassword("");
+    setUsername("");
+    setDisplayName("");
+    setDateOfBirth("");
+    setPhoneNumber("");
+    setAuthMethod(null);
+  };
+
+  // Completion screen
+  if (signupStep === "complete") {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-background via-background to-primary/5">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="text-center max-w-md"
+        >
+          <div className="w-20 h-20 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
+            <CheckCircle className="w-10 h-10 text-green-500" />
+          </div>
+          <h1 className="text-2xl font-bold mb-2">Account Created!</h1>
+          <p className="text-muted-foreground mb-6">
+            {authMethod === "email" 
+              ? "Please check your email to verify your account."
+              : "Your account has been created successfully."}
+          </p>
+          <Button onClick={resetForm} className="w-full">
+            Back to Login
+          </Button>
+        </motion.div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-background via-background to-primary/5 relative overflow-hidden">
@@ -162,7 +301,6 @@ const Auth = () => {
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute -top-40 -right-40 w-80 h-80 bg-primary/10 rounded-full blur-3xl" />
         <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-primary/5 rounded-full blur-3xl" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-primary/5 rounded-full blur-3xl" />
       </div>
 
       <motion.div
@@ -172,248 +310,307 @@ const Auth = () => {
         className="w-full max-w-md relative z-10"
       >
         <div className="bg-card/80 backdrop-blur-xl rounded-3xl shadow-2xl border border-border/50 overflow-hidden">
-          {/* Header with logo */}
-          <div className="pt-10 pb-6 px-8 text-center">
+          {/* Header */}
+          <div className="pt-8 pb-4 px-8 text-center">
+            {/* Back button for signup steps */}
+            {!isLogin && signupStep !== "auth" && (
+              <button
+                onClick={() => {
+                  if (signupStep === "identity") handleBackToAuth();
+                  else if (signupStep === "profile") setSignupStep("identity");
+                }}
+                className="absolute top-6 left-6 p-2 rounded-full hover:bg-muted transition-colors"
+              >
+                <ArrowLeft className="h-5 w-5" />
+              </button>
+            )}
+            
             <motion.div
               initial={{ scale: 0.8, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
               className="relative inline-block"
             >
               <img
                 src={prangonLogo}
                 alt="Prangon"
-                className="h-14 mx-auto drop-shadow-lg"
+                className="h-12 mx-auto drop-shadow-lg"
               />
-              <motion.div
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                transition={{ delay: 0.5, type: "spring" }}
-                className="absolute -top-1 -right-1"
-              >
-                <Sparkles className="h-5 w-5 text-primary animate-pulse" />
-              </motion.div>
+              <Sparkles className="absolute -top-1 -right-1 h-4 w-4 text-primary animate-pulse" />
             </motion.div>
             
-            <motion.p
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
-              className="text-muted-foreground mt-4 text-base"
-            >
-              {isLogin ? "Welcome back! Sign in to continue" : "Create your account to get started"}
-            </motion.p>
+            {/* Progress bar for signup */}
+            {!isLogin && (
+              <div className="mt-4 px-4">
+                <Progress value={getStepProgress()} className="h-1" />
+                <p className="text-xs text-muted-foreground mt-2">
+                  Step {signupStep === "auth" ? 1 : signupStep === "identity" ? 2 : 3} of 3
+                </p>
+              </div>
+            )}
+            
+            <p className="text-muted-foreground mt-3 text-sm">
+              {isLogin 
+                ? "Welcome back! Sign in to continue"
+                : signupStep === "auth"
+                  ? "Choose how to create your account"
+                  : signupStep === "identity"
+                    ? "Tell us about yourself"
+                    : "Just a few more details"
+              }
+            </p>
           </div>
 
-          {/* Form */}
+          {/* Form content */}
           <div className="px-8 pb-8">
             <AnimatePresence mode="wait">
-              <motion.form
-                key={isLogin ? "login" : "signup"}
-                initial={{ opacity: 0, x: isLogin ? -20 : 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: isLogin ? 20 : -20 }}
-                transition={{ duration: 0.3 }}
-                onSubmit={isLogin ? handleLogin : handleSignUp}
-                className="space-y-5"
-              >
-                {/* Full Name field (signup only) */}
-                {!isLogin && (
-                  <motion.div
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: "auto" }}
-                    exit={{ opacity: 0, height: 0 }}
-                    className="space-y-2"
-                  >
-                    <Label htmlFor="displayName" className="text-sm font-medium text-foreground/80">
-                      Full Name
-                    </Label>
+              {/* LOGIN FORM */}
+              {isLogin && (
+                <motion.form
+                  key="login"
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: 20 }}
+                  onSubmit={handleLogin}
+                  className="space-y-4"
+                >
+                  <div className="space-y-2">
+                    <Label htmlFor="email">Email</Label>
+                    <div className="relative">
+                      <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground/50" />
+                      <Input
+                        id="email"
+                        type="email"
+                        placeholder="you@example.com"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        required
+                        className="h-12 pl-12 rounded-xl bg-muted/30 border-border/50"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="password">Password</Label>
+                    <div className="relative">
+                      <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground/50" />
+                      <Input
+                        id="password"
+                        type={showPassword ? "text" : "password"}
+                        placeholder="••••••••"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        required
+                        className="h-12 pl-12 pr-12 rounded-xl bg-muted/30 border-border/50"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground/50 hover:text-foreground"
+                      >
+                        {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                      </button>
+                    </div>
+                  </div>
+
+                  <Button type="submit" className="w-full h-12 rounded-xl" disabled={loading}>
+                    {loading ? "Signing in..." : "Sign In"}
+                  </Button>
+
+                  <div className="relative my-4">
+                    <div className="absolute inset-0 flex items-center">
+                      <div className="w-full border-t border-border/50" />
+                    </div>
+                    <div className="relative flex justify-center text-xs">
+                      <span className="px-4 bg-card text-muted-foreground">or</span>
+                    </div>
+                  </div>
+
+                  <GoogleAuthButton mode="login" className="h-12 rounded-xl" />
+                </motion.form>
+              )}
+
+              {/* SIGNUP STEP 1: AUTH METHOD */}
+              {!isLogin && signupStep === "auth" && (
+                <motion.div
+                  key="signup-auth"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  className="space-y-4"
+                >
+                  <form onSubmit={handleEmailSignup} className="space-y-4">
+                    <div className="space-y-2">
+                      <Label>Email</Label>
+                      <div className="relative">
+                        <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground/50" />
+                        <Input
+                          type="email"
+                          placeholder="you@example.com"
+                          value={email}
+                          onChange={(e) => setEmail(e.target.value)}
+                          className="h-12 pl-12 rounded-xl bg-muted/30 border-border/50"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>Password</Label>
+                      <div className="relative">
+                        <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground/50" />
+                        <Input
+                          type={showPassword ? "text" : "password"}
+                          placeholder="At least 6 characters"
+                          value={password}
+                          onChange={(e) => setPassword(e.target.value)}
+                          className="h-12 pl-12 pr-12 rounded-xl bg-muted/30 border-border/50"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground/50"
+                        >
+                          {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                        </button>
+                      </div>
+                    </div>
+
+                    <Button type="submit" className="w-full h-12 rounded-xl gap-2">
+                      Continue with Email
+                      <ArrowRight className="h-4 w-4" />
+                    </Button>
+                  </form>
+
+                  <div className="relative my-4">
+                    <div className="absolute inset-0 flex items-center">
+                      <div className="w-full border-t border-border/50" />
+                    </div>
+                    <div className="relative flex justify-center text-xs">
+                      <span className="px-4 bg-card text-muted-foreground">or</span>
+                    </div>
+                  </div>
+
+                  <PhoneAuthButton 
+                    onSuccess={handlePhoneAuthSuccess}
+                    className="w-full"
+                  />
+                  
+                  <GoogleAuthButton mode="signup" className="h-12 rounded-xl" />
+                </motion.div>
+              )}
+
+              {/* SIGNUP STEP 2: IDENTITY */}
+              {!isLogin && signupStep === "identity" && (
+                <motion.form
+                  key="signup-identity"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  onSubmit={handleIdentitySubmit}
+                  className="space-y-4"
+                >
+                  <div className="space-y-2">
+                    <Label>Full Name</Label>
                     <div className="relative">
                       <User className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground/50" />
                       <Input
-                        id="displayName"
                         type="text"
-                        placeholder="Your Full Name"
+                        placeholder="Your full name"
                         value={displayName}
                         onChange={(e) => setDisplayName(e.target.value)}
                         required
-                        className="h-12 pl-12 rounded-xl bg-muted/30 border-border/50 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
+                        className="h-12 pl-12 rounded-xl bg-muted/30 border-border/50"
                       />
                     </div>
-                  </motion.div>
-                )}
+                  </div>
 
-                {/* Username field (signup only) */}
-                {!isLogin && (
-                  <motion.div
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: "auto" }}
-                    exit={{ opacity: 0, height: 0 }}
-                    className="space-y-2"
-                  >
-                    <Label htmlFor="username" className="text-sm font-medium text-foreground/80">
-                      Username
-                    </Label>
+                  <div className="space-y-2">
+                    <Label>Username</Label>
                     <div className="relative">
                       <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground/50">@</span>
                       <Input
-                        id="username"
                         type="text"
-                        placeholder="cooluser123"
+                        placeholder="username123"
                         value={username}
-                        onChange={(e) => setUsername(e.target.value)}
+                        onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ""))}
                         required
-                        className="h-12 pl-12 rounded-xl bg-muted/30 border-border/50 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
+                        className="h-12 pl-12 rounded-xl bg-muted/30 border-border/50"
                       />
                     </div>
-                  </motion.div>
-                )}
+                    <p className="text-xs text-muted-foreground">
+                      This will be your unique @handle
+                    </p>
+                  </div>
 
-                {/* Date of Birth field (signup only) */}
-                {!isLogin && (
-                  <motion.div
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: "auto" }}
-                    exit={{ opacity: 0, height: 0 }}
-                    className="space-y-2"
-                  >
-                    <Label htmlFor="dateOfBirth" className="text-sm font-medium text-foreground/80">
-                      Date of Birth
-                    </Label>
+                  <Button type="submit" className="w-full h-12 rounded-xl gap-2">
+                    Continue
+                    <ArrowRight className="h-4 w-4" />
+                  </Button>
+                </motion.form>
+              )}
+
+              {/* SIGNUP STEP 3: PROFILE */}
+              {!isLogin && signupStep === "profile" && (
+                <motion.form
+                  key="signup-profile"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  onSubmit={handleProfileSubmit}
+                  className="space-y-4"
+                >
+                  <div className="space-y-2">
+                    <Label>Date of Birth</Label>
                     <div className="relative">
                       <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground/50" />
                       <Input
-                        id="dateOfBirth"
                         type="date"
                         value={dateOfBirth}
                         onChange={(e) => setDateOfBirth(e.target.value)}
                         max={getMaxDate()}
                         required
-                        className="h-12 pl-12 rounded-xl bg-muted/30 border-border/50 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
+                        className="h-12 pl-12 rounded-xl bg-muted/30 border-border/50"
                       />
                     </div>
                     <div className="flex items-center gap-2 text-xs text-muted-foreground">
                       <Shield className="h-3 w-3" />
-                      <span>We use your DOB to keep Prangon safe. It's private by default.</span>
+                      <span>Your DOB is private and helps keep Prangon safe</span>
                     </div>
-                  </motion.div>
-                )}
-
-                {/* Email field */}
-                <div className="space-y-2">
-                  <Label htmlFor="email" className="text-sm font-medium text-foreground/80">
-                    Email
-                  </Label>
-                  <div className="relative">
-                    <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground/50" />
-                    <Input
-                      id="email"
-                      type="email"
-                      placeholder="you@example.com"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      required
-                      className="h-12 pl-12 rounded-xl bg-muted/30 border-border/50 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
-                    />
                   </div>
-                </div>
 
-                {/* Password field */}
-                <div className="space-y-2">
-                  <Label htmlFor="password" className="text-sm font-medium text-foreground/80">
-                    Password
-                  </Label>
-                  <div className="relative">
-                    <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground/50" />
-                    <Input
-                      id="password"
-                      type={showPassword ? "text" : "password"}
-                      placeholder="••••••••"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      required
-                      className="h-12 pl-12 pr-12 rounded-xl bg-muted/30 border-border/50 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground/50 hover:text-foreground transition-colors"
-                    >
-                      {showPassword ? (
-                        <EyeOff className="h-5 w-5" />
-                      ) : (
-                        <Eye className="h-5 w-5" />
-                      )}
-                    </button>
-                  </div>
-                </div>
-
-                {/* Submit button */}
-                <Button
-                  type="submit"
-                  className="w-full h-12 rounded-xl text-base font-semibold bg-primary hover:bg-primary/90 shadow-lg shadow-primary/25 transition-all hover:shadow-xl hover:shadow-primary/30 hover:-translate-y-0.5"
-                  disabled={loading}
-                >
-                  {loading ? (
-                    <div className="flex items-center gap-2">
-                      <div className="w-5 h-5 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
-                      <span>Please wait...</span>
-                    </div>
-                  ) : (
-                    isLogin ? "Sign In" : "Create Account"
-                  )}
-                </Button>
-
-                {/* Divider */}
-                <div className="relative my-2">
-                  <div className="absolute inset-0 flex items-center">
-                    <div className="w-full border-t border-border/50" />
-                  </div>
-                  <div className="relative flex justify-center text-sm">
-                    <span className="px-4 bg-card text-muted-foreground">or</span>
-                  </div>
-                </div>
-
-                {/* Google Auth Button */}
-                <GoogleAuthButton 
-                  mode={isLogin ? "login" : "signup"} 
-                  className="h-12 rounded-xl"
-                />
-              </motion.form>
+                  <Button type="submit" className="w-full h-12 rounded-xl gap-2" disabled={loading}>
+                    {loading ? "Creating Account..." : (
+                      <>
+                        Create Account
+                        <CheckCircle className="h-4 w-4" />
+                      </>
+                    )}
+                  </Button>
+                </motion.form>
+              )}
             </AnimatePresence>
 
             {/* Toggle login/signup */}
-            <div className="mt-8 text-center">
-              <div className="relative">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-border/50" />
-                </div>
-                <div className="relative flex justify-center text-sm">
-                  <span className="px-4 bg-card text-muted-foreground">
-                    {isLogin ? "New to Prangon?" : "Already have an account?"}
-                  </span>
-                </div>
+            {(isLogin || signupStep === "auth") && (
+              <div className="mt-6 text-center">
+                <p className="text-sm text-muted-foreground">
+                  {isLogin ? "New to Prangon?" : "Already have an account?"}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsLogin(!isLogin);
+                    resetForm();
+                    setIsLogin(!isLogin);
+                  }}
+                  className="text-primary font-semibold hover:underline mt-1"
+                >
+                  {isLogin ? "Create an account" : "Sign in instead"}
+                </button>
               </div>
-              
-              <button
-                type="button"
-                onClick={() => {
-                  setIsLogin(!isLogin);
-                  setEmail("");
-                  setPassword("");
-                  setUsername("");
-                  setDisplayName("");
-                  setDateOfBirth("");
-                }}
-                className="mt-4 text-primary font-semibold hover:underline transition-all"
-              >
-                {isLogin ? "Create an account" : "Sign in instead"}
-              </button>
-            </div>
+            )}
           </div>
         </div>
 
-        {/* Footer text */}
         <p className="text-center text-xs text-muted-foreground mt-6">
           By continuing, you agree to our Terms of Service and Privacy Policy
         </p>
