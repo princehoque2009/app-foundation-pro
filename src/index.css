@@ -13,6 +13,7 @@
 @import url("https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap");
 @import url("https://fonts.googleapis.com/css2?family=Merriweather:wght@400;700&display=swap");
 @import url("https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=JetBrains+Mono&display=swap");
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -31,7 +32,7 @@
     --popover-foreground: 240 5% 10%;
 
     /* Prangon Brand Colors - Electric Coral #FF4F5A */
-    --primary: 333 71% 50%;
+    --primary: 5 100% 69%;
     --primary-foreground: 327 73% 97%;
 
     --secondary: 240 5% 33%;
