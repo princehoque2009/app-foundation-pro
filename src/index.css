@@ -10,6 +10,9 @@
 @import url("https://fonts.googleapis.com/css2?family=Poppins&display=swap");
 @import url("https://fonts.googleapis.com/css2?family=Merriweather&display=swap");
 @import url("https://fonts.googleapis.com/css2?family=Cascadia+Code&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Merriweather:wght@400;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap");
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -28,17 +31,17 @@
     --popover-foreground: 240 5% 10%;
 
     /* Prangon Brand Colors - Electric Coral #FF4F5A */
-    --primary: 5 100% 69%;
-    --primary-foreground: 250 100% 97%;
+    --primary: 333 71% 50%;
+    --primary-foreground: 327 73% 97%;
 
-    --secondary: 240 5.8824% 10%;
+    --secondary: 240 5% 33%;
     --secondary-foreground: 0 0% 98%;
 
     --muted: 240 4% 83%;
     --muted-foreground: 240 5% 10%;
 
-    --accent: 269 100% 98%;
-    --accent-foreground: 270 91% 65%;
+    --accent: 355 100% 97%;
+    --accent-foreground: 349 89% 60%;
 
     --success: 160 84% 39%;
     --success-foreground: 0 0% 100%;
@@ -48,9 +51,9 @@
 
     --border: 240 4% 83%;
     --input: 240 4% 83%;
-    --ring: 258 89% 66%;
+    --ring: 333 71% 50%;
 
-    --radius: 0.5rem;
+    --radius: 1.5rem;
 
     /* Prangon Theme Colors - Electric Coral #FF4F5A */
     --electric-coral: 355 100% 65%;
@@ -64,25 +67,25 @@
 
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 240 5% 10%;
-    --sidebar-primary: 258 89% 66%;
-    --sidebar-primary-foreground: 250 100% 97%;
+    --sidebar-primary: 333 71% 50%;
+    --sidebar-primary-foreground: 327 73% 97%;
     --sidebar-accent: 240 5% 33%;
     --sidebar-accent-foreground: 0 0% 98%;
     --sidebar-border: 240 4% 83%;
-    --sidebar-ring: 258 89% 66%;
+    --sidebar-ring: 333 71% 50%;
     --shadow-sm: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 1px 2px -1px hsl(0 0% 0% / 0.1);
     --shadow: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 1px 2px -1px hsl(0 0% 0% / 0.1);
     --shadow-md: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 2px 4px -1px hsl(0 0% 0% / 0.1);
     --shadow-lg: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 4px 6px -1px hsl(0 0% 0% / 0.1);
-    --chart-1: 255 91% 76%;
-    --chart-2: 270 95% 75%;
-    --chart-3: 234 89% 73%;
-    --chart-4: 258 89% 66%;
+    --chart-1: 328 85% 70%;
+    --chart-2: 351 94% 71%;
+    --chart-3: 327 87% 81%;
+    --chart-4: 352 95% 81%;
     --chart-5: 240 3% 46%;
     --sidebar: 0 0% 98%;
-    --font-sans: Poppins, ui-sans-serif, system-ui, sans-serif, Apple Color Emoji, Segoe UI Emoji, Segoe UI Symbol, Noto Color Emoji;
-    --font-serif: Merriweather, ui-serif, Georgia, Cambria, Times New Roman, Times, serif;
-    --font-mono: "Cascadia Code", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, Liberation Mono, Courier New, monospace;
+    --font-sans: 'Poppins', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif;
+    --font-serif: 'Merriweather', ui-serif, Georgia, Cambria, 'Times New Roman', Times, serif;
+    --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
     --shadow-2xs: 0 1px 3px 0px hsl(0 0% 0% / 0.05);
     --shadow-xs: 0 1px 3px 0px hsl(0 0% 0% / 0.05);
     --shadow-xl: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 8px 10px -1px hsl(0 0% 0% / 0.1);
@@ -102,8 +105,8 @@
     --popover-foreground: 0 0% 98%;
 
     /* Prangon Brand Colors - Electric Coral #FF4F5A MUST STAY THE SAME */
-    --primary: 255 91% 76%;
-    --primary-foreground: 261 72% 22%;
+    --primary: 328 85% 70%;
+    --primary-foreground: 336 83% 17%;
 
     --secondary: 240 3% 46%;
     --secondary-foreground: 0 0% 98%;
@@ -111,8 +114,8 @@
     --muted: 240 3% 46%;
     --muted-foreground: 0 0% 98%;
 
-    --accent: 273 86% 20%;
-    --accent-foreground: 270 95% 75%;
+    --accent: 343 87% 15%;
+    --accent-foreground: 351 94% 71%;
 
     --success: 160 84% 39%;
     --success-foreground: 0 0% 100%;
@@ -122,7 +125,7 @@
 
     --border: 240 5% 33%;
     --input: 240 5% 33%;
-    --ring: 255 91% 76%;
+    --ring: 328 85% 70%;
 
     /* Prangon Theme Colors - Dark Mode (Electric Coral stays same) */
     --electric-coral: 5 100% 69%;
@@ -134,22 +137,22 @@
 
     --sidebar-background: 0 0% 10%;
     --sidebar-foreground: 0 0% 98%;
-    --sidebar-primary: 255 91% 76%;
-    --sidebar-primary-foreground: 261 72% 22%;
-    --sidebar-accent: 270 95% 75%;
-    --sidebar-accent-foreground: 273 86% 20%;
+    --sidebar-primary: 328 85% 70%;
+    --sidebar-primary-foreground: 336 83% 17%;
+    --sidebar-accent: 351 94% 71%;
+    --sidebar-accent-foreground: 343 87% 15%;
     --sidebar-border: 240 5% 33%;
-    --sidebar-ring: 255 91% 76%;
+    --sidebar-ring: 328 85% 70%;
     --radius: 1.125rem;
     --shadow-sm: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 1px 2px -1px hsl(0 0% 0% / 0.1);
     --shadow: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 1px 2px -1px hsl(0 0% 0% / 0.1);
     --shadow-md: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 2px 4px -1px hsl(0 0% 0% / 0.1);
     --shadow-lg: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 4px 6px -1px hsl(0 0% 0% / 0.1);
-    --chart-1: 252 94% 85%;
-    --chart-2: 269 97% 85%;
-    --chart-3: 229 93% 81%;
-    --chart-4: 255 91% 76%;
-    --chart-5: 240 3% 46%;
+    --chart-1: 327 87% 81%;
+    --chart-2: 352 95% 81%;
+    --chart-3: 328 85% 70%;
+    --chart-4: 351 94% 71%;
+    --chart-5: 240 5% 33%;
     --sidebar: 240 3% 15%;
     --shadow-2xs: 0 1px 3px 0px hsl(0 0% 0% / 0.05);
     --shadow-xs: 0 1px 3px 0px hsl(0 0% 0% / 0.05);
