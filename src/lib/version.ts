@@ -1,12 +1,16 @@
 // Prangon App Version
 export const APP_VERSION = "1.5.0";
+export const BUILD_NUMBER = "151";
 export const APP_NAME = "Prangon";
+export const RELEASE_DATE = "2026-01-31";
 export const COPYRIGHT_YEAR = new Date().getFullYear();
 
 export const getVersionInfo = () => ({
   version: APP_VERSION,
+  build: BUILD_NUMBER,
   name: APP_NAME,
+  releaseDate: RELEASE_DATE,
   year: COPYRIGHT_YEAR,
-  fullVersion: `${APP_NAME} v${APP_VERSION}`,
+  fullVersion: `${APP_NAME} v${APP_VERSION} (Build ${BUILD_NUMBER})`,
   copyright: `© ${COPYRIGHT_YEAR} ${APP_NAME}. All rights reserved.`,
 });

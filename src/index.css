@@ -398,6 +398,26 @@
     40% { transform: scale(1); opacity: 1; }
   }
 
+  /* Typing bounce for chat bubbles */
+  @keyframes typing-bounce {
+    0%, 60%, 100% { transform: translateY(0); }
+    30% { transform: translateY(-4px); }
+  }
+
+  .animate-typing-bounce {
+    animation: typing-bounce 1.2s ease-in-out infinite;
+  }
+
+  /* Call status animations */
+  @keyframes call-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+  }
+
+  .call-status-pulse {
+    animation: call-pulse 1.5s ease-in-out infinite;
+  }
+
   /* Pulse ring for online status */
   .online-pulse {
     position: relative;

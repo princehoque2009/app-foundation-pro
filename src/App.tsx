@@ -10,6 +10,7 @@ import { AppSettingsProvider } from "@/contexts/AppSettingsContext";
 import { RolesProvider } from "@/contexts/RolesContext";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { SplashScreen } from "@/components/SplashScreen";
+import { OnboardingSlides } from "@/components/onboarding/OnboardingSlides";
 import Home from "./pages/Home";
 import Reels from "./pages/Reels";
 import Create from "./pages/Create";
@@ -38,17 +39,29 @@ const queryClient = new QueryClient();
 
 const App = () => {
   const [showSplash, setShowSplash] = useState(true);
+  const [showOnboarding, setShowOnboarding] = useState(false);
 
   useEffect(() => {
     const hasSeenSplash = sessionStorage.getItem("hasSeenSplash");
     if (hasSeenSplash) {
       setShowSplash(false);
     }
+    
+    // Check if user has completed onboarding
+    const hasCompletedOnboarding = localStorage.getItem("hasCompletedOnboarding");
+    if (!hasCompletedOnboarding) {
+      setShowOnboarding(true);
+    }
   }, []);
 
   const handleSplashComplete = () => {
     sessionStorage.setItem("hasSeenSplash", "true");
     setShowSplash(false);
+  };
+
+  const handleOnboardingComplete = () => {
+    localStorage.setItem("hasCompletedOnboarding", "true");
+    setShowOnboarding(false);
   };
 
   return (
@@ -58,6 +71,9 @@ const App = () => {
           <Toaster />
           <Sonner />
           {showSplash && <SplashScreen onComplete={handleSplashComplete} />}
+          {!showSplash && showOnboarding && (
+            <OnboardingSlides onComplete={handleOnboardingComplete} />
+          )}
           <BrowserRouter>
             <AuthProvider>
               <AppSettingsProvider>
