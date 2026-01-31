@@ -209,7 +209,8 @@ export const useWebRTC = () => {
         const callId = await startCall(user.id, receiverId, type, offer);
         callIdRef.current = callId;
         
-        setCurrentCall({
+        // Immediately set currentCall so UI shows for caller
+        const newCall: Call = {
           id: callId,
           callerId: user.id,
           receiverId,
@@ -217,23 +218,42 @@ export const useWebRTC = () => {
           offer,
           status: "ringing",
           timestamp: Date.now(),
-        });
+        };
+        
+        setCurrentCall(newCall);
+        console.log("[WebRTC] Call initiated, waiting for answer...");
 
-        // Listen for answer
+        // Listen for call status updates (answer, rejected, ended)
         const unsubscribeCall = listenToCallUpdates(callId, async (call) => {
-          if (!call) return;
+          if (!call) {
+            console.log("[WebRTC] Call no longer exists");
+            cleanup();
+            return;
+          }
+          
+          // Update currentCall with latest status
+          setCurrentCall(prev => prev ? { ...prev, status: call.status } : null);
           
           if (call.answer && pc.signalingState === "have-local-offer") {
             console.log("[WebRTC] Received answer, setting remote description");
             try {
               await pc.setRemoteDescription(new RTCSessionDescription(call.answer));
               await processPendingCandidates(pc);
+              // Update status to accepted
+              setCurrentCall(prev => prev ? { ...prev, status: "accepted" } : null);
             } catch (err) {
               console.error("[WebRTC] Error setting remote description:", err);
             }
           }
           
-          if (call.status === "rejected" || call.status === "ended") {
+          if (call.status === "rejected") {
+            console.log("[WebRTC] Call was rejected");
+            cleanup();
+          } else if (call.status === "ended") {
+            console.log("[WebRTC] Call ended by other party");
+            cleanup();
+          } else if (call.status === "busy") {
+            console.log("[WebRTC] User is busy");
             cleanup();
           }
         });

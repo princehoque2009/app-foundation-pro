@@ -68,7 +68,12 @@ export const startCall = async (
   await set(newCallRef, call);
   
   // Mark caller as in call
-  await update(ref(rtdb, `status/${callerId}`), { inCall: true });
+  await update(ref(rtdb, `status/${callerId}`), { 
+    inCall: true,
+    callId: newCallRef.key 
+  });
+  
+  console.log("[CallingService] Call started with ID:", newCallRef.key);
   
   return newCallRef.key!;
 };

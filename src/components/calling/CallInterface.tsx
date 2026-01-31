@@ -12,6 +12,8 @@ import {
   X,
   Volume2,
   VolumeX,
+  PhoneCall,
+  PhoneMissed,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -23,6 +25,8 @@ interface CallInterfaceProps {
     avatar_url?: string;
   };
 }
+
+type CallStatus = "idle" | "calling" | "ringing" | "connecting" | "connected" | "ended" | "failed" | "busy" | "offline";
 
 export const CallInterface = ({ profile }: CallInterfaceProps) => {
   const {
@@ -44,10 +48,65 @@ export const CallInterface = ({ profile }: CallInterfaceProps) => {
   const localVideoRef = useRef<HTMLVideoElement>(null);
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
   const remoteAudioRef = useRef<HTMLAudioElement>(null);
+  const ringtoneRef = useRef<HTMLAudioElement>(null);
 
   const [isMuted, setIsMuted] = useState(false);
   const [isVideoOff, setIsVideoOff] = useState(false);
   const [isSpeakerOff, setIsSpeakerOff] = useState(false);
+  const [callStatus, setCallStatus] = useState<CallStatus>("idle");
+
+  // Determine call status based on currentCall and connectionState
+  useEffect(() => {
+    if (!currentCall) {
+      setCallStatus("idle");
+      return;
+    }
+
+    if (currentCall.status === "busy") {
+      setCallStatus("busy");
+    } else if (currentCall.status === "rejected") {
+      setCallStatus("ended");
+    } else if (currentCall.status === "ended") {
+      setCallStatus("ended");
+    } else if (currentCall.status === "ringing") {
+      setCallStatus("ringing");
+    } else if (currentCall.status === "accepted") {
+      if (connectionState === "connected") {
+        setCallStatus("connected");
+      } else if (connectionState === "connecting" || isConnecting) {
+        setCallStatus("connecting");
+      } else if (connectionState === "failed" || connectionState === "disconnected") {
+        setCallStatus("failed");
+      } else {
+        setCallStatus("connecting");
+      }
+    } else if (isConnecting) {
+      setCallStatus("calling");
+    } else {
+      setCallStatus("calling");
+    }
+  }, [currentCall, connectionState, isConnecting]);
+
+  // Play ringtone for incoming calls
+  useEffect(() => {
+    if (incomingCall && !currentCall) {
+      // Play ringtone (using Web Audio API for cross-browser support)
+      const playRingtone = () => {
+        if (ringtoneRef.current) {
+          ringtoneRef.current.loop = true;
+          ringtoneRef.current.play().catch(console.error);
+        }
+      };
+      playRingtone();
+      
+      return () => {
+        if (ringtoneRef.current) {
+          ringtoneRef.current.pause();
+          ringtoneRef.current.currentTime = 0;
+        }
+      };
+    }
+  }, [incomingCall, currentCall]);
 
   // Set up local video stream
   useEffect(() => {
@@ -111,28 +170,51 @@ export const CallInterface = ({ profile }: CallInterfaceProps) => {
     }
   };
 
-  const getStatusText = () => {
-    if (isConnecting) return "Connecting...";
-    if (currentCall?.status === "ringing") return "Ringing...";
-    if (connectionState === "connecting") return "Connecting...";
-    if (connectionState === "connected" || callDuration > 0) return formatDuration(callDuration);
-    return "Calling...";
+  const getStatusDisplay = () => {
+    switch (callStatus) {
+      case "calling":
+        return { text: "Calling...", color: "text-yellow-500", icon: PhoneCall, animate: true };
+      case "ringing":
+        return { text: "Ringing...", color: "text-blue-500", icon: Phone, animate: true };
+      case "connecting":
+        return { text: "Connecting...", color: "text-yellow-500", icon: PhoneCall, animate: true };
+      case "connected":
+        return { text: formatDuration(callDuration), color: "text-green-500", icon: Phone, animate: false };
+      case "ended":
+        return { text: "Call Ended", color: "text-muted-foreground", icon: PhoneOff, animate: false };
+      case "failed":
+        return { text: "Connection Failed", color: "text-destructive", icon: PhoneMissed, animate: false };
+      case "busy":
+        return { text: "User is Busy", color: "text-orange-500", icon: PhoneMissed, animate: false };
+      case "offline":
+        return { text: "User Offline", color: "text-muted-foreground", icon: PhoneMissed, animate: false };
+      default:
+        return { text: "", color: "", icon: Phone, animate: false };
+    }
   };
 
   // Hidden audio element for audio playback
   const AudioElement = () => (
-    <audio
-      ref={remoteAudioRef}
-      autoPlay
-      playsInline
-      className="hidden"
-    />
+    <>
+      <audio
+        ref={remoteAudioRef}
+        autoPlay
+        playsInline
+        className="hidden"
+      />
+      {/* Ringtone for incoming calls - using a simple oscillator would be better but this is placeholder */}
+      <audio
+        ref={ringtoneRef}
+        src="data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1oa2d4i4+Ej3RnZHR9jJORhHJnaG98j5eSf21obnqLkpCCdG5vfYuRjn92cXN/iY+LfHdydoCIjIt9eHR2gIiLiHx4dHaAiIuIfHh0doCIi4h8eHR2gIiLiHx4dHaAiIuIfHh0doCIi4h8eHR2gIiLiHx4dHaAiIuIfHh0doCIi4h8eHR2gIiLiHx4dHaAiIuIfHh0doCIi4h8"
+        className="hidden"
+      />
+    </>
   );
 
   // Incoming call modal - fullscreen with safe areas
   if (incomingCall && !currentCall) {
     return (
-      <div className="fixed inset-0 z-[100] bg-background flex flex-col" style={{ paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'env(safe-area-inset-bottom)' }}>
+      <div className="fixed inset-0 z-[100] bg-background flex flex-col" style={{ paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'max(env(safe-area-inset-bottom), 24px)' }}>
         <AudioElement />
         <div className="flex-1 flex items-center justify-center px-4">
           <div className="bg-card rounded-3xl p-8 shadow-2xl max-w-sm w-full animate-fade-in">
@@ -196,13 +278,15 @@ export const CallInterface = ({ profile }: CallInterfaceProps) => {
   // Active call interface - fullscreen with proper safe areas
   if (currentCall) {
     const isVideoCall = currentCall.type === "video";
+    const statusDisplay = getStatusDisplay();
+    const StatusIcon = statusDisplay.icon;
 
     return (
       <div 
         className="fixed inset-0 z-[100] bg-background flex flex-col"
         style={{ 
           paddingTop: 'env(safe-area-inset-top)', 
-          paddingBottom: 'env(safe-area-inset-bottom)',
+          paddingBottom: 'max(env(safe-area-inset-bottom), 24px)',
           paddingLeft: 'env(safe-area-inset-left)',
           paddingRight: 'env(safe-area-inset-right)'
         }}
@@ -222,21 +306,28 @@ export const CallInterface = ({ profile }: CallInterfaceProps) => {
               />
 
               {/* No video placeholder */}
-              {(!remoteStream || remoteStream.getVideoTracks().length === 0) && (
-                <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-b from-primary/20 to-background">
-                  <Avatar className="w-32 h-32 ring-4 ring-primary/30">
+              {(!remoteStream || remoteStream.getVideoTracks().length === 0 || callStatus !== "connected") && (
+                <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-b from-primary/20 to-background">
+                  <Avatar className="w-32 h-32 mb-4 ring-4 ring-primary/30">
                     <AvatarImage src={profile?.avatar_url || ""} />
                     <AvatarFallback className="text-4xl">
                       {profile?.display_name?.[0] || profile?.username?.[0] || "?"}
                     </AvatarFallback>
                   </Avatar>
+                  <h2 className="text-xl font-semibold mb-2">
+                    {profile?.display_name || profile?.username}
+                  </h2>
+                  <div className={cn("flex items-center gap-2", statusDisplay.color)}>
+                    <StatusIcon className={cn("h-5 w-5", statusDisplay.animate && "animate-pulse")} />
+                    <span className="text-lg">{statusDisplay.text}</span>
+                  </div>
                 </div>
               )}
 
               {/* Local video (picture-in-picture) - positioned with safe area */}
               <div 
                 className="absolute w-28 h-40 rounded-2xl overflow-hidden shadow-lg bg-black border-2 border-background"
-                style={{ top: '16px', right: '16px' }}
+                style={{ top: 'max(env(safe-area-inset-top), 16px)', right: '16px' }}
               >
                 <video
                   ref={localVideoRef}
@@ -255,21 +346,20 @@ export const CallInterface = ({ profile }: CallInterfaceProps) => {
                 )}
               </div>
 
-              {/* Call status overlay at top */}
-              <div className="absolute top-4 left-4 right-20 z-10">
-                <div className="bg-black/50 backdrop-blur-sm rounded-full px-4 py-2 inline-flex items-center gap-2">
-                  <div className={cn(
-                    "w-2 h-2 rounded-full",
-                    connectionState === "connected" ? "bg-green-500" : "bg-yellow-500 animate-pulse"
-                  )} />
-                  <span className="text-white text-sm font-medium">
-                    {profile?.display_name || profile?.username}
-                  </span>
-                  <span className="text-white/80 text-sm">
-                    {getStatusText()}
-                  </span>
+              {/* Call status overlay at top - only when connected */}
+              {callStatus === "connected" && (
+                <div className="absolute left-4 z-10" style={{ top: 'max(env(safe-area-inset-top), 16px)' }}>
+                  <div className="bg-black/50 backdrop-blur-sm rounded-full px-4 py-2 inline-flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-green-500" />
+                    <span className="text-white text-sm font-medium">
+                      {profile?.display_name || profile?.username}
+                    </span>
+                    <span className="text-white/80 text-sm">
+                      {formatDuration(callDuration)}
+                    </span>
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
 
             {/* Controls - fixed at bottom with safe padding */}
@@ -330,34 +420,50 @@ export const CallInterface = ({ profile }: CallInterfaceProps) => {
           <div className="flex-1 flex flex-col">
             {/* Main content area */}
             <div className="flex-1 flex flex-col items-center justify-center bg-gradient-to-b from-primary/10 to-background px-6">
-              {/* Status indicator */}
+              {/* Status indicator badge */}
               <div className="mb-8">
                 <div className={cn(
                   "inline-flex items-center gap-2 px-4 py-2 rounded-full",
-                  connectionState === "connected" ? "bg-green-500/20 text-green-600" : "bg-yellow-500/20 text-yellow-600"
+                  callStatus === "connected" ? "bg-green-500/20" : 
+                  callStatus === "failed" || callStatus === "busy" ? "bg-destructive/20" :
+                  "bg-yellow-500/20"
                 )}>
-                  <div className={cn(
-                    "w-2 h-2 rounded-full",
-                    connectionState === "connected" ? "bg-green-500" : "bg-yellow-500 animate-pulse"
+                  <StatusIcon className={cn(
+                    "h-4 w-4",
+                    statusDisplay.color,
+                    statusDisplay.animate && "animate-pulse"
                   )} />
-                  <span className="text-sm font-medium">
-                    {connectionState === "connected" ? "Connected" : "Connecting..."}
+                  <span className={cn("text-sm font-medium", statusDisplay.color)}>
+                    {statusDisplay.text}
                   </span>
                 </div>
               </div>
 
-              {/* Profile avatar */}
-              <Avatar className="w-32 h-32 mb-6 ring-4 ring-primary/30">
-                <AvatarImage src={profile?.avatar_url || ""} />
-                <AvatarFallback className="text-4xl">
-                  {profile?.display_name?.[0] || profile?.username?.[0] || "?"}
-                </AvatarFallback>
-              </Avatar>
+              {/* Profile avatar with animation based on status */}
+              <div className="relative mb-6">
+                {callStatus === "ringing" && (
+                  <>
+                    <div className="absolute inset-0 rounded-full bg-primary/20 animate-ping scale-110" />
+                    <div className="absolute inset-0 rounded-full bg-primary/10 animate-pulse scale-105" />
+                  </>
+                )}
+                <Avatar className="w-32 h-32 ring-4 ring-primary/30 relative z-10">
+                  <AvatarImage src={profile?.avatar_url || ""} />
+                  <AvatarFallback className="text-4xl">
+                    {profile?.display_name?.[0] || profile?.username?.[0] || "?"}
+                  </AvatarFallback>
+                </Avatar>
+              </div>
 
               <h2 className="text-2xl font-bold mb-2">
                 {profile?.display_name || profile?.username || "Call"}
               </h2>
-              <p className="text-muted-foreground text-lg">{getStatusText()}</p>
+              
+              {/* Call type indicator */}
+              <div className="flex items-center gap-2 text-muted-foreground mb-2">
+                <Phone className="h-4 w-4" />
+                <span className="text-sm">Voice Call</span>
+              </div>
             </div>
 
             {/* Controls - fixed at bottom with safe padding */}
