@@ -7,10 +7,13 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { UserCircle, MessageCircle, UserPlus, UserMinus } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
+import { UserCircle, MessageCircle, UserPlus, UserMinus, Check, Clock } from "lucide-react";
 import { PostCard } from "@/components/home/PostCard";
 import { ProfileAboutSection } from "@/components/profile/ProfileAboutSection";
 import { ProfileCreations } from "@/components/profile/ProfileCreations";
+import { ProfileActionsMenu } from "@/components/profile/ProfileActionsMenu";
+import { UserRolesDisplay } from "@/components/profile/UserRolesDisplay";
 import { toast } from "@/hooks/use-toast";
 import { useConversations } from "@/hooks/useConversations";
 import { VerifiedBadge } from "@/components/ui/VerifiedBadge";
@@ -23,7 +26,7 @@ const UserProfile = () => {
   const { createConversation } = useConversations();
 
   // Fetch profile
-  const { data: profile } = useQuery({
+  const { data: profile, isLoading: profileLoading } = useQuery({
     queryKey: ["profile", userId],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -74,7 +77,7 @@ const UserProfile = () => {
   });
 
   // Fetch user's posts
-  const { data: posts } = useQuery({
+  const { data: posts, isLoading: postsLoading } = useQuery({
     queryKey: ["user-posts", userId],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -123,7 +126,6 @@ const UserProfile = () => {
 
   const unfriend = useMutation({
     mutationFn: async () => {
-      // Delete both directions of friendship
       const { error: error1 } = await supabase
         .from("friendships")
         .delete()
@@ -158,6 +160,26 @@ const UserProfile = () => {
     return null;
   }
 
+  // Loading skeleton
+  if (profileLoading) {
+    return (
+      <MainLayout>
+        <div className="max-w-screen-xl mx-auto px-4 py-6">
+          <div className="bg-card rounded-lg p-6 mb-6">
+            <div className="flex flex-col md:flex-row gap-6 items-start md:items-center">
+              <Skeleton className="h-24 w-24 rounded-full" />
+              <div className="flex-1 space-y-2">
+                <Skeleton className="h-8 w-48" />
+                <Skeleton className="h-4 w-32" />
+                <Skeleton className="h-16 w-full max-w-md" />
+              </div>
+            </div>
+          </div>
+        </div>
+      </MainLayout>
+    );
+  }
+
   return (
     <MainLayout>
       <div className="max-w-screen-xl mx-auto px-4 py-6">
@@ -172,10 +194,13 @@ const UserProfile = () => {
             </Avatar>
             
             <div className="flex-1">
-              <h1 className="text-2xl font-bold flex items-center gap-2">
-                {profile?.display_name || profile?.username}
-                {profile?.is_verified && <VerifiedBadge size="lg" />}
-              </h1>
+              <div className="flex items-center gap-2 flex-wrap">
+                <h1 className="text-2xl font-bold flex items-center gap-2">
+                  {profile?.display_name || profile?.username}
+                  {profile?.is_verified && <VerifiedBadge size="lg" />}
+                </h1>
+                {userId && <UserRolesDisplay userId={userId} size="md" />}
+              </div>
               <p className="text-muted-foreground">@{profile?.username}</p>
               {profile?.bio && (
                 <p className="mt-2 text-sm">{profile.bio}</p>
@@ -197,7 +222,7 @@ const UserProfile = () => {
               </div>
             </div>
 
-            <div className="flex gap-2">
+            <div className="flex items-center gap-2">
               {friendship ? (
                 <>
                   <Button onClick={handleMessage}>
@@ -210,18 +235,29 @@ const UserProfile = () => {
                   </Button>
                 </>
               ) : pendingRequest ? (
-                <Button disabled>Request Sent</Button>
+                <Button disabled variant="secondary">
+                  <Clock className="h-4 w-4 mr-2" />
+                  Request Sent
+                </Button>
               ) : (
                 <Button onClick={() => sendFriendRequest.mutate()}>
                   <UserPlus className="h-4 w-4 mr-2" />
                   Add Friend
                 </Button>
               )}
+              
+              {profile && (
+                <ProfileActionsMenu
+                  userId={userId!}
+                  username={profile.username}
+                  onMessageClick={handleMessage}
+                />
+              )}
             </div>
           </div>
         </div>
 
-        {/* About Section - Publicly Visible */}
+        {/* About Section */}
         <div className="mb-6">
           <ProfileAboutSection
             bio={profile?.bio}
@@ -234,7 +270,7 @@ const UserProfile = () => {
           />
         </div>
 
-        {/* Creations Section - Publicly Visible */}
+        {/* Creations Section */}
         <div className="mb-6">
           <ProfileCreations
             creations={creations}
@@ -251,48 +287,58 @@ const UserProfile = () => {
           </TabsList>
           
           <TabsContent value="posts" className="space-y-4 mt-4">
-            {regularPosts.map((post) => (
-              <PostCard 
-                key={post.id}
-                id={post.id}
-                author={{
-                  name: post.profiles.display_name || post.profiles.username,
-                  avatar: post.profiles.avatar_url || "",
-                  username: post.profiles.username,
-                }}
-                content={post.caption || ""}
-                image={post.media_type === "image" ? post.media_url || "" : undefined}
-                video={post.media_type === "video" ? post.media_url || "" : undefined}
-                likes={post.likes_count || 0}
-                comments={post.comments_count || 0}
-                timestamp={post.created_at}
-              />
-            ))}
-            {regularPosts.length === 0 && (
+            {postsLoading ? (
+              Array.from({ length: 3 }).map((_, i) => (
+                <Skeleton key={i} className="h-64 w-full rounded-lg" />
+              ))
+            ) : regularPosts.length === 0 ? (
               <p className="text-center text-muted-foreground py-8">No posts yet</p>
+            ) : (
+              regularPosts.map((post) => (
+                <PostCard 
+                  key={post.id}
+                  id={post.id}
+                  author={{
+                    name: post.profiles.display_name || post.profiles.username,
+                    avatar: post.profiles.avatar_url || "",
+                    username: post.profiles.username,
+                  }}
+                  content={post.caption || ""}
+                  image={post.media_type === "image" ? post.media_url || "" : undefined}
+                  video={post.media_type === "video" ? post.media_url || "" : undefined}
+                  likes={post.likes_count || 0}
+                  comments={post.comments_count || 0}
+                  timestamp={post.created_at}
+                />
+              ))
             )}
           </TabsContent>
           
           <TabsContent value="reels" className="space-y-4 mt-4">
-            {reelPosts.map((post) => (
-              <PostCard 
-                key={post.id}
-                id={post.id}
-                author={{
-                  name: post.profiles.display_name || post.profiles.username,
-                  avatar: post.profiles.avatar_url || "",
-                  username: post.profiles.username,
-                }}
-                content={post.caption || ""}
-                image={post.media_type === "image" ? post.media_url || "" : undefined}
-                video={post.media_type === "video" ? post.media_url || "" : undefined}
-                likes={post.likes_count || 0}
-                comments={post.comments_count || 0}
-                timestamp={post.created_at}
-              />
-            ))}
-            {reelPosts.length === 0 && (
+            {postsLoading ? (
+              Array.from({ length: 3 }).map((_, i) => (
+                <Skeleton key={i} className="h-64 w-full rounded-lg" />
+              ))
+            ) : reelPosts.length === 0 ? (
               <p className="text-center text-muted-foreground py-8">No reels yet</p>
+            ) : (
+              reelPosts.map((post) => (
+                <PostCard 
+                  key={post.id}
+                  id={post.id}
+                  author={{
+                    name: post.profiles.display_name || post.profiles.username,
+                    avatar: post.profiles.avatar_url || "",
+                    username: post.profiles.username,
+                  }}
+                  content={post.caption || ""}
+                  image={post.media_type === "image" ? post.media_url || "" : undefined}
+                  video={post.media_type === "video" ? post.media_url || "" : undefined}
+                  likes={post.likes_count || 0}
+                  comments={post.comments_count || 0}
+                  timestamp={post.created_at}
+                />
+              ))
             )}
           </TabsContent>
         </Tabs>
