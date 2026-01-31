@@ -13,6 +13,8 @@ import {
   listenToIceCandidates,
 } from "@/services/callingService";
 
+export type CallStatus = "idle" | "calling" | "ringing" | "connecting" | "connected" | "ended" | "failed" | "busy" | "offline";
+
 export const useWebRTC = () => {
   const { user } = useAuth();
   const [localStream, setLocalStream] = useState<MediaStream | null>(null);
@@ -22,6 +24,7 @@ export const useWebRTC = () => {
   const [callDuration, setCallDuration] = useState(0);
   const [isConnecting, setIsConnecting] = useState(false);
   const [connectionState, setConnectionState] = useState<RTCPeerConnectionState | null>(null);
+  const [callStatus, setCallStatus] = useState<CallStatus>("idle");
 
   const peerConnectionRef = useRef<RTCPeerConnection | null>(null);
   const localStreamRef = useRef<MediaStream | null>(null);
@@ -29,6 +32,42 @@ export const useWebRTC = () => {
   const callStartTimeRef = useRef<number | null>(null);
   const pendingCandidatesRef = useRef<RTCIceCandidateInit[]>([]);
   const callIdRef = useRef<string | null>(null);
+  const unsubscribeCallRef = useRef<(() => void) | null>(null);
+  const unsubscribeCandidatesRef = useRef<(() => void) | null>(null);
+
+  // Update call status based on currentCall and connectionState
+  useEffect(() => {
+    if (!currentCall) {
+      setCallStatus("idle");
+      return;
+    }
+
+    if (currentCall.status === "busy") {
+      setCallStatus("busy");
+    } else if (currentCall.status === "rejected") {
+      setCallStatus("ended");
+    } else if (currentCall.status === "ended") {
+      setCallStatus("ended");
+    } else if (currentCall.status === "ringing") {
+      // For caller, show "Calling..." not "Ringing..."
+      const isCaller = currentCall.callerId === user?.id;
+      setCallStatus(isCaller ? "calling" : "ringing");
+    } else if (currentCall.status === "accepted") {
+      if (connectionState === "connected") {
+        setCallStatus("connected");
+      } else if (connectionState === "connecting" || isConnecting) {
+        setCallStatus("connecting");
+      } else if (connectionState === "failed" || connectionState === "disconnected") {
+        setCallStatus("failed");
+      } else {
+        setCallStatus("connecting");
+      }
+    } else if (isConnecting) {
+      setCallStatus("calling");
+    } else {
+      setCallStatus("calling");
+    }
+  }, [currentCall, connectionState, isConnecting, user?.id]);
 
   // Listen for incoming calls
   useEffect(() => {
@@ -180,7 +219,7 @@ export const useWebRTC = () => {
     }
   }, []);
 
-  // Start a call
+  // Start a call - CALLER SIDE
   const initiateCall = useCallback(
     async (receiverId: string, type: "audio" | "video") => {
       if (!user?.id) return;
@@ -209,7 +248,7 @@ export const useWebRTC = () => {
         const callId = await startCall(user.id, receiverId, type, offer);
         callIdRef.current = callId;
         
-        // Immediately set currentCall so UI shows for caller
+        // IMMEDIATELY set currentCall so UI shows for caller
         const newCall: Call = {
           id: callId,
           callerId: user.id,
@@ -221,26 +260,27 @@ export const useWebRTC = () => {
         };
         
         setCurrentCall(newCall);
-        console.log("[WebRTC] Call initiated, waiting for answer...");
+        setCallStatus("calling"); // Caller sees "Calling..."
+        console.log("[WebRTC] Call initiated, caller UI should now be visible");
 
         // Listen for call status updates (answer, rejected, ended)
-        const unsubscribeCall = listenToCallUpdates(callId, async (call) => {
+        unsubscribeCallRef.current = listenToCallUpdates(callId, async (call) => {
           if (!call) {
             console.log("[WebRTC] Call no longer exists");
             cleanup();
             return;
           }
           
+          console.log("[WebRTC] Call update received:", call.status);
+          
           // Update currentCall with latest status
-          setCurrentCall(prev => prev ? { ...prev, status: call.status } : null);
+          setCurrentCall(prev => prev ? { ...prev, status: call.status, answer: call.answer } : null);
           
           if (call.answer && pc.signalingState === "have-local-offer") {
             console.log("[WebRTC] Received answer, setting remote description");
             try {
               await pc.setRemoteDescription(new RTCSessionDescription(call.answer));
               await processPendingCandidates(pc);
-              // Update status to accepted
-              setCurrentCall(prev => prev ? { ...prev, status: "accepted" } : null);
             } catch (err) {
               console.error("[WebRTC] Error setting remote description:", err);
             }
@@ -248,18 +288,21 @@ export const useWebRTC = () => {
           
           if (call.status === "rejected") {
             console.log("[WebRTC] Call was rejected");
-            cleanup();
+            setCallStatus("ended");
+            setTimeout(() => cleanup(), 2000);
           } else if (call.status === "ended") {
             console.log("[WebRTC] Call ended by other party");
-            cleanup();
+            setCallStatus("ended");
+            setTimeout(() => cleanup(), 1000);
           } else if (call.status === "busy") {
             console.log("[WebRTC] User is busy");
-            cleanup();
+            setCallStatus("busy");
+            setTimeout(() => cleanup(), 2000);
           }
         });
 
         // Listen for ICE candidates from receiver
-        const unsubscribeCandidates = listenToIceCandidates(callId, receiverId, async (candidate) => {
+        unsubscribeCandidatesRef.current = listenToIceCandidates(callId, receiverId, async (candidate) => {
           if (pc.remoteDescription) {
             console.log("[WebRTC] Adding remote ICE candidate");
             try {
@@ -276,14 +319,15 @@ export const useWebRTC = () => {
       } catch (error) {
         console.error("[WebRTC] Failed to start call:", error);
         setIsConnecting(false);
-        cleanup();
+        setCallStatus("failed");
+        setTimeout(() => cleanup(), 2000);
         throw error;
       }
     },
     [user?.id, initializePeerConnection, processPendingCandidates]
   );
 
-  // Accept incoming call
+  // Accept incoming call - RECEIVER SIDE
   const answerCall = useCallback(async () => {
     if (!incomingCall?.id || !user?.id) return;
 
@@ -291,9 +335,10 @@ export const useWebRTC = () => {
     pendingCandidatesRef.current = [];
 
     try {
+      // Request media permissions and initialize peer connection
       const pc = await initializePeerConnection(incomingCall.type, incomingCall.id);
 
-      // Set remote description (offer)
+      // Set remote description (offer) from caller
       if (incomingCall.offer) {
         console.log("[WebRTC] Setting remote description (offer)");
         await pc.setRemoteDescription(new RTCSessionDescription(incomingCall.offer));
@@ -301,20 +346,39 @@ export const useWebRTC = () => {
       }
 
       // Create answer
-      const answerOptions: RTCAnswerOptions = {};
-      const answer = await pc.createAnswer(answerOptions);
+      const answer = await pc.createAnswer();
       console.log("[WebRTC] Created answer");
       
       await pc.setLocalDescription(answer);
       console.log("[WebRTC] Set local description (answer)");
 
+      // Send answer to Firebase
       await acceptCall(incomingCall.id, answer);
 
+      // Set current call and clear incoming call
       setCurrentCall({ ...incomingCall, status: "accepted" });
       setIncomingCall(null);
+      setCallStatus("connecting");
+
+      // Listen for call updates
+      unsubscribeCallRef.current = listenToCallUpdates(incomingCall.id, async (call) => {
+        if (!call) {
+          console.log("[WebRTC] Call no longer exists");
+          cleanup();
+          return;
+        }
+        
+        setCurrentCall(prev => prev ? { ...prev, status: call.status } : null);
+        
+        if (call.status === "ended") {
+          console.log("[WebRTC] Call ended by caller");
+          setCallStatus("ended");
+          setTimeout(() => cleanup(), 1000);
+        }
+      });
 
       // Listen for ICE candidates from caller
-      listenToIceCandidates(incomingCall.id, incomingCall.callerId, async (candidate) => {
+      unsubscribeCandidatesRef.current = listenToIceCandidates(incomingCall.id, incomingCall.callerId, async (candidate) => {
         if (pc.remoteDescription) {
           console.log("[WebRTC] Adding remote ICE candidate from caller");
           try {
@@ -330,6 +394,7 @@ export const useWebRTC = () => {
     } catch (error) {
       console.error("[WebRTC] Failed to answer call:", error);
       setIsConnecting(false);
+      setCallStatus("failed");
       cleanup();
     }
   }, [incomingCall, user?.id, initializePeerConnection, processPendingCandidates]);
@@ -351,7 +416,8 @@ export const useWebRTC = () => {
       : 0;
 
     await endCall(currentCall.id, duration);
-    cleanup();
+    setCallStatus("ended");
+    setTimeout(() => cleanup(), 1000);
   }, [currentCall?.id]);
 
   // Toggle audio
@@ -398,6 +464,16 @@ export const useWebRTC = () => {
   const cleanup = useCallback(() => {
     console.log("[WebRTC] Cleaning up...");
     
+    // Unsubscribe from listeners
+    if (unsubscribeCallRef.current) {
+      unsubscribeCallRef.current();
+      unsubscribeCallRef.current = null;
+    }
+    if (unsubscribeCandidatesRef.current) {
+      unsubscribeCandidatesRef.current();
+      unsubscribeCandidatesRef.current = null;
+    }
+    
     // Stop all local tracks
     if (localStreamRef.current) {
       localStreamRef.current.getTracks().forEach((track) => {
@@ -426,6 +502,7 @@ export const useWebRTC = () => {
     setCallDuration(0);
     setIsConnecting(false);
     setConnectionState(null);
+    setCallStatus("idle");
     callStartTimeRef.current = null;
     peerConnectionRef.current = null;
     localStreamRef.current = null;
@@ -441,6 +518,7 @@ export const useWebRTC = () => {
     callDuration,
     isConnecting,
     connectionState,
+    callStatus,
     initiateCall,
     answerCall,
     declineCall,
