@@ -1,5 +1,5 @@
 // Prangon App Version
-export const APP_VERSION = "1.4.0";
+export const APP_VERSION = "1.5.0";
 export const APP_NAME = "Prangon";
 export const COPYRIGHT_YEAR = new Date().getFullYear();
 

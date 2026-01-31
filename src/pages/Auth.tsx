@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -10,7 +10,8 @@ import { z } from "zod";
 import { motion, AnimatePresence } from "framer-motion";
 import { Eye, EyeOff, Mail, Lock, User, Sparkles, Calendar, Shield, ArrowLeft, ArrowRight, CheckCircle } from "lucide-react";
 import { GoogleAuthButton } from "@/components/auth/GoogleAuthButton";
-import { PhoneAuthButton } from "@/components/auth/PhoneAuthButton";
+import { SupabasePhoneAuth } from "@/components/auth/SupabasePhoneAuth";
+import { ForgotPasswordDialog } from "@/components/auth/ForgotPasswordDialog";
 import prangonLogo from "@/assets/prangon-logo.png";
 import { Progress } from "@/components/ui/progress";
 
@@ -49,6 +50,7 @@ type SignupStep = "auth" | "identity" | "profile" | "complete";
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [signupStep, setSignupStep] = useState<SignupStep>("auth");
+  const [searchParams] = useSearchParams();
   
   // Auth step data
   const [email, setEmail] = useState("");
@@ -65,6 +67,7 @@ const Auth = () => {
   
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
   const navigate = useNavigate();
   const { user } = useAuth();
 
@@ -73,6 +76,16 @@ const Auth = () => {
       navigate("/", { replace: true });
     }
   }, [user, navigate]);
+
+  // Handle password reset redirect
+  useEffect(() => {
+    if (searchParams.get("reset") === "true") {
+      toast({
+        title: "Password Reset",
+        description: "You can now set a new password after logging in.",
+      });
+    }
+  }, [searchParams]);
 
   const getStepProgress = () => {
     switch (signupStep) {
@@ -137,10 +150,12 @@ const Auth = () => {
     }
   };
 
-  const handlePhoneAuthSuccess = async (firebaseUser: any, phone: string) => {
+  const handlePhoneAuthSuccess = async (phone: string) => {
     setPhoneNumber(phone);
     setAuthMethod("phone");
-    setSignupStep("identity");
+    // For phone auth via Supabase, user is already authenticated
+    // Navigate to home or check if profile needs completion
+    navigate("/");
   };
 
   const handleIdentitySubmit = async (e: React.FormEvent) => {
@@ -204,28 +219,6 @@ const Auth = () => {
         if (error) throw error;
 
         setSignupStep("complete");
-      } else if (authMethod === "phone") {
-        // For phone auth, we need to link with Supabase
-        // Create a profile entry directly since Firebase handles auth
-        const { error } = await supabase.auth.signUp({
-          email: `${username}@prangon.phone`,
-          password: crypto.randomUUID(),
-          options: {
-            data: {
-              username,
-              display_name: displayName,
-              date_of_birth: dateOfBirth,
-              phone_number: phoneNumber,
-              auth_provider: "phone",
-            },
-          },
-        });
-
-        if (error && !error.message.includes("already registered")) {
-          throw error;
-        }
-
-        setSignupStep("complete");
       }
     } catch (error: any) {
       if (error instanceof z.ZodError) {
@@ -278,14 +271,12 @@ const Auth = () => {
           animate={{ opacity: 1, scale: 1 }}
           className="text-center max-w-md"
         >
-          <div className="w-20 h-20 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
-            <CheckCircle className="w-10 h-10 text-green-500" />
+          <div className="w-20 h-20 bg-primary/20 rounded-full flex items-center justify-center mx-auto mb-6">
+            <CheckCircle className="w-10 h-10 text-primary" />
           </div>
           <h1 className="text-2xl font-bold mb-2">Account Created!</h1>
           <p className="text-muted-foreground mb-6">
-            {authMethod === "email" 
-              ? "Please check your email to verify your account."
-              : "Your account has been created successfully."}
+            Please check your email to verify your account.
           </p>
           <Button onClick={resetForm} className="w-full">
             Back to Login
@@ -390,7 +381,16 @@ const Auth = () => {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="password">Password</Label>
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="password">Password</Label>
+                      <button
+                        type="button"
+                        onClick={() => setShowForgotPassword(true)}
+                        className="text-xs text-primary hover:underline"
+                      >
+                        Forgot password?
+                      </button>
+                    </div>
                     <div className="relative">
                       <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground/50" />
                       <Input
@@ -425,6 +425,12 @@ const Auth = () => {
                     </div>
                   </div>
 
+                  <SupabasePhoneAuth 
+                    onSuccess={handlePhoneAuthSuccess}
+                    mode="login"
+                    className="w-full"
+                  />
+                  
                   <GoogleAuthButton mode="login" className="h-12 rounded-xl" />
                 </motion.form>
               )}
@@ -489,8 +495,9 @@ const Auth = () => {
                     </div>
                   </div>
 
-                  <PhoneAuthButton 
+                  <SupabasePhoneAuth 
                     onSuccess={handlePhoneAuthSuccess}
+                    mode="signup"
                     className="w-full"
                   />
                   
@@ -598,7 +605,6 @@ const Auth = () => {
                 <button
                   type="button"
                   onClick={() => {
-                    setIsLogin(!isLogin);
                     resetForm();
                     setIsLogin(!isLogin);
                   }}
@@ -614,7 +620,16 @@ const Auth = () => {
         <p className="text-center text-xs text-muted-foreground mt-6">
           By continuing, you agree to our Terms of Service and Privacy Policy
         </p>
+        
+        <p className="text-center text-xs text-muted-foreground mt-2">
+          Need help? Contact <a href="mailto:service.prangon@outlook.com" className="text-primary hover:underline">service.prangon@outlook.com</a>
+        </p>
       </motion.div>
+
+      <ForgotPasswordDialog
+        open={showForgotPassword}
+        onOpenChange={setShowForgotPassword}
+      />
     </div>
   );
 };
