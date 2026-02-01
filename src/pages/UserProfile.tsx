@@ -8,12 +8,13 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
-import { UserCircle, MessageCircle, UserPlus, UserMinus, Check, Clock } from "lucide-react";
+import { UserCircle, MessageCircle, UserPlus, UserMinus, Clock } from "lucide-react";
 import { PostCard } from "@/components/home/PostCard";
 import { ProfileAboutSection } from "@/components/profile/ProfileAboutSection";
 import { ProfileCreations } from "@/components/profile/ProfileCreations";
 import { ProfileActionsMenu } from "@/components/profile/ProfileActionsMenu";
 import { UserRolesDisplay } from "@/components/profile/UserRolesDisplay";
+import { CoverPhotoUploader } from "@/components/profile/CoverPhotoUploader";
 import { toast } from "@/hooks/use-toast";
 import { useConversations } from "@/hooks/useConversations";
 import { VerifiedBadge } from "@/components/ui/VerifiedBadge";
@@ -182,7 +183,15 @@ const UserProfile = () => {
 
   return (
     <MainLayout>
-      <div className="max-w-screen-xl mx-auto px-4 py-6">
+      <div className="max-w-screen-xl mx-auto">
+        {/* Cover Photo - View Only for other users */}
+        <CoverPhotoUploader
+          userId={userId!}
+          currentCoverUrl={(profile as any)?.cover_photo_url}
+          isOwner={false}
+        />
+
+        <div className="px-4 py-6 -mt-12 relative z-10">
         {/* Profile Header */}
         <div className="bg-card rounded-lg p-6 mb-6">
           <div className="flex flex-col md:flex-row gap-6 items-start md:items-center">
@@ -342,6 +351,7 @@ const UserProfile = () => {
             )}
           </TabsContent>
         </Tabs>
+        </div>
       </div>
     </MainLayout>
   );
