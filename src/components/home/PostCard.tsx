@@ -149,19 +149,19 @@ export const PostCard = ({ id, author, content, image, video, mediaItems, likes,
 
   return (
     <>
-      <Card className="border-0 shadow-sm hover:shadow-md mb-4 overflow-hidden animate-fade-in transition-shadow duration-300 rounded-2xl bg-card">
+      <Card className="border-0 shadow-sm hover:shadow-md mb-4 overflow-hidden animate-fade-in transition-all duration-300 rounded-2xl bg-card">
         <CardContent className="p-0">
           {/* Post Header */}
           <div className="flex items-center justify-between p-4">
             <div 
-              className="flex items-center gap-3 cursor-pointer"
+              className="flex items-center gap-3 cursor-pointer group"
               onClick={handleProfileClick}
             >
               <div className="relative">
                 <div className="p-[2px] rounded-full bg-gradient-to-br from-primary via-primary/80 to-primary/60">
-                  <Avatar className="h-10 w-10 border-2 border-background">
+                  <Avatar className="h-10 w-10 border-2 border-background transition-transform group-hover:scale-105">
                     <AvatarImage src={author.avatar || undefined} alt={author.name} />
-                    <AvatarFallback className="bg-primary/10 text-primary">
+                    <AvatarFallback className="bg-muted text-muted-foreground">
                       <UserCircle className="h-6 w-6" />
                     </AvatarFallback>
                   </Avatar>
@@ -169,7 +169,7 @@ export const PostCard = ({ id, author, content, image, video, mediaItems, likes,
               </div>
               <div>
                 <div className="flex items-center gap-1.5">
-                  <p className="font-semibold text-sm hover:text-primary transition-colors leading-tight flex items-center gap-1">
+                  <p className="font-semibold text-sm text-foreground group-hover:text-primary transition-colors leading-tight flex items-center gap-1">
                     {author.name}
                     {author.isVerified && <VerifiedBadge size="sm" />}
                   </p>
@@ -195,7 +195,7 @@ export const PostCard = ({ id, author, content, image, video, mediaItems, likes,
 
           {/* Post Content - with content protection */}
           {content && (
-            <p className="text-sm px-4 pb-3 leading-relaxed select-none pointer-events-none">{content}</p>
+            <p className="text-sm px-4 pb-3 leading-relaxed text-foreground select-none pointer-events-none">{content}</p>
           )}
 
           {/* Post Media - Multi-media carousel or single media */}
