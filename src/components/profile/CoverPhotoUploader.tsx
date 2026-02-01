@@ -136,12 +136,15 @@ export const CoverPhotoUploader = ({
           variant="secondary"
           size="sm"
           className={cn(
-            "absolute bottom-3 right-3 gap-1.5 rounded-full",
+            "absolute bottom-3 right-3 gap-1.5 rounded-full z-20",
             "bg-background/80 backdrop-blur-sm shadow-lg",
             "hover:bg-background/90 transition-all",
             "text-xs font-medium"
           )}
-          onClick={() => fileInputRef.current?.click()}
+          onClick={(e) => {
+            e.stopPropagation();
+            fileInputRef.current?.click();
+          }}
         >
           <Camera className="h-3.5 w-3.5" />
           <span className="hidden sm:inline">Edit Cover</span>
@@ -152,6 +155,7 @@ export const CoverPhotoUploader = ({
         ref={fileInputRef}
         type="file"
         accept="image/*"
+        capture="environment"
         className="hidden"
         onChange={handleFileSelect}
       />
