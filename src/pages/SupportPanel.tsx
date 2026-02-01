@@ -472,7 +472,7 @@ const SupportPanel = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="h-[200px] flex items-center justify-center">
+              <ChartContainer config={chartConfig} className="h-[200px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie
@@ -491,7 +491,7 @@ const SupportPanel = () => {
                     <ChartTooltip content={<ChartTooltipContent />} />
                   </PieChart>
                 </ResponsiveContainer>
-              </div>
+              </ChartContainer>
               <div className="flex flex-wrap justify-center gap-3 mt-2">
                 {categoryData.map((item) => (
                   <div key={item.name} className="flex items-center gap-1">
