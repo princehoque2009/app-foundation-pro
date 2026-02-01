@@ -53,20 +53,24 @@ export const AvatarUploader = ({
       const processedBlob = await processImage(file);
       setUploadProgress(40);
 
-      // Upload to Supabase Storage
+      // Upload to Supabase Storage (avatars bucket, same pattern as cover photos)
       const fileExt = "jpg";
       const fileName = `avatar-${user?.id}-${Date.now()}.${fileExt}`;
 
       const { error: uploadError } = await supabase.storage
-        .from("post-media")
-        .upload(fileName, processedBlob);
+        .from("avatars")
+        .upload(fileName, processedBlob, {
+          cacheControl: "3600",
+          upsert: true,
+        });
 
       if (uploadError) throw uploadError;
       setUploadProgress(70);
 
-      const {
-        data: { publicUrl },
-      } = supabase.storage.from("post-media").getPublicUrl(fileName);
+      const { data: urlData } = supabase.storage
+        .from("avatars")
+        .getPublicUrl(fileName);
+      const publicUrl = urlData.publicUrl;
 
       // Update profile
       const { error: updateError } = await supabase
