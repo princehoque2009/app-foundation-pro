@@ -111,18 +111,7 @@ export const CoverPhotoUploader = ({
             />
           </motion.div>
         ) : (
-          <div className="absolute inset-0 flex items-center justify-center">
-            {isOwner && (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="text-center"
-              >
-                <ImagePlus className="h-10 w-10 text-muted-foreground/40 mx-auto mb-2" />
-                <p className="text-xs text-muted-foreground/60">Add cover photo</p>
-              </motion.div>
-            )}
-          </div>
+          <div className="absolute inset-0 bg-gradient-to-br from-muted to-muted/50" />
         )}
       </AnimatePresence>
 
