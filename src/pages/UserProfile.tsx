@@ -1,23 +1,21 @@
-import { useMemo } from "react";
+import { useState, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
-import { UserCircle, MessageCircle, UserPlus, UserMinus, Clock } from "lucide-react";
-import { PostCard } from "@/components/home/PostCard";
+import { MessageCircle, UserPlus, UserMinus, Clock } from "lucide-react";
 import { ProfileAboutSection } from "@/components/profile/ProfileAboutSection";
-import { ProfileCreations } from "@/components/profile/ProfileCreations";
-import { ProfileActionsMenu } from "@/components/profile/ProfileActionsMenu";
-import { UserRolesDisplay } from "@/components/profile/UserRolesDisplay";
-import { CoverPhotoUploader } from "@/components/profile/CoverPhotoUploader";
+import { ProfileActionsDropdown } from "@/components/profile/ProfileActionsDropdown";
+import { ProfileHeader } from "@/components/profile/ProfileHeader";
+import { ProfileTabs } from "@/components/profile/ProfileTabs";
+import { ProfileContentGrid } from "@/components/profile/ProfileContentGrid";
+import { PostCard } from "@/components/home/PostCard";
 import { toast } from "@/hooks/use-toast";
 import { useConversations } from "@/hooks/useConversations";
-import { VerifiedBadge } from "@/components/ui/VerifiedBadge";
+import { motion, AnimatePresence } from "framer-motion";
 
 const UserProfile = () => {
   const { userId } = useParams();
@@ -25,6 +23,7 @@ const UserProfile = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { createConversation } = useConversations();
+  const [activeTab, setActiveTab] = useState("all");
 
   // Fetch profile
   const { data: profile, isLoading: profileLoading } = useQuery({
@@ -107,6 +106,13 @@ const UserProfile = () => {
 
   const regularPosts = posts?.filter(post => !post.is_reel) || [];
   const reelPosts = posts?.filter(post => post.is_reel) || [];
+  const mediaPosts = posts?.filter(post => post.media_url) || [];
+
+  const tabs = [
+    { id: "all", label: "All", count: posts?.length || 0 },
+    { id: "media", label: "Media", count: mediaPosts.length },
+    { id: "reels", label: "Reels", count: reelPosts.length },
+  ];
 
   const sendFriendRequest = useMutation({
     mutationFn: async () => {
@@ -165,14 +171,14 @@ const UserProfile = () => {
   if (profileLoading) {
     return (
       <MainLayout>
-        <div className="max-w-screen-xl mx-auto px-4 py-6">
-          <div className="bg-card rounded-lg p-6 mb-6">
-            <div className="flex flex-col md:flex-row gap-6 items-start md:items-center">
-              <Skeleton className="h-24 w-24 rounded-full" />
-              <div className="flex-1 space-y-2">
-                <Skeleton className="h-8 w-48" />
+        <div className="max-w-screen-lg mx-auto">
+          <Skeleton className="h-48 w-full" />
+          <div className="px-4 py-6">
+            <div className="flex gap-4 -mt-16">
+              <Skeleton className="h-28 w-28 rounded-full" />
+              <div className="flex-1 pt-20 space-y-2">
+                <Skeleton className="h-6 w-48" />
                 <Skeleton className="h-4 w-32" />
-                <Skeleton className="h-16 w-full max-w-md" />
               </div>
             </div>
           </div>
@@ -183,91 +189,59 @@ const UserProfile = () => {
 
   return (
     <MainLayout>
-      <div className="max-w-screen-xl mx-auto">
-        {/* Cover Photo - View Only for other users */}
-        <CoverPhotoUploader
+      <div className="max-w-screen-lg mx-auto bg-background min-h-screen">
+        {/* Profile Header */}
+        <ProfileHeader
+          profile={profile}
           userId={userId!}
-          currentCoverUrl={(profile as any)?.cover_photo_url}
           isOwner={false}
+          postsCount={posts?.length || 0}
+          isLoading={profileLoading}
         />
 
-        <div className="px-4 py-6 -mt-12 relative z-10">
-        {/* Profile Header */}
-        <div className="bg-card rounded-lg p-6 mb-6">
-          <div className="flex flex-col md:flex-row gap-6 items-start md:items-center">
-            <Avatar className="h-24 w-24">
-              <AvatarImage src={profile?.avatar_url || ""} />
-              <AvatarFallback>
-                <UserCircle className="h-16 w-16" />
-              </AvatarFallback>
-            </Avatar>
-            
-            <div className="flex-1">
-              <div className="flex items-center gap-2 flex-wrap">
-                <h1 className="text-2xl font-bold flex items-center gap-2">
-                  {profile?.display_name || profile?.username}
-                  {profile?.is_verified && <VerifiedBadge size="lg" />}
-                </h1>
-                {userId && <UserRolesDisplay userId={userId} size="md" />}
-              </div>
-              <p className="text-muted-foreground">@{profile?.username}</p>
-              {profile?.bio && (
-                <p className="mt-2 text-sm">{profile.bio}</p>
-              )}
-              
-              <div className="flex gap-6 mt-4">
-                <div>
-                  <span className="font-bold">{posts?.length || 0}</span>
-                  <span className="text-muted-foreground ml-1">Posts</span>
-                </div>
-                <div>
-                  <span className="font-bold">{profile?.followers_count || 0}</span>
-                  <span className="text-muted-foreground ml-1">Followers</span>
-                </div>
-                <div>
-                  <span className="font-bold">{profile?.following_count || 0}</span>
-                  <span className="text-muted-foreground ml-1">Following</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2">
-              {friendship ? (
-                <>
-                  <Button onClick={handleMessage}>
-                    <MessageCircle className="h-4 w-4 mr-2" />
-                    Message
-                  </Button>
-                  <Button variant="outline" onClick={() => unfriend.mutate()}>
-                    <UserMinus className="h-4 w-4 mr-2" />
-                    Unfriend
-                  </Button>
-                </>
-              ) : pendingRequest ? (
-                <Button disabled variant="secondary">
-                  <Clock className="h-4 w-4 mr-2" />
-                  Request Sent
-                </Button>
-              ) : (
-                <Button onClick={() => sendFriendRequest.mutate()}>
-                  <UserPlus className="h-4 w-4 mr-2" />
-                  Add Friend
-                </Button>
-              )}
-              
-              {profile && (
-                <ProfileActionsMenu
-                  userId={userId!}
-                  username={profile.username}
-                  onMessageClick={handleMessage}
-                />
-              )}
-            </div>
-          </div>
+        {/* Action Buttons for Other Users */}
+        <div className="px-4 sm:px-6 pb-4 flex items-center gap-2 border-b border-border">
+          {friendship ? (
+            <>
+              <Button onClick={handleMessage} className="flex-1 rounded-full gap-2">
+                <MessageCircle className="h-4 w-4" />
+                Message
+              </Button>
+              <Button 
+                variant="outline" 
+                onClick={() => unfriend.mutate()}
+                className="rounded-full gap-2"
+              >
+                <UserMinus className="h-4 w-4" />
+                Unfriend
+              </Button>
+            </>
+          ) : pendingRequest ? (
+            <Button disabled variant="secondary" className="flex-1 rounded-full gap-2">
+              <Clock className="h-4 w-4" />
+              Request Sent
+            </Button>
+          ) : (
+            <Button 
+              onClick={() => sendFriendRequest.mutate()}
+              className="flex-1 rounded-full gap-2"
+            >
+              <UserPlus className="h-4 w-4" />
+              Add Friend
+            </Button>
+          )}
+          
+          {profile && (
+            <ProfileActionsDropdown
+              userId={userId!}
+              username={profile.username}
+              onMessageClick={handleMessage}
+            />
+          )}
         </div>
 
         {/* About Section */}
-        <div className="mb-6">
+        <div className="px-4 sm:px-6 py-4">
           <ProfileAboutSection
             bio={profile?.bio}
             dateOfBirth={profile?.date_of_birth}
@@ -279,79 +253,29 @@ const UserProfile = () => {
           />
         </div>
 
-        {/* Creations Section */}
-        <div className="mb-6">
-          <ProfileCreations
-            creations={creations}
-            totalPosts={regularPosts.length}
-            totalReels={reelPosts.length}
-          />
-        </div>
+        {/* Profile Tabs */}
+        <ProfileTabs
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
+          tabs={tabs}
+        />
 
-        {/* Posts Tabs */}
-        <Tabs defaultValue="posts" className="w-full">
-          <TabsList>
-            <TabsTrigger value="posts">Posts</TabsTrigger>
-            <TabsTrigger value="reels">Reels</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="posts" className="space-y-4 mt-4">
-            {postsLoading ? (
-              Array.from({ length: 3 }).map((_, i) => (
-                <Skeleton key={i} className="h-64 w-full rounded-lg" />
-              ))
-            ) : regularPosts.length === 0 ? (
-              <p className="text-center text-muted-foreground py-8">No posts yet</p>
-            ) : (
-              regularPosts.map((post) => (
-                <PostCard 
-                  key={post.id}
-                  id={post.id}
-                  author={{
-                    name: post.profiles.display_name || post.profiles.username,
-                    avatar: post.profiles.avatar_url || "",
-                    username: post.profiles.username,
-                  }}
-                  content={post.caption || ""}
-                  image={post.media_type === "image" ? post.media_url || "" : undefined}
-                  video={post.media_type === "video" ? post.media_url || "" : undefined}
-                  likes={post.likes_count || 0}
-                  comments={post.comments_count || 0}
-                  timestamp={post.created_at}
-                />
-              ))
-            )}
-          </TabsContent>
-          
-          <TabsContent value="reels" className="space-y-4 mt-4">
-            {postsLoading ? (
-              Array.from({ length: 3 }).map((_, i) => (
-                <Skeleton key={i} className="h-64 w-full rounded-lg" />
-              ))
-            ) : reelPosts.length === 0 ? (
-              <p className="text-center text-muted-foreground py-8">No reels yet</p>
-            ) : (
-              reelPosts.map((post) => (
-                <PostCard 
-                  key={post.id}
-                  id={post.id}
-                  author={{
-                    name: post.profiles.display_name || post.profiles.username,
-                    avatar: post.profiles.avatar_url || "",
-                    username: post.profiles.username,
-                  }}
-                  content={post.caption || ""}
-                  image={post.media_type === "image" ? post.media_url || "" : undefined}
-                  video={post.media_type === "video" ? post.media_url || "" : undefined}
-                  likes={post.likes_count || 0}
-                  comments={post.comments_count || 0}
-                  timestamp={post.created_at}
-                />
-              ))
-            )}
-          </TabsContent>
-        </Tabs>
-        </div>
+        {/* Content Grid */}
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={activeTab}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+          >
+            <ProfileContentGrid
+              items={creations}
+              activeTab={activeTab}
+              isLoading={postsLoading}
+            />
+          </motion.div>
+        </AnimatePresence>
       </div>
     </MainLayout>
   );

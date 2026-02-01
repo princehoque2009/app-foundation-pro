@@ -3,24 +3,23 @@ import { useQuery } from "@tanstack/react-query";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Settings, UserCircle } from "lucide-react";
 import { EditProfileDialog } from "@/components/profile/EditProfileDialog";
 import { ProfileAboutSection } from "@/components/profile/ProfileAboutSection";
 import { LiveInsights } from "@/components/profile/LiveInsights";
-import { ProfileCreations } from "@/components/profile/ProfileCreations";
+import { ProfileHeader } from "@/components/profile/ProfileHeader";
+import { ProfileTabs } from "@/components/profile/ProfileTabs";
+import { ProfileContentGrid } from "@/components/profile/ProfileContentGrid";
 import { PostCard } from "@/components/home/PostCard";
-import { VerifiedBadge } from "@/components/ui/VerifiedBadge";
-import { CoverPhotoUploader } from "@/components/profile/CoverPhotoUploader";
+import { motion, AnimatePresence } from "framer-motion";
 
 const Profile = () => {
   const { user } = useAuth();
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState("all");
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
 
   // Fetch profile
-  const { data: profile } = useQuery({
+  const { data: profile, isLoading: profileLoading } = useQuery({
     queryKey: ["profile", user?.id],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -36,7 +35,7 @@ const Profile = () => {
   });
 
   // Fetch user's posts
-  const { data: posts } = useQuery({
+  const { data: posts, isLoading: postsLoading } = useQuery({
     queryKey: ["user-posts", user?.id],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -56,7 +55,7 @@ const Profile = () => {
     return posts?.reduce((acc, post) => acc + (post.likes_count || 0), 0) || 0;
   }, [posts]);
 
-  // Transform posts into creations format
+  // Transform posts into creations format for grid view
   const creations = useMemo(() => {
     return posts?.map(post => ({
       id: post.id,
@@ -70,71 +69,40 @@ const Profile = () => {
 
   const regularPosts = posts?.filter(post => !post.is_reel) || [];
   const reelPosts = posts?.filter(post => post.is_reel) || [];
+  const mediaPosts = posts?.filter(post => post.media_url) || [];
+
+  const tabs = [
+    { id: "all", label: "All", count: posts?.length || 0 },
+    { id: "media", label: "Media", count: mediaPosts.length },
+    { id: "reels", label: "Reels", count: reelPosts.length },
+  ];
+
+  const getFilteredPosts = () => {
+    switch (activeTab) {
+      case "media":
+        return mediaPosts;
+      case "reels":
+        return reelPosts;
+      default:
+        return posts || [];
+    }
+  };
 
   return (
     <MainLayout>
-      <div className="max-w-screen-xl mx-auto">
-        {/* Cover Photo */}
-        {user?.id && (
-          <CoverPhotoUploader
-            userId={user.id}
-            currentCoverUrl={(profile as any)?.cover_photo_url}
-            isOwner={true}
-          />
-        )}
-
-        <div className="px-4 py-6 -mt-12 relative z-10">
-        {/* Profile Header */}
-        <div className="bg-card rounded-lg p-6 mb-6">
-          <div className="flex flex-col md:flex-row gap-6 items-start md:items-center">
-            <Avatar className="h-24 w-24">
-              <AvatarImage src={profile?.avatar_url || ""} />
-              <AvatarFallback>
-                <UserCircle className="h-16 w-16" />
-              </AvatarFallback>
-            </Avatar>
-            
-            <div className="flex-1">
-              <h1 className="text-2xl font-bold flex items-center gap-2">
-                {profile?.display_name || profile?.username}
-                {profile?.is_verified && <VerifiedBadge size="lg" />}
-              </h1>
-              <p className="text-muted-foreground">@{profile?.username}</p>
-              {profile?.bio && (
-                <p className="mt-2 text-sm">{profile.bio}</p>
-              )}
-              
-              <div className="flex gap-6 mt-4">
-                <div>
-                  <span className="font-bold">{posts?.length || 0}</span>
-                  <span className="text-muted-foreground ml-1">Posts</span>
-                </div>
-                <div>
-                  <span className="font-bold">{profile?.followers_count || 0}</span>
-                  <span className="text-muted-foreground ml-1">Followers</span>
-                </div>
-                <div>
-                  <span className="font-bold">{profile?.following_count || 0}</span>
-                  <span className="text-muted-foreground ml-1">Following</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex gap-2">
-              <Button onClick={() => setIsEditDialogOpen(true)}>
-                Edit Profile
-              </Button>
-              <Button variant="outline" asChild>
-                <a href="/settings">
-                  <Settings className="h-4 w-4" />
-                </a>
-              </Button>
-            </div>
-          </div>
-        </div>
+      <div className="max-w-screen-lg mx-auto bg-background min-h-screen">
+        {/* Profile Header with Hero/Identity/Action Layers */}
+        <ProfileHeader
+          profile={profile}
+          userId={user?.id || ""}
+          isOwner={true}
+          postsCount={posts?.length || 0}
+          onEditClick={() => setIsEditDialogOpen(true)}
+          isLoading={profileLoading}
+        />
 
         {/* Live Insights - Private, Owner Only */}
-        <div className="mb-6">
+        <div className="px-4 sm:px-6 py-4">
           <LiveInsights
             profileViews={Math.floor(Math.random() * 500) + 50}
             profileViewsChange={Math.floor(Math.random() * 40) - 10}
@@ -148,7 +116,7 @@ const Profile = () => {
         </div>
 
         {/* About Section - Publicly Visible */}
-        <div className="mb-6">
+        <div className="px-4 sm:px-6 pb-4">
           <ProfileAboutSection
             bio={profile?.bio}
             dateOfBirth={profile?.date_of_birth}
@@ -160,76 +128,60 @@ const Profile = () => {
           />
         </div>
 
-        {/* Creations Section */}
-        <div className="mb-6">
-          <ProfileCreations
-            creations={creations}
-            totalPosts={regularPosts.length}
-            totalReels={reelPosts.length}
-          />
-        </div>
+        {/* Profile Tabs */}
+        <ProfileTabs
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
+          tabs={tabs}
+        />
 
-        {/* Posts Tabs */}
-        <Tabs defaultValue="posts" className="w-full">
-          <TabsList>
-            <TabsTrigger value="posts">Posts</TabsTrigger>
-            <TabsTrigger value="reels">Reels</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="posts" className="space-y-4 mt-4">
-            {regularPosts.map((post) => (
-              <PostCard 
-                key={post.id}
-                id={post.id}
-                author={{
-                  name: post.profiles.display_name || post.profiles.username,
-                  avatar: post.profiles.avatar_url || "",
-                  username: post.profiles.username,
-                }}
-                content={post.caption || ""}
-                image={post.media_type === "image" ? post.media_url || "" : undefined}
-                video={post.media_type === "video" ? post.media_url || "" : undefined}
-                likes={post.likes_count || 0}
-                comments={post.comments_count || 0}
-                timestamp={post.created_at}
+        {/* Content Area */}
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={activeTab}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+          >
+            {viewMode === "grid" ? (
+              <ProfileContentGrid
+                items={creations}
+                activeTab={activeTab}
+                isLoading={postsLoading}
               />
-            ))}
-            {regularPosts.length === 0 && (
-              <p className="text-center text-muted-foreground py-8">No posts yet</p>
+            ) : (
+              <div className="space-y-4 p-4">
+                {getFilteredPosts().map((post) => (
+                  <PostCard
+                    key={post.id}
+                    id={post.id}
+                    author={{
+                      name: post.profiles.display_name || post.profiles.username,
+                      avatar: post.profiles.avatar_url || "",
+                      username: post.profiles.username,
+                    }}
+                    content={post.caption || ""}
+                    image={post.media_type === "image" ? post.media_url || "" : undefined}
+                    video={post.media_type === "video" ? post.media_url || "" : undefined}
+                    likes={post.likes_count || 0}
+                    comments={post.comments_count || 0}
+                    timestamp={post.created_at}
+                  />
+                ))}
+                {getFilteredPosts().length === 0 && (
+                  <p className="text-center text-muted-foreground py-8">No content yet</p>
+                )}
+              </div>
             )}
-          </TabsContent>
-          
-          <TabsContent value="reels" className="space-y-4 mt-4">
-            {reelPosts.map((post) => (
-              <PostCard 
-                key={post.id}
-                id={post.id}
-                author={{
-                  name: post.profiles.display_name || post.profiles.username,
-                  avatar: post.profiles.avatar_url || "",
-                  username: post.profiles.username,
-                }}
-                content={post.caption || ""}
-                image={post.media_type === "image" ? post.media_url || "" : undefined}
-                video={post.media_type === "video" ? post.media_url || "" : undefined}
-                likes={post.likes_count || 0}
-                comments={post.comments_count || 0}
-                timestamp={post.created_at}
-              />
-            ))}
-            {reelPosts.length === 0 && (
-              <p className="text-center text-muted-foreground py-8">No reels yet</p>
-            )}
-          </TabsContent>
-          
-        </Tabs>
+          </motion.div>
+        </AnimatePresence>
 
         <EditProfileDialog 
           profile={profile}
           open={isEditDialogOpen}
           onOpenChange={setIsEditDialogOpen}
         />
-        </div>
       </div>
     </MainLayout>
   );

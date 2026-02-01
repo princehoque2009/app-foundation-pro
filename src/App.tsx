@@ -34,6 +34,10 @@ import Favourites from "./pages/Favourites";
 import SupportPanel from "./pages/SupportPanel";
 import ModeratorPanel from "./pages/ModeratorPanel";
 import AdvisorPanel from "./pages/AdvisorPanel";
+import About from "./pages/About";
+import CommunityStandards from "./pages/CommunityStandards";
+import CookiesPolicy from "./pages/CookiesPolicy";
+import ManageInfo from "./pages/ManageInfo";
 
 const queryClient = new QueryClient();
 
@@ -94,6 +98,7 @@ const App = () => {
                   <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
                   <Route path="/menu" element={<ProtectedRoute><Menu /></ProtectedRoute>} />
                   <Route path="/help" element={<ProtectedRoute><HelpSupport /></ProtectedRoute>} />
+                  <Route path="/help-support" element={<ProtectedRoute><HelpSupport /></ProtectedRoute>} />
                   <Route path="/admin" element={<ProtectedRoute requireAdmin><Admin /></ProtectedRoute>} />
                   <Route path="/support-panel" element={<ProtectedRoute requireSupport><SupportPanel /></ProtectedRoute>} />
                   <Route path="/moderator-panel" element={<ProtectedRoute requireModerator><ModeratorPanel /></ProtectedRoute>} />
@@ -101,6 +106,11 @@ const App = () => {
                   <Route path="/groups" element={<ProtectedRoute><Groups /></ProtectedRoute>} />
                   <Route path="/groups/:groupId" element={<ProtectedRoute><GroupChat /></ProtectedRoute>} />
                   <Route path="/favourites" element={<ProtectedRoute><Favourites /></ProtectedRoute>} />
+                  {/* Legal & Info Pages */}
+                  <Route path="/about" element={<About />} />
+                  <Route path="/community-standards" element={<CommunityStandards />} />
+                  <Route path="/cookies-policy" element={<CookiesPolicy />} />
+                  <Route path="/manage-info" element={<ManageInfo />} />
                   <Route path="*" element={<NotFound />} />
                   </Routes>
                 </RolesProvider>
