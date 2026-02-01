@@ -8,9 +8,8 @@ import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
 import { z } from "zod";
 import { motion, AnimatePresence } from "framer-motion";
-import { Eye, EyeOff, Mail, Lock, User, Sparkles, Calendar, Shield, ArrowLeft, ArrowRight, CheckCircle } from "lucide-react";
+import { Eye, EyeOff, Mail, Lock, User, Sparkles, Calendar, ArrowLeft, ArrowRight, CheckCircle } from "lucide-react";
 import { GoogleAuthButton } from "@/components/auth/GoogleAuthButton";
-import { SupabasePhoneAuth } from "@/components/auth/SupabasePhoneAuth";
 import { ForgotPasswordDialog } from "@/components/auth/ForgotPasswordDialog";
 import prangonLogo from "@/assets/prangon-logo.png";
 import { Progress } from "@/components/ui/progress";
@@ -55,8 +54,6 @@ const Auth = () => {
   // Auth step data
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [phoneNumber, setPhoneNumber] = useState("");
-  const [authMethod, setAuthMethod] = useState<"email" | "phone" | "google" | null>(null);
   
   // Identity step data
   const [displayName, setDisplayName] = useState("");
@@ -89,9 +86,9 @@ const Auth = () => {
 
   const getStepProgress = () => {
     switch (signupStep) {
-      case "auth": return 25;
-      case "identity": return 50;
-      case "profile": return 75;
+      case "auth": return 33;
+      case "identity": return 66;
+      case "profile": return 100;
       case "complete": return 100;
       default: return 0;
     }
@@ -137,7 +134,6 @@ const Auth = () => {
     try {
       emailSchema.parse(email);
       passwordSchema.parse(password);
-      setAuthMethod("email");
       setSignupStep("identity");
     } catch (error: any) {
       if (error instanceof z.ZodError) {
@@ -148,14 +144,6 @@ const Auth = () => {
         });
       }
     }
-  };
-
-  const handlePhoneAuthSuccess = async (phone: string) => {
-    setPhoneNumber(phone);
-    setAuthMethod("phone");
-    // For phone auth via Supabase, user is already authenticated
-    // Navigate to home or check if profile needs completion
-    navigate("/");
   };
 
   const handleIdentitySubmit = async (e: React.FormEvent) => {
@@ -200,26 +188,24 @@ const Auth = () => {
     try {
       dateOfBirthSchema.parse(dateOfBirth);
       
-      if (authMethod === "email") {
-        const redirectUrl = `${window.location.origin}/`;
-        
-        const { error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            emailRedirectTo: redirectUrl,
-            data: {
-              username,
-              display_name: displayName,
-              date_of_birth: dateOfBirth,
-            },
+      const redirectUrl = `${window.location.origin}/`;
+      
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: redirectUrl,
+          data: {
+            username,
+            display_name: displayName,
+            date_of_birth: dateOfBirth,
           },
-        });
+        },
+      });
 
-        if (error) throw error;
+      if (error) throw error;
 
-        setSignupStep("complete");
-      }
+      setSignupStep("complete");
     } catch (error: any) {
       if (error instanceof z.ZodError) {
         toast({
@@ -241,7 +227,6 @@ const Auth = () => {
 
   const handleBackToAuth = () => {
     setSignupStep("auth");
-    setAuthMethod(null);
   };
 
   const getMaxDate = () => {
@@ -258,8 +243,6 @@ const Auth = () => {
     setUsername("");
     setDisplayName("");
     setDateOfBirth("");
-    setPhoneNumber("");
-    setAuthMethod(null);
   };
 
   // Completion screen
@@ -343,7 +326,7 @@ const Auth = () => {
               {isLogin 
                 ? "Welcome back! Sign in to continue"
                 : signupStep === "auth"
-                  ? "Choose how to create your account"
+                  ? "Create your account with email"
                   : signupStep === "identity"
                     ? "Tell us about yourself"
                     : "Just a few more details"
@@ -421,15 +404,9 @@ const Auth = () => {
                       <div className="w-full border-t border-border/50" />
                     </div>
                     <div className="relative flex justify-center text-xs">
-                      <span className="px-4 bg-card text-muted-foreground">or</span>
+                      <span className="px-4 bg-card text-muted-foreground">or continue with</span>
                     </div>
                   </div>
-
-                  <SupabasePhoneAuth 
-                    onSuccess={handlePhoneAuthSuccess}
-                    mode="login"
-                    className="w-full"
-                  />
                   
                   <GoogleAuthButton mode="login" className="h-12 rounded-xl" />
                 </motion.form>
@@ -495,12 +472,6 @@ const Auth = () => {
                     </div>
                   </div>
 
-                  <SupabasePhoneAuth 
-                    onSuccess={handlePhoneAuthSuccess}
-                    mode="signup"
-                    className="w-full"
-                  />
-                  
                   <GoogleAuthButton mode="signup" className="h-12 rounded-xl" />
                 </motion.div>
               )}
@@ -524,7 +495,6 @@ const Auth = () => {
                         placeholder="Your full name"
                         value={displayName}
                         onChange={(e) => setDisplayName(e.target.value)}
-                        required
                         className="h-12 pl-12 rounded-xl bg-muted/30 border-border/50"
                       />
                     </div>
@@ -536,15 +506,14 @@ const Auth = () => {
                       <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground/50">@</span>
                       <Input
                         type="text"
-                        placeholder="username123"
+                        placeholder="username"
                         value={username}
                         onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ""))}
-                        required
-                        className="h-12 pl-12 rounded-xl bg-muted/30 border-border/50"
+                        className="h-12 pl-10 rounded-xl bg-muted/30 border-border/50"
                       />
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      This will be your unique @handle
+                      Letters, numbers, and underscores only
                     </p>
                   </div>
 
@@ -574,58 +543,67 @@ const Auth = () => {
                         value={dateOfBirth}
                         onChange={(e) => setDateOfBirth(e.target.value)}
                         max={getMaxDate()}
-                        required
                         className="h-12 pl-12 rounded-xl bg-muted/30 border-border/50"
                       />
                     </div>
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                      <Shield className="h-3 w-3" />
-                      <span>Your DOB is private and helps keep Prangon safe</span>
+                    <p className="text-xs text-muted-foreground">
+                      You must be at least 13 years old to use Prangon
+                    </p>
+                  </div>
+
+                  <div className="p-4 rounded-xl bg-muted/30 space-y-2">
+                    <p className="text-sm font-medium">Review Your Details</p>
+                    <div className="space-y-1 text-sm text-muted-foreground">
+                      <p>📧 {email}</p>
+                      <p>👤 {displayName}</p>
+                      <p>@ {username}</p>
                     </div>
                   </div>
 
                   <Button type="submit" className="w-full h-12 rounded-xl gap-2" disabled={loading}>
-                    {loading ? "Creating Account..." : (
-                      <>
-                        Create Account
-                        <CheckCircle className="h-4 w-4" />
-                      </>
-                    )}
+                    {loading ? "Creating Account..." : "Create Account"}
+                    <CheckCircle className="h-4 w-4" />
                   </Button>
+
+                  <p className="text-xs text-center text-muted-foreground">
+                    By creating an account, you agree to our{" "}
+                    <a href="#" className="text-primary hover:underline">Terms of Service</a>
+                    {" "}and{" "}
+                    <a href="#" className="text-primary hover:underline">Privacy Policy</a>
+                  </p>
                 </motion.form>
               )}
             </AnimatePresence>
 
-            {/* Toggle login/signup */}
-            {(isLogin || signupStep === "auth") && (
-              <div className="mt-6 text-center">
-                <p className="text-sm text-muted-foreground">
-                  {isLogin ? "New to Prangon?" : "Already have an account?"}
-                </p>
+            {/* Switch login/signup */}
+            {signupStep === "auth" && (
+              <p className="text-center text-sm text-muted-foreground mt-6">
+                {isLogin ? "Don't have an account? " : "Already have an account? "}
                 <button
                   type="button"
                   onClick={() => {
-                    resetForm();
                     setIsLogin(!isLogin);
+                    resetForm();
                   }}
-                  className="text-primary font-semibold hover:underline mt-1"
+                  className="text-primary hover:underline font-medium"
                 >
-                  {isLogin ? "Create an account" : "Sign in instead"}
+                  {isLogin ? "Sign up" : "Sign in"}
                 </button>
-              </div>
+              </p>
             )}
           </div>
         </div>
 
-        <p className="text-center text-xs text-muted-foreground mt-6">
-          By continuing, you agree to our Terms of Service and Privacy Policy
-        </p>
-        
-        <p className="text-center text-xs text-muted-foreground mt-2">
-          Need help? Contact <a href="mailto:service.prangon@outlook.com" className="text-primary hover:underline">service.prangon@outlook.com</a>
+        {/* Support email */}
+        <p className="text-center text-xs text-muted-foreground mt-4">
+          Need help?{" "}
+          <a href="mailto:service.prangon@outlook.com" className="text-primary hover:underline">
+            service.prangon@outlook.com
+          </a>
         </p>
       </motion.div>
 
+      {/* Forgot Password Dialog */}
       <ForgotPasswordDialog
         open={showForgotPassword}
         onOpenChange={setShowForgotPassword}
