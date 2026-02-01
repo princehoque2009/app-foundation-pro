@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -58,10 +58,13 @@ import {
   HelpCircle,
   Server,
   Wifi,
-  WifiOff,
+  Loader2,
+  MessageCircle as MessageIcon,
+  ArrowUpRight,
 } from "lucide-react";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { AreaChart, Area, XAxis, YAxis, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
+import { useConversations } from "@/hooks/useConversations";
 
 // Predefined response templates
 const responseTemplates = [
@@ -77,6 +80,7 @@ const SupportPanel = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const { createConversation } = useConversations();
   const [selectedTicket, setSelectedTicket] = useState<any>(null);
   const [response, setResponse] = useState("");
   const [internalNotes, setInternalNotes] = useState("");
@@ -85,6 +89,7 @@ const SupportPanel = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [showAuditLog, setShowAuditLog] = useState(false);
   const [showSystemHealth, setShowSystemHealth] = useState(false);
+  const [isMessageLoading, setIsMessageLoading] = useState(false);
 
   // Fetch support tickets with user profiles
   const { data: tickets, isLoading, refetch } = useQuery({
@@ -117,8 +122,27 @@ const SupportPanel = () => {
         user: profiles?.find((p) => p.id === ticket.user_id),
       }));
     },
-    refetchInterval: 30000,
+    refetchInterval: 10000, // Real-time refresh every 10 seconds
   });
+
+  // Real-time subscription for ticket updates
+  useEffect(() => {
+    const channel = supabase
+      .channel("support-tickets-realtime")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "support_tickets" },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["support-tickets"] });
+          queryClient.invalidateQueries({ queryKey: ["support-stats"] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [queryClient]);
 
   // Fetch stats
   const { data: stats } = useQuery({
@@ -601,14 +625,52 @@ const SupportPanel = () => {
           </DialogHeader>
           {selectedTicket && (
             <div className="space-y-4">
-              <div className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg">
-                <Avatar className="h-10 w-10">
-                  <AvatarImage src={selectedTicket.user?.avatar_url} />
-                  <AvatarFallback>{selectedTicket.user?.username?.charAt(0).toUpperCase()}</AvatarFallback>
-                </Avatar>
-                <div>
-                  <p className="font-medium text-sm">{selectedTicket.user?.display_name || selectedTicket.user?.username}</p>
-                  <p className="text-xs text-muted-foreground">@{selectedTicket.user?.username}</p>
+              <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+                <div className="flex items-center gap-3">
+                  <Avatar className="h-10 w-10">
+                    <AvatarImage src={selectedTicket.user?.avatar_url} />
+                    <AvatarFallback>{selectedTicket.user?.username?.charAt(0).toUpperCase()}</AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <p className="font-medium text-sm">{selectedTicket.user?.display_name || selectedTicket.user?.username}</p>
+                    <p className="text-xs text-muted-foreground">@{selectedTicket.user?.username}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={async () => {
+                      if (!selectedTicket.user_id) {
+                        toast({ title: "Cannot message this user", variant: "destructive" });
+                        return;
+                      }
+                      setIsMessageLoading(true);
+                      try {
+                        const conversationId = await createConversation.mutateAsync(selectedTicket.user_id);
+                        navigate(`/messages?conversation=${conversationId}`);
+                      } catch (error: any) {
+                        toast({ title: "Failed to open chat", description: error.message, variant: "destructive" });
+                      } finally {
+                        setIsMessageLoading(false);
+                      }
+                    }}
+                    disabled={isMessageLoading}
+                  >
+                    {isMessageLoading ? (
+                      <Loader2 className="h-4 w-4 animate-spin mr-1" />
+                    ) : (
+                      <MessageIcon className="h-4 w-4 mr-1" />
+                    )}
+                    Chat
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => navigate(`/profile/${selectedTicket.user_id}`)}
+                  >
+                    <ArrowUpRight className="h-4 w-4" />
+                  </Button>
                 </div>
               </div>
 

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -55,7 +55,7 @@ import {
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 
-type AdType = "feed" | "banner" | "story" | "video";
+type AdType = "feed" | "banner" | "story" | "video" | "carousel" | "interstitial" | "rewarded" | "native";
 
 interface Advertisement {
   id: string;
@@ -83,6 +83,10 @@ const adTypeConfig: Record<AdType, { label: string; icon: typeof Image; color: s
   banner: { label: "Banner", icon: Image, color: "bg-amber-500/10 text-amber-500" },
   story: { label: "Story Ad", icon: Video, color: "bg-purple-500/10 text-purple-500" },
   video: { label: "Video Ad", icon: Video, color: "bg-emerald-500/10 text-emerald-500" },
+  carousel: { label: "Carousel", icon: LayoutDashboard, color: "bg-pink-500/10 text-pink-500" },
+  interstitial: { label: "Interstitial", icon: LayoutDashboard, color: "bg-red-500/10 text-red-500" },
+  rewarded: { label: "Rewarded", icon: Target, color: "bg-yellow-500/10 text-yellow-500" },
+  native: { label: "Native", icon: LayoutDashboard, color: "bg-cyan-500/10 text-cyan-500" },
 };
 
 export const AdvertisementPanel = () => {
@@ -445,6 +449,36 @@ const AdFormDialog = ({ ad, onSave, isPending }: AdFormDialogProps) => {
     start_date: ad?.start_date?.split("T")[0] || "",
     end_date: ad?.end_date?.split("T")[0] || "",
   });
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploading(true);
+    try {
+      const fileExt = file.name.split(".").pop();
+      const fileName = `ads/${Date.now()}.${fileExt}`;
+
+      const { data, error } = await supabase.storage
+        .from("post-media")
+        .upload(fileName, file, { upsert: true });
+
+      if (error) throw error;
+
+      const { data: urlData } = supabase.storage
+        .from("post-media")
+        .getPublicUrl(data.path);
+
+      setFormData({ ...formData, media_url: urlData.publicUrl });
+      toast({ title: "Media uploaded successfully" });
+    } catch (error: any) {
+      toast({ title: "Upload failed", description: error.message, variant: "destructive" });
+    } finally {
+      setIsUploading(false);
+    }
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -457,7 +491,7 @@ const AdFormDialog = ({ ad, onSave, isPending }: AdFormDialogProps) => {
   };
 
   return (
-    <DialogContent className="max-w-lg">
+    <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
       <DialogHeader>
         <DialogTitle>{ad ? "Edit Advertisement" : "Create Advertisement"}</DialogTitle>
         <DialogDescription>
@@ -502,6 +536,10 @@ const AdFormDialog = ({ ad, onSave, isPending }: AdFormDialogProps) => {
                 <SelectItem value="banner">Banner</SelectItem>
                 <SelectItem value="story">Story Ad</SelectItem>
                 <SelectItem value="video">Video Ad</SelectItem>
+                <SelectItem value="carousel">Carousel</SelectItem>
+                <SelectItem value="interstitial">Interstitial</SelectItem>
+                <SelectItem value="rewarded">Rewarded</SelectItem>
+                <SelectItem value="native">Native</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -523,13 +561,60 @@ const AdFormDialog = ({ ad, onSave, isPending }: AdFormDialogProps) => {
           </div>
         </div>
 
+        {/* Media Upload from Gallery */}
         <div className="space-y-2">
-          <Label htmlFor="media_url">Media URL</Label>
+          <Label>Media</Label>
+          <div className="flex gap-2">
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*,video/*"
+              onChange={handleFileUpload}
+              className="hidden"
+            />
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isUploading}
+              className="flex-1"
+            >
+              {isUploading ? (
+                <>
+                  <div className="animate-spin h-4 w-4 border-2 border-primary border-t-transparent rounded-full mr-2" />
+                  Uploading...
+                </>
+              ) : (
+                <>
+                  <Image className="h-4 w-4 mr-2" />
+                  Upload from Gallery
+                </>
+              )}
+            </Button>
+          </div>
+          {formData.media_url && (
+            <div className="relative mt-2">
+              <img
+                src={formData.media_url}
+                alt="Preview"
+                className="w-full h-32 object-cover rounded-lg"
+              />
+              <Button
+                type="button"
+                variant="destructive"
+                size="icon"
+                className="absolute top-2 right-2 h-6 w-6"
+                onClick={() => setFormData({ ...formData, media_url: "" })}
+              >
+                <Trash2 className="h-3 w-3" />
+              </Button>
+            </div>
+          )}
           <Input
-            id="media_url"
             value={formData.media_url}
             onChange={(e) => setFormData({ ...formData, media_url: e.target.value })}
-            placeholder="https://..."
+            placeholder="Or paste URL..."
+            className="mt-2"
           />
         </div>
 

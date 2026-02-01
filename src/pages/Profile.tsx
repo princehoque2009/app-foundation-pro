@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -12,12 +12,11 @@ import { ProfileAboutSection } from "@/components/profile/ProfileAboutSection";
 import { LiveInsights } from "@/components/profile/LiveInsights";
 import { ProfileCreations } from "@/components/profile/ProfileCreations";
 import { PostCard } from "@/components/home/PostCard";
-import { toast } from "@/hooks/use-toast";
 import { VerifiedBadge } from "@/components/ui/VerifiedBadge";
+import { CoverPhotoUploader } from "@/components/profile/CoverPhotoUploader";
 
 const Profile = () => {
   const { user } = useAuth();
-  const queryClient = useQueryClient();
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
   // Fetch profile
@@ -74,7 +73,17 @@ const Profile = () => {
 
   return (
     <MainLayout>
-      <div className="max-w-screen-xl mx-auto px-4 py-6">
+      <div className="max-w-screen-xl mx-auto">
+        {/* Cover Photo */}
+        {user?.id && (
+          <CoverPhotoUploader
+            userId={user.id}
+            currentCoverUrl={(profile as any)?.cover_photo_url}
+            isOwner={true}
+          />
+        )}
+
+        <div className="px-4 py-6 -mt-12 relative z-10">
         {/* Profile Header */}
         <div className="bg-card rounded-lg p-6 mb-6">
           <div className="flex flex-col md:flex-row gap-6 items-start md:items-center">
@@ -220,6 +229,7 @@ const Profile = () => {
           open={isEditDialogOpen}
           onOpenChange={setIsEditDialogOpen}
         />
+        </div>
       </div>
     </MainLayout>
   );

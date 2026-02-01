@@ -777,6 +777,7 @@ export type Database = {
           bio: string | null
           can_create_groups: boolean | null
           country: string | null
+          cover_photo_url: string | null
           created_at: string
           date_of_birth: string | null
           display_name: string | null
@@ -800,6 +801,7 @@ export type Database = {
           bio?: string | null
           can_create_groups?: boolean | null
           country?: string | null
+          cover_photo_url?: string | null
           created_at?: string
           date_of_birth?: string | null
           display_name?: string | null
@@ -823,6 +825,7 @@ export type Database = {
           bio?: string | null
           can_create_groups?: boolean | null
           country?: string | null
+          cover_photo_url?: string | null
           created_at?: string
           date_of_birth?: string | null
           display_name?: string | null
