@@ -1,4 +1,4 @@
-import { Search, Bell, Users, Menu as MenuIcon, User } from "lucide-react";
+import { Search, Bell, Users, Menu as MenuIcon, FlaskConical } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useNotifications } from "@/hooks/useNotifications";
 import { Badge } from "@/components/ui/badge";
@@ -49,10 +49,10 @@ export const TopHeader = () => {
             )}
           </Link>
           <Link
-            to="/profile"
+            to="/lab"
             className="p-2.5 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-all"
           >
-            <User className="h-5 w-5" />
+            <FlaskConical className="h-5 w-5" />
           </Link>
           <button
             onClick={() => navigate("/menu")}
