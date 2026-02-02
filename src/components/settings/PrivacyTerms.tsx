@@ -133,7 +133,7 @@ export const PrivacyTerms = () => {
               </AccordionTrigger>
               <AccordionContent className="text-muted-foreground">
                 <p>For privacy concerns or data requests, contact us at:</p>
-                <p className="font-medium text-foreground mt-2">prangon@support.com</p>
+                <p className="font-medium text-foreground mt-2">service.prangon@outlook.com</p>
               </AccordionContent>
             </AccordionItem>
           </Accordion>
