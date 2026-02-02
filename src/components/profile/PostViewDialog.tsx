@@ -1,10 +1,11 @@
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { PostCard } from "@/components/home/PostCard";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
 import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 
 interface PostViewDialogProps {
   postId: string | null;
@@ -21,7 +22,7 @@ export const PostViewDialog = ({ postId, open, onOpenChange }: PostViewDialogPro
         .from("posts")
         .select("*, profiles(*)")
         .eq("id", postId)
-        .single();
+        .maybeSingle();
       
       if (error) throw error;
       return data;
@@ -32,6 +33,9 @@ export const PostViewDialog = ({ postId, open, onOpenChange }: PostViewDialogPro
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg p-0 gap-0 overflow-hidden max-h-[90vh] overflow-y-auto">
+        <VisuallyHidden>
+          <DialogTitle>View Post</DialogTitle>
+        </VisuallyHidden>
         <div className="sticky top-0 z-10 flex items-center justify-between p-3 bg-background/80 backdrop-blur-sm border-b">
           <h2 className="font-semibold">Post</h2>
           <Button 
@@ -56,13 +60,13 @@ export const PostViewDialog = ({ postId, open, onOpenChange }: PostViewDialogPro
             <Skeleton className="h-64 w-full" />
             <Skeleton className="h-4 w-3/4" />
           </div>
-        ) : post ? (
+        ) : post && post.profiles ? (
           <PostCard
             id={post.id}
             author={{
-              name: post.profiles.display_name || post.profiles.username,
+              name: post.profiles.display_name || post.profiles.username || "Unknown",
               avatar: post.profiles.avatar_url || "",
-              username: post.profiles.username,
+              username: post.profiles.username || "unknown",
             }}
             content={post.caption || ""}
             image={post.media_type === "image" ? post.media_url || "" : undefined}
