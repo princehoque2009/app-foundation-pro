@@ -38,6 +38,7 @@ import About from "./pages/About";
 import CommunityStandards from "./pages/CommunityStandards";
 import CookiesPolicy from "./pages/CookiesPolicy";
 import ManageInfo from "./pages/ManageInfo";
+import Lab from "./pages/Lab";
 
 const queryClient = new QueryClient();
 
@@ -106,6 +107,9 @@ const App = () => {
                   <Route path="/groups" element={<ProtectedRoute><Groups /></ProtectedRoute>} />
                   <Route path="/groups/:groupId" element={<ProtectedRoute><GroupChat /></ProtectedRoute>} />
                   <Route path="/favourites" element={<ProtectedRoute><Favourites /></ProtectedRoute>} />
+                  <Route path="/lab" element={<ProtectedRoute><Lab /></ProtectedRoute>} />
+                  <Route path="/page/:pageId" element={<ProtectedRoute><Lab /></ProtectedRoute>} />
+                  <Route path="/community/:groupId" element={<ProtectedRoute><Lab /></ProtectedRoute>} />
                   {/* Legal & Info Pages */}
                   <Route path="/about" element={<About />} />
                   <Route path="/community-standards" element={<CommunityStandards />} />

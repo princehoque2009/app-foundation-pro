@@ -15,8 +15,6 @@ import {
   Users,
   Film,
   Clock,
-  Moon,
-  Sun,
   Settings,
   LogOut,
   ChevronRight,
@@ -36,24 +34,19 @@ import {
   BookOpen,
   Building2,
   Heart,
-  Globe,
-  Lock,
-  Palette,
-  Zap,
   Radio,
   History,
   Star,
   CircleUser,
-  Wallet,
-  Gift,
-  ShieldCheck,
+  Zap,
+  FlaskConical,
   FileText,
-  Smartphone,
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { VerifiedBadge } from "@/components/ui/VerifiedBadge";
 import { useRoles } from "@/contexts/RolesContext";
+import { MenuSearchBar } from "@/components/menu/MenuSearchBar";
 
 // Minimal B&W outline icons - consistent style
 const menuItems = [
@@ -289,6 +282,11 @@ const Menu = () => {
         animate="visible"
         className="p-4 space-y-5 max-w-screen-xl mx-auto"
       >
+        {/* Search Bar */}
+        <motion.div variants={itemVariants}>
+          <MenuSearchBar />
+        </motion.div>
+
         {/* Profile Card */}
         <motion.div variants={itemVariants}>
           <Card
@@ -311,6 +309,30 @@ const Menu = () => {
                 </h2>
                 <p className="text-muted-foreground text-sm truncate">
                   @{profile?.username}
+                </p>
+              </div>
+              <ChevronRight className="h-5 w-5 text-muted-foreground" />
+            </div>
+          </Card>
+        </motion.div>
+
+        {/* Lab Section */}
+        <motion.div variants={itemVariants}>
+          <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2 px-1">
+            Lab
+          </h3>
+          <Card
+            className="p-4 cursor-pointer hover:bg-muted/50 transition-colors border-border/50"
+            onClick={() => navigate("/lab")}
+          >
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-xl bg-primary/10">
+                <FlaskConical className="h-5 w-5 text-primary" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-medium text-sm">Pages & Groups</h3>
+                <p className="text-xs text-muted-foreground">
+                  Create and manage your pages and community groups
                 </p>
               </div>
               <ChevronRight className="h-5 w-5 text-muted-foreground" />
