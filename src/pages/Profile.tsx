@@ -9,6 +9,7 @@ import { LiveInsights } from "@/components/profile/LiveInsights";
 import { ProfileHeader } from "@/components/profile/ProfileHeader";
 import { ProfileTabs } from "@/components/profile/ProfileTabs";
 import { ProfileContentGrid } from "@/components/profile/ProfileContentGrid";
+import { PostViewDialog } from "@/components/profile/PostViewDialog";
 import { PostCard } from "@/components/home/PostCard";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -17,6 +18,7 @@ const Profile = () => {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("all");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [selectedPostId, setSelectedPostId] = useState<string | null>(null);
 
   // Fetch profile
   const { data: profile, isLoading: profileLoading } = useQuery({
@@ -149,6 +151,7 @@ const Profile = () => {
                 items={creations}
                 activeTab={activeTab}
                 isLoading={postsLoading}
+                onItemClick={(item) => setSelectedPostId(item.id)}
               />
             ) : (
               <div className="space-y-4 p-4">
@@ -181,6 +184,12 @@ const Profile = () => {
           profile={profile}
           open={isEditDialogOpen}
           onOpenChange={setIsEditDialogOpen}
+        />
+
+        <PostViewDialog
+          postId={selectedPostId}
+          open={!!selectedPostId}
+          onOpenChange={(open) => !open && setSelectedPostId(null)}
         />
       </div>
     </MainLayout>
