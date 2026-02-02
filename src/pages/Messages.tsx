@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
@@ -14,8 +14,11 @@ import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
-import { MessageCircle, Search, Users, UserCircle, Plus, Settings } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
+import { MessageCircle, Search, Users, UserCircle, Plus, Settings, Circle } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { ref, onValue, off } from "firebase/database";
+import { rtdb } from "@/lib/firebase";
 
 interface Profile {
   id: string;
@@ -25,12 +28,23 @@ interface Profile {
   is_verified?: boolean;
 }
 
+interface ChatPreview {
+  friendId: string;
+  profile: Profile;
+  lastMessage?: string;
+  lastMessageTime?: number;
+  unreadCount: number;
+  isOnline?: boolean;
+}
+
 const Messages = () => {
   const { user } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const [selectedFriend, setSelectedFriend] = useState<Profile | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [showCreateGroup, setShowCreateGroup] = useState(false);
+  const [chatPreviews, setChatPreviews] = useState<Record<string, { lastMessage?: string; lastMessageTime?: number; unreadCount: number }>>({});
+  const [onlineStatus, setOnlineStatus] = useState<Record<string, boolean>>({});
   const { initiateCall, incomingCall } = useWebRTC();
 
   // Get friend ID from URL params
@@ -49,7 +63,7 @@ const Messages = () => {
   }, [searchParams]);
 
   // Fetch friends list
-  const { data: friends } = useQuery({
+  const { data: friends, isLoading: friendsLoading } = useQuery({
     queryKey: ["friends", user?.id],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -66,10 +80,88 @@ const Messages = () => {
         .eq("user_id", user?.id);
 
       if (error) throw error;
-      return data?.map((f) => f.friend) || [];
+      return data?.map((f) => f.friend).filter(Boolean) as Profile[];
     },
     enabled: !!user?.id,
   });
+
+  // Listen for chat previews and unread counts from Firebase
+  useEffect(() => {
+    if (!user?.id || !friends || friends.length === 0) return;
+
+    const unsubscribes: (() => void)[] = [];
+
+    friends.forEach((friend) => {
+      if (!friend?.id) return;
+
+      const chatId = [user.id, friend.id].sort().join("_");
+      
+      // Listen for last message
+      const messagesRef = ref(rtdb, `chats/${chatId}/messages`);
+      const messagesHandler = onValue(messagesRef, (snapshot) => {
+        if (snapshot.exists()) {
+          const messages = snapshot.val();
+          const messageList = Object.entries(messages)
+            .map(([id, msg]: [string, any]) => ({ id, ...msg }))
+            .sort((a, b) => b.timestamp - a.timestamp);
+          
+          const lastMsg = messageList[0];
+          const unreadCount = messageList.filter(
+            (m) => m.senderId === friend.id && !m.seen
+          ).length;
+
+          setChatPreviews((prev) => ({
+            ...prev,
+            [friend.id]: {
+              lastMessage: lastMsg?.text || (lastMsg?.mediaType ? `Sent ${lastMsg.mediaType}` : undefined),
+              lastMessageTime: lastMsg?.timestamp,
+              unreadCount,
+            },
+          }));
+        }
+      });
+
+      unsubscribes.push(() => off(messagesRef, "value", messagesHandler));
+
+      // Listen for online status
+      const statusRef = ref(rtdb, `status/${friend.id}`);
+      const statusHandler = onValue(statusRef, (snapshot) => {
+        if (snapshot.exists()) {
+          const status = snapshot.val();
+          setOnlineStatus((prev) => ({
+            ...prev,
+            [friend.id]: status.online === true,
+          }));
+        }
+      });
+
+      unsubscribes.push(() => off(statusRef, "value", statusHandler));
+    });
+
+    return () => {
+      unsubscribes.forEach((unsub) => unsub());
+    };
+  }, [user?.id, friends]);
+
+  // Sort friends: unread first, then by last message time
+  const sortedFriends = useMemo(() => {
+    if (!friends) return [];
+    
+    return [...friends].sort((a, b) => {
+      const previewA = chatPreviews[a.id];
+      const previewB = chatPreviews[b.id];
+      
+      // Unread messages first
+      const unreadA = previewA?.unreadCount || 0;
+      const unreadB = previewB?.unreadCount || 0;
+      if (unreadA !== unreadB) return unreadB - unreadA;
+      
+      // Then by last message time
+      const timeA = previewA?.lastMessageTime || 0;
+      const timeB = previewB?.lastMessageTime || 0;
+      return timeB - timeA;
+    });
+  }, [friends, chatPreviews]);
 
   const handleSelectFriend = (friendId: string, profile: Profile) => {
     setSelectedFriend(profile);
@@ -104,11 +196,28 @@ const Messages = () => {
   }, [incomingCall]);
 
   // Filter friends by search
-  const filteredFriends = friends?.filter(
+  const filteredFriends = sortedFriends.filter(
     (f) =>
       f?.username?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       f?.display_name?.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  const formatTime = (timestamp?: number) => {
+    if (!timestamp) return "";
+    const date = new Date(timestamp);
+    const now = new Date();
+    const diffDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
+    
+    if (diffDays === 0) {
+      return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    } else if (diffDays === 1) {
+      return "Yesterday";
+    } else if (diffDays < 7) {
+      return date.toLocaleDateString([], { weekday: "short" });
+    } else {
+      return date.toLocaleDateString([], { month: "short", day: "numeric" });
+    }
+  };
 
   return (
     <MainLayout>
@@ -178,90 +287,95 @@ const Messages = () => {
                 </div>
               </button>
 
-              {searchQuery ? (
-                // Show search results
-                <>
-                  {filteredFriends && filteredFriends.length > 0 ? (
-                    filteredFriends.map((friend) => (
-                      <button
-                        key={friend?.id}
-                        onClick={() =>
-                          friend && handleSelectFriend(friend.id, friend as Profile)
-                        }
-                        className={cn(
-                          "w-full p-3 rounded-xl flex items-center gap-3 transition-all hover:bg-accent/50",
-                          selectedFriend?.id === friend?.id && "bg-accent"
-                        )}
-                      >
-                        <div className="relative">
-                          <Avatar className="h-12 w-12 ring-2 ring-background">
-                            <AvatarImage src={friend?.avatar_url || ""} />
-                            <AvatarFallback className="bg-primary/10 text-primary">
-                              {friend?.display_name?.[0] || friend?.username?.[0]}
-                            </AvatarFallback>
-                          </Avatar>
-                        </div>
-                        <div className="flex-1 min-w-0 text-left">
-                          <h3 className="font-semibold truncate">
-                            {friend?.display_name || friend?.username}
-                          </h3>
-                          <p className="text-sm text-muted-foreground truncate">
-                            @{friend?.username}
-                          </p>
-                        </div>
-                      </button>
-                    ))
-                  ) : (
-                    <div className="text-center py-8 text-muted-foreground">
-                      No friends found
+              {friendsLoading ? (
+                // Loading skeletons
+                Array.from({ length: 5 }).map((_, i) => (
+                  <div key={i} className="flex items-center gap-3 p-3">
+                    <Skeleton className="h-12 w-12 rounded-full" />
+                    <div className="flex-1 space-y-2">
+                      <Skeleton className="h-4 w-32" />
+                      <Skeleton className="h-3 w-48" />
                     </div>
-                  )}
-                </>
+                  </div>
+                ))
+              ) : filteredFriends.length > 0 ? (
+                filteredFriends.map((friend) => {
+                  const preview = chatPreviews[friend.id];
+                  const isOnline = onlineStatus[friend.id];
+                  
+                  return (
+                    <button
+                      key={friend.id}
+                      onClick={() => handleSelectFriend(friend.id, friend)}
+                      className={cn(
+                        "w-full p-3 rounded-xl flex items-center gap-3 transition-all hover:bg-accent/50",
+                        selectedFriend?.id === friend.id && "bg-accent",
+                        preview?.unreadCount && preview.unreadCount > 0 && "bg-primary/5"
+                      )}
+                    >
+                      <div className="relative">
+                        <Avatar className="h-12 w-12 ring-2 ring-background">
+                          <AvatarImage src={friend.avatar_url || ""} />
+                          <AvatarFallback className="bg-primary/10 text-primary">
+                            {friend.display_name?.[0] || friend.username?.[0]}
+                          </AvatarFallback>
+                        </Avatar>
+                        {/* Online indicator */}
+                        <span 
+                          className={cn(
+                            "absolute bottom-0 right-0 h-3.5 w-3.5 rounded-full border-2 border-card",
+                            isOnline ? "bg-green-500" : "bg-muted-foreground/50"
+                          )} 
+                        />
+                      </div>
+                      <div className="flex-1 min-w-0 text-left">
+                        <div className="flex items-center justify-between">
+                          <h3 className={cn(
+                            "font-semibold truncate",
+                            preview?.unreadCount && preview.unreadCount > 0 && "text-foreground"
+                          )}>
+                            {friend.display_name || friend.username}
+                          </h3>
+                          {preview?.lastMessageTime && (
+                            <span className="text-xs text-muted-foreground">
+                              {formatTime(preview.lastMessageTime)}
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <p className={cn(
+                            "text-sm truncate",
+                            preview?.unreadCount && preview.unreadCount > 0 
+                              ? "text-foreground font-medium" 
+                              : "text-muted-foreground"
+                          )}>
+                            {preview?.lastMessage || `@${friend.username}`}
+                          </p>
+                          {preview?.unreadCount && preview.unreadCount > 0 && (
+                            <Badge 
+                              variant="default" 
+                              className="h-5 min-w-[20px] px-1.5 text-xs rounded-full bg-primary"
+                            >
+                              {preview.unreadCount}
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                    </button>
+                  );
+                })
+              ) : friends && friends.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-12 text-center px-4">
+                  <UserCircle className="h-16 w-16 text-muted-foreground/50 mb-4" />
+                  <p className="text-muted-foreground font-medium">No friends yet</p>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Add friends to start chatting
+                  </p>
+                </div>
               ) : (
-                // Show friends list
-                <>
-                  {friends && friends.length > 0 ? (
-                    friends.map((friend) => (
-                      <button
-                        key={friend?.id}
-                        onClick={() =>
-                          friend && handleSelectFriend(friend.id, friend as Profile)
-                        }
-                        className={cn(
-                          "w-full p-3 rounded-xl flex items-center gap-3 transition-all hover:bg-accent/50",
-                          selectedFriend?.id === friend?.id && "bg-accent"
-                        )}
-                      >
-                        <div className="relative">
-                          <Avatar className="h-12 w-12 ring-2 ring-background">
-                            <AvatarImage src={friend?.avatar_url || ""} />
-                            <AvatarFallback className="bg-primary/10 text-primary">
-                              {friend?.display_name?.[0] || friend?.username?.[0]}
-                            </AvatarFallback>
-                          </Avatar>
-                          {/* Online indicator placeholder */}
-                          <span className="absolute bottom-0 right-0 h-3 w-3 bg-gray-400 rounded-full border-2 border-card" />
-                        </div>
-                        <div className="flex-1 min-w-0 text-left">
-                          <h3 className="font-semibold truncate">
-                            {friend?.display_name || friend?.username}
-                          </h3>
-                          <p className="text-sm text-muted-foreground truncate">
-                            @{friend?.username}
-                          </p>
-                        </div>
-                      </button>
-                    ))
-                  ) : (
-                    <div className="flex flex-col items-center justify-center py-12 text-center px-4">
-                      <UserCircle className="h-16 w-16 text-muted-foreground/50 mb-4" />
-                      <p className="text-muted-foreground font-medium">No friends yet</p>
-                      <p className="text-sm text-muted-foreground mt-1">
-                        Add friends to start chatting
-                      </p>
-                    </div>
-                  )}
-                </>
+                <div className="text-center py-8 text-muted-foreground">
+                  No results found
+                </div>
               )}
             </div>
           </ScrollArea>
