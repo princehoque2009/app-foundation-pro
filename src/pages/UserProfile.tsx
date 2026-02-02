@@ -6,16 +6,17 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { MessageCircle, UserPlus, UserMinus, Clock } from "lucide-react";
+import { MessageCircle, UserPlus, UserMinus, Clock, Info, ChevronDown } from "lucide-react";
 import { ProfileAboutSection } from "@/components/profile/ProfileAboutSection";
 import { ProfileActionsDropdown } from "@/components/profile/ProfileActionsDropdown";
 import { ProfileHeader } from "@/components/profile/ProfileHeader";
 import { ProfileTabs } from "@/components/profile/ProfileTabs";
 import { ProfileContentGrid } from "@/components/profile/ProfileContentGrid";
-import { PostCard } from "@/components/home/PostCard";
+import { PostViewDialog } from "@/components/profile/PostViewDialog";
 import { toast } from "@/hooks/use-toast";
 import { useConversations } from "@/hooks/useConversations";
 import { motion, AnimatePresence } from "framer-motion";
+import { cn } from "@/lib/utils";
 
 const UserProfile = () => {
   const { userId } = useParams();
@@ -24,6 +25,8 @@ const UserProfile = () => {
   const queryClient = useQueryClient();
   const { createConversation } = useConversations();
   const [activeTab, setActiveTab] = useState("all");
+  const [showAbout, setShowAbout] = useState(false);
+  const [selectedPostId, setSelectedPostId] = useState<string | null>(null);
 
   // Fetch profile
   const { data: profile, isLoading: profileLoading } = useQuery({
@@ -82,7 +85,7 @@ const UserProfile = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("posts")
-        .select("*, profiles(*)")
+        .select("*, profiles!posts_user_id_fkey(*)")
         .eq("user_id", userId)
         .order("created_at", { ascending: false });
       
@@ -162,6 +165,10 @@ const UserProfile = () => {
     navigate(`/messages?conversation=${conversationId}`);
   };
 
+  const handlePostClick = (item: { id: string }) => {
+    setSelectedPostId(item.id);
+  };
+
   if (user?.id === userId) {
     navigate("/profile");
     return null;
@@ -231,6 +238,16 @@ const UserProfile = () => {
             </Button>
           )}
           
+          {/* About Toggle Button */}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-9 w-9 rounded-full"
+            onClick={() => setShowAbout(!showAbout)}
+          >
+            <Info className={cn("h-4 w-4 transition-colors", showAbout && "text-primary")} />
+          </Button>
+          
           {profile && (
             <ProfileActionsDropdown
               userId={userId!}
@@ -240,18 +257,30 @@ const UserProfile = () => {
           )}
         </div>
 
-        {/* About Section */}
-        <div className="px-4 sm:px-6 py-4">
-          <ProfileAboutSection
-            bio={profile?.bio}
-            dateOfBirth={profile?.date_of_birth}
-            createdAt={profile?.created_at}
-            postsCount={posts?.length || 0}
-            followersCount={profile?.followers_count || 0}
-            followingCount={profile?.following_count || 0}
-            country={profile?.country}
-          />
-        </div>
+        {/* Collapsible About Section */}
+        <AnimatePresence>
+          {showAbout && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="overflow-hidden border-b border-border"
+            >
+              <div className="px-4 sm:px-6 py-4">
+                <ProfileAboutSection
+                  bio={profile?.bio}
+                  dateOfBirth={profile?.date_of_birth}
+                  createdAt={profile?.created_at}
+                  postsCount={posts?.length || 0}
+                  followersCount={profile?.followers_count || 0}
+                  followingCount={profile?.following_count || 0}
+                  country={profile?.country}
+                />
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Profile Tabs */}
         <ProfileTabs
@@ -273,10 +302,18 @@ const UserProfile = () => {
               items={creations}
               activeTab={activeTab}
               isLoading={postsLoading}
+              onItemClick={handlePostClick}
             />
           </motion.div>
         </AnimatePresence>
       </div>
+
+      {/* Post View Dialog */}
+      <PostViewDialog
+        postId={selectedPostId}
+        open={!!selectedPostId}
+        onOpenChange={(open) => !open && setSelectedPostId(null)}
+      />
     </MainLayout>
   );
 };

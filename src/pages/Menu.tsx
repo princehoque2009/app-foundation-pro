@@ -35,8 +35,20 @@ import {
   Cookie,
   BookOpen,
   Building2,
-  Copy,
   Heart,
+  Globe,
+  Lock,
+  Palette,
+  Zap,
+  Radio,
+  History,
+  Star,
+  CircleUser,
+  Wallet,
+  Gift,
+  ShieldCheck,
+  FileText,
+  Smartphone,
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -77,7 +89,7 @@ const menuItems = [
     id: "profile",
     icon: User,
     label: "My Profile",
-    description: "View and edit your profile",
+    description: "View and edit profile",
     path: "/profile",
   },
   {
@@ -95,15 +107,48 @@ const menuItems = [
     path: "/friends",
   },
   {
+    id: "live",
+    icon: Radio,
+    label: "Live",
+    description: "Go live or watch",
+    path: "/live",
+  },
+];
+
+const quickAccessItems = [
+  {
     id: "activity",
-    icon: Clock,
-    label: "Activity",
-    description: "Your recent activity",
+    icon: History,
+    label: "Activity Log",
     path: "/notifications",
+  },
+  {
+    id: "memories",
+    icon: Clock,
+    label: "Memories",
+    path: "/notifications",
+  },
+  {
+    id: "starred",
+    icon: Star,
+    label: "Starred",
+    path: "/favourites",
+  },
+  {
+    id: "gaming",
+    icon: Zap,
+    label: "Gaming",
+    path: "/",
   },
 ];
 
 const settingsItems = [
+  {
+    id: "settings",
+    icon: Settings,
+    label: "Settings & Privacy",
+    path: "/settings",
+  },
   {
     id: "help",
     icon: HelpCircle,
@@ -111,9 +156,9 @@ const settingsItems = [
     path: "/help",
   },
   {
-    id: "settings",
-    icon: Settings,
-    label: "Settings & Privacy",
+    id: "accessibility",
+    icon: CircleUser,
+    label: "Accessibility",
     path: "/settings",
   },
 ];
@@ -339,6 +384,30 @@ const Menu = () => {
               </Card>
             ))}
           </div>
+        </motion.div>
+
+        {/* Quick Access */}
+        <motion.div variants={itemVariants}>
+          <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2 px-1">
+            Quick Access
+          </h3>
+          <Card className="overflow-hidden border-border/50">
+            {quickAccessItems.map((item, index) => (
+              <div
+                key={item.id}
+                className={`flex items-center justify-between p-4 cursor-pointer hover:bg-muted/50 transition-colors ${
+                  index !== quickAccessItems.length - 1 ? "border-b border-border/50" : ""
+                }`}
+                onClick={() => navigate(item.path)}
+              >
+                <div className="flex items-center gap-3">
+                  <item.icon className="h-5 w-5 text-foreground" />
+                  <span className="font-medium text-sm">{item.label}</span>
+                </div>
+                <ChevronRight className="h-5 w-5 text-muted-foreground" />
+              </div>
+            ))}
+          </Card>
         </motion.div>
 
         {/* Theme Toggle */}
