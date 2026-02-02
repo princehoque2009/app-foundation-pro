@@ -95,17 +95,34 @@ const UserProfile = () => {
     enabled: !!userId,
   });
 
+  // Fetch pinned posts for this user
+  const { data: pinnedPosts } = useQuery({
+    queryKey: ["pinned-posts", userId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("pinned_posts")
+        .select("post_id")
+        .eq("user_id", userId)
+        .order("display_order", { ascending: true });
+      
+      if (error) throw error;
+      return data?.map(p => p.post_id) || [];
+    },
+    enabled: !!userId,
+  });
+
   // Transform posts into creations format
   const creations = useMemo(() => {
+    const pinnedSet = new Set(pinnedPosts || []);
     return posts?.map(post => ({
       id: post.id,
       type: post.is_reel ? "reel" as const : post.media_type === "video" ? "video" as const : "image" as const,
       thumbnail: post.media_url || undefined,
       caption: post.caption || undefined,
       likes: post.likes_count || 0,
-      isPinned: false,
+      isPinned: pinnedSet.has(post.id),
     })) || [];
-  }, [posts]);
+  }, [posts, pinnedPosts]);
 
   const regularPosts = posts?.filter(post => !post.is_reel) || [];
   const reelPosts = posts?.filter(post => post.is_reel) || [];
@@ -276,6 +293,10 @@ const UserProfile = () => {
                   followersCount={profile?.followers_count || 0}
                   followingCount={profile?.following_count || 0}
                   country={profile?.country}
+                  isVerified={profile?.is_verified}
+                  accountType={profile?.account_type}
+                  displayName={profile?.display_name}
+                  username={profile?.username}
                 />
               </div>
             </motion.div>
