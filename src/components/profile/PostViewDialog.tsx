@@ -14,18 +14,32 @@ interface PostViewDialogProps {
 }
 
 export const PostViewDialog = ({ postId, open, onOpenChange }: PostViewDialogProps) => {
-  const { data: post, isLoading } = useQuery({
-    queryKey: ["post", postId],
+  const { data: post, isLoading, error } = useQuery({
+    queryKey: ["post-view", postId],
     queryFn: async () => {
       if (!postId) return null;
-      const { data, error } = await supabase
+      
+      // Fetch post with profile data
+      const { data: postData, error: postError } = await supabase
         .from("posts")
-        .select("*, profiles(*)")
+        .select("*, profiles!posts_user_id_fkey(*)")
         .eq("id", postId)
         .maybeSingle();
       
-      if (error) throw error;
-      return data;
+      if (postError) throw postError;
+      if (!postData) return null;
+      
+      // Fetch additional media if it's a carousel post
+      const { data: mediaData } = await supabase
+        .from("post_media")
+        .select("*")
+        .eq("post_id", postId)
+        .order("display_order", { ascending: true });
+      
+      return {
+        ...postData,
+        post_media: mediaData || []
+      };
     },
     enabled: !!postId && open,
   });
