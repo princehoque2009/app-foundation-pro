@@ -1,4 +1,4 @@
-import { MoreVertical, Edit, Trash2, Flag, Share2, Pin, Archive, BarChart3, Link2, Download, EyeOff, BellOff, Copy } from "lucide-react";
+import { MoreVertical, Edit, Trash2, Flag, Share2, Pin, PinOff, Archive, BarChart3, Link2, Download, EyeOff, BellOff } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -9,17 +9,21 @@ import {
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface PostMenuProps {
   postId: string;
   postUserId: string;
+  isPinned?: boolean;
   onEdit?: () => void;
   onDelete?: () => void;
   onShare?: () => void;
 }
 
-export const PostMenu = ({ postId, postUserId, onEdit, onDelete, onShare }: PostMenuProps) => {
+export const PostMenu = ({ postId, postUserId, isPinned = false, onEdit, onDelete, onShare }: PostMenuProps) => {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const isOwner = user?.id === postUserId;
 
   const handleReport = () => {
@@ -33,7 +37,6 @@ export const PostMenu = ({ postId, postUserId, onEdit, onDelete, onShare }: Post
     if (onShare) {
       onShare();
     } else {
-      // Copy post link to clipboard
       const postUrl = `${window.location.origin}/post/${postId}`;
       navigator.clipboard.writeText(postUrl);
       toast({
@@ -52,11 +55,67 @@ export const PostMenu = ({ postId, postUserId, onEdit, onDelete, onShare }: Post
     });
   };
 
-  const handlePin = () => {
-    toast({
-      title: "Post pinned",
-      description: "This post has been pinned to your profile.",
-    });
+  const handlePin = async () => {
+    if (!user?.id) return;
+
+    try {
+      if (isPinned) {
+        // Unpin the post
+        const { error } = await supabase
+          .from("pinned_posts")
+          .delete()
+          .eq("user_id", user.id)
+          .eq("post_id", postId);
+
+        if (error) throw error;
+
+        toast({
+          title: "Post unpinned",
+          description: "This post has been removed from your profile pins.",
+        });
+      } else {
+        // Check how many posts are already pinned
+        const { count } = await supabase
+          .from("pinned_posts")
+          .select("*", { count: "exact", head: true })
+          .eq("user_id", user.id);
+
+        if ((count || 0) >= 3) {
+          toast({
+            title: "Pin limit reached",
+            description: "You can only pin up to 3 posts. Unpin one to add another.",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        // Pin the post
+        const { error } = await supabase
+          .from("pinned_posts")
+          .insert({
+            user_id: user.id,
+            post_id: postId,
+            display_order: (count || 0),
+          });
+
+        if (error) throw error;
+
+        toast({
+          title: "Post pinned",
+          description: "This post has been pinned to your profile.",
+        });
+      }
+
+      // Invalidate queries to refresh the data
+      queryClient.invalidateQueries({ queryKey: ["pinned-posts", user.id] });
+      queryClient.invalidateQueries({ queryKey: ["user-posts", user.id] });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update pin status",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleArchive = () => {
@@ -109,8 +168,17 @@ export const PostMenu = ({ postId, postUserId, onEdit, onDelete, onShare }: Post
         {isOwner ? (
           <>
             <DropdownMenuItem onClick={handlePin} className="cursor-pointer gap-2">
-              <Pin className="h-4 w-4" />
-              Pin to profile
+              {isPinned ? (
+                <>
+                  <PinOff className="h-4 w-4" />
+                  Unpin from profile
+                </>
+              ) : (
+                <>
+                  <Pin className="h-4 w-4" />
+                  Pin to profile
+                </>
+              )}
             </DropdownMenuItem>
             <DropdownMenuItem onClick={handleArchive} className="cursor-pointer gap-2">
               <Archive className="h-4 w-4" />

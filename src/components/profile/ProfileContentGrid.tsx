@@ -1,6 +1,6 @@
-import { useMemo } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Image, Play, Tag, FileText } from "lucide-react";
+import { Image, Play, Tag, FileText, Pin } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -10,6 +10,7 @@ interface MediaItem {
   thumbnail?: string;
   caption?: string;
   likes: number;
+  isPinned?: boolean;
 }
 
 interface ProfileContentGridProps {
@@ -19,6 +20,61 @@ interface ProfileContentGridProps {
   onItemClick?: (item: MediaItem) => void;
 }
 
+// Generate video thumbnail from video URL
+const VideoThumbnail = ({ src, alt }: { src: string; alt: string }) => {
+  const [thumbnail, setThumbnail] = useState<string | null>(null);
+  const [error, setError] = useState(false);
+
+  useEffect(() => {
+    const video = document.createElement("video");
+    video.crossOrigin = "anonymous";
+    video.src = src;
+    video.muted = true;
+    video.preload = "metadata";
+
+    video.onloadeddata = () => {
+      video.currentTime = 1; // Seek to 1 second for better thumbnail
+    };
+
+    video.onseeked = () => {
+      try {
+        const canvas = document.createElement("canvas");
+        canvas.width = video.videoWidth || 320;
+        canvas.height = video.videoHeight || 320;
+        const ctx = canvas.getContext("2d");
+        if (ctx) {
+          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+          setThumbnail(canvas.toDataURL("image/jpeg", 0.8));
+        }
+      } catch (e) {
+        setError(true);
+      }
+    };
+
+    video.onerror = () => setError(true);
+
+    return () => {
+      video.src = "";
+    };
+  }, [src]);
+
+  if (error || !thumbnail) {
+    return (
+      <div className="w-full h-full flex items-center justify-center bg-muted">
+        <Play className="h-8 w-8 text-muted-foreground" />
+      </div>
+    );
+  }
+
+  return (
+    <img
+      src={thumbnail}
+      alt={alt}
+      className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+    />
+  );
+};
+
 export const ProfileContentGrid = ({
   items,
   activeTab,
@@ -26,10 +82,16 @@ export const ProfileContentGrid = ({
   onItemClick,
 }: ProfileContentGridProps) => {
   const filteredItems = useMemo(() => {
-    if (activeTab === "all") return items;
-    if (activeTab === "media") return items.filter(i => i.type === "image" || i.type === "video");
-    if (activeTab === "reels") return items.filter(i => i.type === "reel" || i.type === "video");
-    return items;
+    let filtered = items;
+    if (activeTab === "media") filtered = items.filter(i => i.type === "image" || i.type === "video");
+    if (activeTab === "reels") filtered = items.filter(i => i.type === "reel" || i.type === "video");
+    
+    // Sort pinned items first
+    return [...filtered].sort((a, b) => {
+      if (a.isPinned && !b.isPinned) return -1;
+      if (!a.isPinned && b.isPinned) return 1;
+      return 0;
+    });
   }, [items, activeTab]);
 
   if (isLoading) {
@@ -94,7 +156,16 @@ export const ProfileContentGrid = ({
               "bg-muted focus:outline-none focus:ring-2 focus:ring-primary focus:ring-inset"
             )}
           >
-            {item.thumbnail ? (
+            {/* Render content based on type */}
+            {item.type === "video" || item.type === "reel" ? (
+              item.thumbnail ? (
+                <VideoThumbnail src={item.thumbnail} alt={item.caption || "Video"} />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center bg-muted">
+                  <Play className="h-8 w-8 text-muted-foreground" />
+                </div>
+              )
+            ) : item.thumbnail ? (
               <img
                 src={item.thumbnail}
                 alt={item.caption || "Post"}
@@ -111,6 +182,13 @@ export const ProfileContentGrid = ({
             {(item.type === "video" || item.type === "reel") && (
               <div className="absolute top-2 right-2">
                 <Play className="h-5 w-5 text-white drop-shadow-lg fill-white/20" />
+              </div>
+            )}
+
+            {/* Pinned indicator */}
+            {item.isPinned && (
+              <div className="absolute top-2 left-2 bg-primary/90 rounded-full p-1">
+                <Pin className="h-3 w-3 text-primary-foreground" />
               </div>
             )}
 
