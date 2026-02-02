@@ -2,11 +2,11 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/hooks/use-toast";
-import { Bell, Mail, Moon } from "lucide-react";
+import { Bell, Mail } from "lucide-react";
 
 export const NotificationSettings = () => {
   const { user } = useAuth();
@@ -107,32 +107,6 @@ export const NotificationSettings = () => {
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Moon className="h-5 w-5" />
-            Theme
-          </CardTitle>
-          <CardDescription>
-            Choose your preferred theme
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Select
-            value={settings?.theme || "system"}
-            onValueChange={(value) => updateSettingMutation.mutate({ theme: value })}
-          >
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="light">Light</SelectItem>
-              <SelectItem value="dark">Dark</SelectItem>
-              <SelectItem value="system">System</SelectItem>
-            </SelectContent>
-          </Select>
-        </CardContent>
-      </Card>
     </div>
   );
 };
