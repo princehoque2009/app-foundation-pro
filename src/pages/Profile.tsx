@@ -19,6 +19,8 @@ const Profile = () => {
   const [activeTab, setActiveTab] = useState("all");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [selectedPostId, setSelectedPostId] = useState<string | null>(null);
+  const [showAnalytics, setShowAnalytics] = useState(false);
+  const [showAbout, setShowAbout] = useState(true);
 
   // Fetch profile
   const { data: profile, isLoading: profileLoading } = useQuery({
@@ -100,35 +102,61 @@ const Profile = () => {
           isOwner={true}
           postsCount={posts?.length || 0}
           onEditClick={() => setIsEditDialogOpen(true)}
+          onAnalyticsClick={() => setShowAnalytics(!showAnalytics)}
+          onAboutClick={() => setShowAbout(!showAbout)}
           isLoading={profileLoading}
         />
 
-        {/* Live Insights - Private, Owner Only */}
-        <div className="px-4 sm:px-6 py-4">
-          <LiveInsights
-            profileViews={Math.floor(Math.random() * 500) + 50}
-            profileViewsChange={Math.floor(Math.random() * 40) - 10}
-            contentReach={totalReactions * 3}
-            contentReachChange={Math.floor(Math.random() * 30) - 5}
-            totalReactions={totalReactions}
-            reactionsChange={Math.floor(Math.random() * 25)}
-            totalShares={Math.floor(totalReactions * 0.2)}
-            sharesChange={Math.floor(Math.random() * 20) - 5}
-          />
-        </div>
+        {/* Live Insights - Private, Owner Only, Collapsible */}
+        <AnimatePresence>
+          {showAnalytics && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="overflow-hidden"
+            >
+              <div className="px-4 sm:px-6 py-4">
+                <LiveInsights
+                  profileViews={Math.floor(Math.random() * 500) + 50}
+                  profileViewsChange={Math.floor(Math.random() * 40) - 10}
+                  contentReach={totalReactions * 3}
+                  contentReachChange={Math.floor(Math.random() * 30) - 5}
+                  totalReactions={totalReactions}
+                  reactionsChange={Math.floor(Math.random() * 25)}
+                  totalShares={Math.floor(totalReactions * 0.2)}
+                  sharesChange={Math.floor(Math.random() * 20) - 5}
+                />
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-        {/* About Section - Publicly Visible */}
-        <div className="px-4 sm:px-6 pb-4">
-          <ProfileAboutSection
-            bio={profile?.bio}
-            dateOfBirth={profile?.date_of_birth}
-            createdAt={profile?.created_at}
-            postsCount={posts?.length || 0}
-            followersCount={profile?.followers_count || 0}
-            followingCount={profile?.following_count || 0}
-            country={profile?.country}
-          />
-        </div>
+        {/* About Section - Publicly Visible, Collapsible */}
+        <AnimatePresence>
+          {showAbout && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="overflow-hidden"
+            >
+              <div className="px-4 sm:px-6 pb-4">
+                <ProfileAboutSection
+                  bio={profile?.bio}
+                  dateOfBirth={profile?.date_of_birth}
+                  createdAt={profile?.created_at}
+                  postsCount={posts?.length || 0}
+                  followersCount={profile?.followers_count || 0}
+                  followingCount={profile?.following_count || 0}
+                  country={profile?.country}
+                />
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Profile Tabs */}
         <ProfileTabs

@@ -8,7 +8,9 @@ import {
   UserCircle, 
   Share2, 
   Edit3,
-  Camera 
+  Camera,
+  BarChart3,
+  Info
 } from "lucide-react";
 import { VerifiedBadge } from "@/components/ui/VerifiedBadge";
 import { UserRolesDisplay } from "./UserRolesDisplay";
@@ -24,6 +26,8 @@ interface ProfileHeaderProps {
   isOwner: boolean;
   postsCount: number;
   onEditClick?: () => void;
+  onAnalyticsClick?: () => void;
+  onAboutClick?: () => void;
   isLoading?: boolean;
 }
 
@@ -33,6 +37,8 @@ export const ProfileHeader = ({
   isOwner,
   postsCount,
   onEditClick,
+  onAnalyticsClick,
+  onAboutClick,
   isLoading,
 }: ProfileHeaderProps) => {
   const navigate = useNavigate();
@@ -146,18 +152,38 @@ export const ProfileHeader = ({
                     <span className="hidden sm:inline">Edit</span>
                   </Button>
                   <Button
-                    variant="outline"
-                    size="sm"
+                    variant="ghost"
+                    size="icon"
+                    onClick={onAboutClick}
+                    className="rounded-full h-8 w-8"
+                    title="About"
+                  >
+                    <Info className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={onAnalyticsClick}
+                    className="rounded-full h-8 w-8"
+                    title="Analytics"
+                  >
+                    <BarChart3 className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
                     onClick={handleShare}
-                    className="gap-1.5 rounded-full border-border"
+                    className="rounded-full h-8 w-8"
+                    title="Share"
                   >
                     <Share2 className="h-4 w-4" />
                   </Button>
                   <Button
-                    variant="outline"
+                    variant="ghost"
                     size="icon"
                     onClick={() => navigate("/settings")}
-                    className="rounded-full border-border h-8 w-8"
+                    className="rounded-full h-8 w-8"
+                    title="Settings"
                   >
                     <Settings className="h-4 w-4" />
                   </Button>
