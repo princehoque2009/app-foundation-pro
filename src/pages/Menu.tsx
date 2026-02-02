@@ -58,13 +58,6 @@ import { useRoles } from "@/contexts/RolesContext";
 // Minimal B&W outline icons - consistent style
 const menuItems = [
   {
-    id: "favourites",
-    icon: Bookmark,
-    label: "Saved",
-    description: "Your saved posts",
-    path: "/favourites",
-  },
-  {
     id: "groups",
     icon: Users,
     label: "Groups",
@@ -410,32 +403,6 @@ const Menu = () => {
           </Card>
         </motion.div>
 
-        {/* Theme Toggle */}
-        <motion.div variants={itemVariants}>
-          <Card className="p-4 border-border/50">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-xl bg-muted">
-                  {theme === "dark" ? (
-                    <Moon className="h-5 w-5 text-foreground" />
-                  ) : (
-                    <Sun className="h-5 w-5 text-foreground" />
-                  )}
-                </div>
-                <div>
-                  <h3 className="font-medium text-sm">Dark Mode</h3>
-                  <p className="text-[11px] text-muted-foreground">
-                    {theme === "dark" ? "Currently on" : "Currently off"}
-                  </p>
-                </div>
-              </div>
-              <Switch
-                checked={theme === "dark"}
-                onCheckedChange={toggleTheme}
-              />
-            </div>
-          </Card>
-        </motion.div>
 
         {/* Settings Section */}
         <motion.div variants={itemVariants}>
