@@ -1,6 +1,7 @@
 import { MainLayout } from "@/components/layout/MainLayout";
 import { Stories } from "@/components/home/Stories";
 import { PostCard } from "@/components/home/PostCard";
+import { SuggestedAccounts } from "@/components/home/SuggestedAccounts";
 import { usePosts } from "@/hooks/usePosts";
 import { PostSkeleton, StorySkeleton } from "@/components/ui/Shimmer";
 import { SmartFeedAd } from "@/components/ads/SmartFeedAd";
@@ -18,6 +19,9 @@ const Home = () => {
         <div className="bg-card border-b border-border py-4">
           {isLoading ? <StorySkeleton /> : <Stories />}
         </div>
+
+        {/* Suggested Accounts - Swipeable horizontal scroll */}
+        <SuggestedAccounts />
 
         {/* Posts Feed */}
         <div className="max-w-2xl mx-auto px-4 py-4">

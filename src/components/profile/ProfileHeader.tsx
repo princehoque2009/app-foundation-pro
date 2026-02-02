@@ -16,6 +16,7 @@ import { VerifiedBadge } from "@/components/ui/VerifiedBadge";
 import { UserRolesDisplay } from "./UserRolesDisplay";
 import { CoverPhotoUploader } from "./CoverPhotoUploader";
 import { AvatarUploader } from "./AvatarUploader";
+import { FollowersFollowingDialog } from "./FollowersFollowingDialog";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 import { toast } from "@/hooks/use-toast";
@@ -43,6 +44,13 @@ export const ProfileHeader = ({
 }: ProfileHeaderProps) => {
   const navigate = useNavigate();
   const [isAvatarUploaderOpen, setIsAvatarUploaderOpen] = useState(false);
+  const [isFollowersDialogOpen, setIsFollowersDialogOpen] = useState(false);
+  const [followersDialogTab, setFollowersDialogTab] = useState<"followers" | "following">("followers");
+
+  const openFollowersDialog = (tab: "followers" | "following") => {
+    setFollowersDialogTab(tab);
+    setIsFollowersDialogOpen(true);
+  };
 
   const handleShare = async () => {
     const profileUrl = `${window.location.origin}/profile/${userId}`;
@@ -239,7 +247,7 @@ export const ProfileHeader = ({
             </button>
             <button 
               className="group text-left"
-              onClick={() => {/* Navigate to followers */}}
+              onClick={() => openFollowersDialog("followers")}
             >
               <span className="text-lg font-bold text-foreground group-hover:text-primary transition-colors">
                 {profile?.followers_count || 0}
@@ -248,7 +256,7 @@ export const ProfileHeader = ({
             </button>
             <button 
               className="group text-left"
-              onClick={() => {/* Navigate to following */}}
+              onClick={() => openFollowersDialog("following")}
             >
               <span className="text-lg font-bold text-foreground group-hover:text-primary transition-colors">
                 {profile?.following_count || 0}
@@ -264,6 +272,16 @@ export const ProfileHeader = ({
         currentAvatar={profile?.avatar_url}
         open={isAvatarUploaderOpen}
         onOpenChange={setIsAvatarUploaderOpen}
+      />
+
+      {/* Followers/Following Dialog */}
+      <FollowersFollowingDialog
+        open={isFollowersDialogOpen}
+        onOpenChange={setIsFollowersDialogOpen}
+        userId={userId}
+        initialTab={followersDialogTab}
+        followersCount={profile?.followers_count || 0}
+        followingCount={profile?.following_count || 0}
       />
     </>
   );
