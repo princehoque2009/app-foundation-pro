@@ -18,9 +18,15 @@ import { UserRoleBadges } from "@/components/ui/RoleBadge";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/hooks/use-toast";
-import { Search, UserCircle, UserPlus, UserMinus, Lock } from "lucide-react";
+import { Search, UserCircle, UserPlus, UserMinus, Lock, Filter, Clock, Users, UserCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface FollowersFollowingDialogProps {
   open: boolean;
@@ -33,6 +39,8 @@ interface FollowersFollowingDialogProps {
 
 const PAGE_SIZE = 20;
 
+type FilterType = "all" | "newest" | "mutual";
+
 interface UserWithRole {
   id: string;
   username: string;
@@ -41,6 +49,7 @@ interface UserWithRole {
   is_verified: boolean;
   account_type: string | null;
   roles?: string[];
+  created_at?: string;
 }
 
 export const FollowersFollowingDialog = ({
@@ -56,6 +65,7 @@ export const FollowersFollowingDialog = ({
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<"followers" | "following">(initialTab);
   const [searchQuery, setSearchQuery] = useState("");
+  const [filter, setFilter] = useState<FilterType>("all");
 
   useEffect(() => {
     setActiveTab(initialTab);
@@ -63,6 +73,7 @@ export const FollowersFollowingDialog = ({
 
   useEffect(() => {
     setSearchQuery("");
+    setFilter("all");
   }, [activeTab, open]);
 
   // Fetch followers with infinite scroll
@@ -75,11 +86,11 @@ export const FollowersFollowingDialog = ({
   } = useInfiniteQuery({
     queryKey: ["followers", userId],
     queryFn: async ({ pageParam = 0 }) => {
-      // Get users who have this user as a friend (followers)
       const { data, error } = await supabase
         .from("friendships")
         .select(`
           user_id,
+          created_at,
           profiles:user_id (
             id,
             username,
@@ -90,11 +101,11 @@ export const FollowersFollowingDialog = ({
           )
         `)
         .eq("friend_id", userId)
+        .order("created_at", { ascending: false })
         .range(pageParam, pageParam + PAGE_SIZE - 1);
 
       if (error) throw error;
 
-      // Get roles for each user
       const userIds = data.map((f: any) => f.user_id);
       const { data: rolesData } = await supabase
         .from("user_roles")
@@ -110,6 +121,7 @@ export const FollowersFollowingDialog = ({
       return data.map((f: any) => ({
         ...f.profiles,
         roles: roleMap.get(f.user_id) || [],
+        created_at: f.created_at,
       })) as UserWithRole[];
     },
     getNextPageParam: (lastPage, allPages) => {
@@ -130,11 +142,11 @@ export const FollowersFollowingDialog = ({
   } = useInfiniteQuery({
     queryKey: ["following", userId],
     queryFn: async ({ pageParam = 0 }) => {
-      // Get users this user is following
       const { data, error } = await supabase
         .from("friendships")
         .select(`
           friend_id,
+          created_at,
           profiles:friend_id (
             id,
             username,
@@ -145,11 +157,11 @@ export const FollowersFollowingDialog = ({
           )
         `)
         .eq("user_id", userId)
+        .order("created_at", { ascending: false })
         .range(pageParam, pageParam + PAGE_SIZE - 1);
 
       if (error) throw error;
 
-      // Get roles for each user
       const userIds = data.map((f: any) => f.friend_id);
       const { data: rolesData } = await supabase
         .from("user_roles")
@@ -165,6 +177,7 @@ export const FollowersFollowingDialog = ({
       return data.map((f: any) => ({
         ...f.profiles,
         roles: roleMap.get(f.friend_id) || [],
+        created_at: f.created_at,
       })) as UserWithRole[];
     },
     getNextPageParam: (lastPage, allPages) => {
@@ -187,6 +200,38 @@ export const FollowersFollowingDialog = ({
       return new Set(data.map(f => f.friend_id));
     },
     enabled: !!currentUser?.id && open,
+  });
+
+  // Get mutual friends (people that both current user and target user follow)
+  const { data: mutualFriends } = useQuery({
+    queryKey: ["mutual-friends", userId, currentUser?.id],
+    queryFn: async () => {
+      if (!currentUser?.id || currentUser.id === userId) return new Set<string>();
+      
+      // Get target user's friends
+      const { data: targetFriends } = await supabase
+        .from("friendships")
+        .select("friend_id")
+        .eq("user_id", userId);
+      
+      // Get current user's friends
+      const { data: myFriendsData } = await supabase
+        .from("friendships")
+        .select("friend_id")
+        .eq("user_id", currentUser.id);
+      
+      const targetSet = new Set(targetFriends?.map(f => f.friend_id) || []);
+      const mySet = new Set(myFriendsData?.map(f => f.friend_id) || []);
+      
+      // Find intersection
+      const mutual = new Set<string>();
+      targetSet.forEach(id => {
+        if (mySet.has(id)) mutual.add(id);
+      });
+      
+      return mutual;
+    },
+    enabled: !!currentUser?.id && open && filter === "mutual",
   });
 
   // Follow mutation
@@ -242,17 +287,30 @@ export const FollowersFollowingDialog = ({
     [followingData]
   );
 
-  // Filter by search
+  // Filter by search and filter type
   const filteredUsers = useMemo(() => {
-    const users = activeTab === "followers" ? followers : following;
-    if (!searchQuery.trim()) return users;
+    let users = activeTab === "followers" ? followers : following;
     
-    const query = searchQuery.toLowerCase();
-    return users.filter(user => 
-      user.username.toLowerCase().includes(query) ||
-      (user.display_name?.toLowerCase().includes(query))
-    );
-  }, [activeTab, followers, following, searchQuery]);
+    // Apply filter
+    if (filter === "newest") {
+      users = [...users].sort((a, b) => 
+        new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime()
+      );
+    } else if (filter === "mutual" && mutualFriends) {
+      users = users.filter(user => mutualFriends.has(user.id));
+    }
+    
+    // Apply search
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      users = users.filter(user => 
+        user.username.toLowerCase().includes(query) ||
+        (user.display_name?.toLowerCase().includes(query))
+      );
+    }
+    
+    return users;
+  }, [activeTab, followers, following, searchQuery, filter, mutualFriends]);
 
   // Infinite scroll handler
   const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
@@ -290,6 +348,12 @@ export const FollowersFollowingDialog = ({
     );
   };
 
+  const filterLabels: Record<FilterType, string> = {
+    all: "All",
+    newest: "Newest",
+    mutual: "Mutual Friends",
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md max-h-[80vh] flex flex-col p-0 gap-0 rounded-2xl overflow-hidden">
@@ -315,9 +379,9 @@ export const FollowersFollowingDialog = ({
           </Tabs>
         </div>
 
-        {/* Search Bar */}
-        <div className="px-4 py-3 border-b border-border">
-          <div className="relative">
+        {/* Search Bar + Filter */}
+        <div className="px-4 py-3 border-b border-border flex gap-2">
+          <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Search..."
@@ -326,7 +390,54 @@ export const FollowersFollowingDialog = ({
               className="pl-9 bg-muted/50 border-0"
             />
           </div>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="icon" className="shrink-0">
+                <Filter className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem 
+                onClick={() => setFilter("all")}
+                className={cn(filter === "all" && "bg-muted")}
+              >
+                <Users className="h-4 w-4 mr-2" />
+                All
+              </DropdownMenuItem>
+              <DropdownMenuItem 
+                onClick={() => setFilter("newest")}
+                className={cn(filter === "newest" && "bg-muted")}
+              >
+                <Clock className="h-4 w-4 mr-2" />
+                Newest
+              </DropdownMenuItem>
+              {currentUser?.id !== userId && (
+                <DropdownMenuItem 
+                  onClick={() => setFilter("mutual")}
+                  className={cn(filter === "mutual" && "bg-muted")}
+                >
+                  <UserCheck className="h-4 w-4 mr-2" />
+                  Mutual Friends
+                </DropdownMenuItem>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
+
+        {/* Active Filter Badge */}
+        {filter !== "all" && (
+          <div className="px-4 py-2 border-b border-border">
+            <Button
+              variant="secondary"
+              size="sm"
+              className="h-7 text-xs gap-1"
+              onClick={() => setFilter("all")}
+            >
+              {filterLabels[filter]}
+              <span className="ml-1">×</span>
+            </Button>
+          </div>
+        )}
 
         {/* User List */}
         <ScrollArea 
@@ -359,6 +470,11 @@ export const FollowersFollowingDialog = ({
                       <Search className="h-12 w-12 text-muted-foreground/50 mb-3" />
                       <p className="text-muted-foreground">No users found matching "{searchQuery}"</p>
                     </>
+                  ) : filter === "mutual" ? (
+                    <>
+                      <UserCheck className="h-12 w-12 text-muted-foreground/50 mb-3" />
+                      <p className="text-muted-foreground">No mutual friends found</p>
+                    </>
                   ) : (
                     <>
                       <Lock className="h-12 w-12 text-muted-foreground/50 mb-3" />
@@ -370,7 +486,7 @@ export const FollowersFollowingDialog = ({
                 </motion.div>
               ) : (
                 <motion.div
-                  key={activeTab}
+                  key={activeTab + filter}
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
@@ -379,6 +495,7 @@ export const FollowersFollowingDialog = ({
                   {filteredUsers.map((user) => {
                     const isFollowing = myFriendships?.has(user.id);
                     const isCurrentUser = user.id === currentUser?.id;
+                    const isMutual = mutualFriends?.has(user.id);
 
                     return (
                       <motion.div
@@ -408,9 +525,16 @@ export const FollowersFollowingDialog = ({
                               <UserRoleBadges roles={user.roles as any} size="sm" />
                             )}
                           </div>
-                          <p className="text-xs text-muted-foreground truncate">
-                            @{highlightMatch(user.username, searchQuery)}
-                          </p>
+                          <div className="flex items-center gap-2">
+                            <p className="text-xs text-muted-foreground truncate">
+                              @{highlightMatch(user.username, searchQuery)}
+                            </p>
+                            {isMutual && filter !== "mutual" && (
+                              <span className="text-[10px] text-primary bg-primary/10 px-1.5 py-0.5 rounded-full">
+                                Mutual
+                              </span>
+                            )}
+                          </div>
                         </div>
 
                         {!isCurrentUser && (

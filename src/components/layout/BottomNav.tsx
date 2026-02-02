@@ -1,4 +1,4 @@
-import { Home, Film, PlusCircle, MessageCircle, FlaskConical } from "lucide-react";
+import { Home, Film, PlusCircle, MessageCircle, User } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
@@ -8,7 +8,7 @@ const navItems = [
   { icon: Film, label: "Reels", path: "/reels" },
   { icon: PlusCircle, label: "Create", path: "/create" },
   { icon: MessageCircle, label: "Messages", path: "/messages" },
-  { icon: FlaskConical, label: "Lab", path: "/lab" },
+  { icon: User, label: "Profile", path: "/profile" },
 ];
 
 export const BottomNav = () => {
