@@ -39,6 +39,7 @@ import CommunityStandards from "./pages/CommunityStandards";
 import CookiesPolicy from "./pages/CookiesPolicy";
 import ManageInfo from "./pages/ManageInfo";
 import Lab from "./pages/Lab";
+import SuspendedAccount from "./pages/SuspendedAccount";
 
 const queryClient = new QueryClient();
 
@@ -115,6 +116,7 @@ const App = () => {
                   <Route path="/community-standards" element={<CommunityStandards />} />
                   <Route path="/cookies-policy" element={<CookiesPolicy />} />
                   <Route path="/manage-info" element={<ManageInfo />} />
+                  <Route path="/suspended" element={<SuspendedAccount />} />
                   <Route path="*" element={<NotFound />} />
                   </Routes>
                 </RolesProvider>
