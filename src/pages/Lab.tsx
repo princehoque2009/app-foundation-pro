@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -23,20 +24,27 @@ import {
   ChevronRight,
   Globe,
   Lock,
-  MoreHorizontal,
   Sparkles,
   Search,
   LayoutGrid,
   List,
   BarChart3,
   Settings,
-  Edit,
   Filter,
   Clock,
   TrendingUp,
+  UserCircle,
+  RefreshCw,
+  Palette,
+  DollarSign,
+  Shield,
+  Cog,
+  Zap,
 } from "lucide-react";
 import { CreatePageDialog } from "@/components/lab/CreatePageDialog";
 import { CreateGroupDialog } from "@/components/lab/CreateCommunityGroupDialog";
+import { LabIdentitySwitcher } from "@/components/lab/LabIdentitySwitcher";
+import { LabAnalyticsPanel } from "@/components/lab/LabAnalyticsPanel";
 import { cn } from "@/lib/utils";
 
 type ViewMode = "grid" | "list";
@@ -47,12 +55,29 @@ const Lab = () => {
   const { user } = useAuth();
   const [showCreatePage, setShowCreatePage] = useState(false);
   const [showCreateGroup, setShowCreateGroup] = useState(false);
+  const [showIdentitySwitcher, setShowIdentitySwitcher] = useState(false);
+  const [showAnalytics, setShowAnalytics] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>("list");
   const [sortMode, setSortMode] = useState<SortMode>("newest");
   const [searchQuery, setSearchQuery] = useState("");
 
+  // Fetch current user profile
+  const { data: profile } = useQuery({
+    queryKey: ["my-profile", user?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", user?.id)
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user?.id,
+  });
+
   // Fetch user's pages
-  const { data: pages, isLoading: loadingPages } = useQuery({
+  const { data: pages, isLoading: loadingPages, refetch: refetchPages } = useQuery({
     queryKey: ["my-pages", user?.id],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -67,7 +92,7 @@ const Lab = () => {
   });
 
   // Fetch user's community groups
-  const { data: groups, isLoading: loadingGroups } = useQuery({
+  const { data: groups, isLoading: loadingGroups, refetch: refetchGroups } = useQuery({
     queryKey: ["my-community-groups", user?.id],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -145,6 +170,11 @@ const Lab = () => {
     }
   });
 
+  const handleRefresh = () => {
+    refetchPages();
+    refetchGroups();
+  };
+
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
@@ -157,6 +187,42 @@ const Lab = () => {
     hidden: { opacity: 0, y: 10 },
     visible: { opacity: 1, y: 0 },
   };
+
+  // Feature cards for quick actions
+  const featureCards = [
+    { 
+      id: "create-page", 
+      icon: FileText, 
+      label: "Create Page", 
+      color: "text-blue-500",
+      bgColor: "bg-blue-500/10",
+      onClick: () => setShowCreatePage(true),
+    },
+    { 
+      id: "create-group", 
+      icon: Users, 
+      label: "Create Group", 
+      color: "text-green-500",
+      bgColor: "bg-green-500/10",
+      onClick: () => setShowCreateGroup(true),
+    },
+    { 
+      id: "switch-identity", 
+      icon: RefreshCw, 
+      label: "Switch Identity", 
+      color: "text-purple-500",
+      bgColor: "bg-purple-500/10",
+      onClick: () => setShowIdentitySwitcher(true),
+    },
+    { 
+      id: "analytics", 
+      icon: BarChart3, 
+      label: "Analytics", 
+      color: "text-amber-500",
+      bgColor: "bg-amber-500/10",
+      onClick: () => setShowAnalytics(true),
+    },
+  ];
 
   const renderPageCard = (page: any, isOwned: boolean = true) => (
     <Card
@@ -184,9 +250,14 @@ const Lab = () => {
           "min-w-0",
           viewMode === "grid" ? "" : "flex-1"
         )}>
-          <h4 className="font-medium text-sm truncate">
-            {page.name}
-          </h4>
+          <div className="flex items-center gap-1.5">
+            <h4 className="font-medium text-sm truncate">
+              {page.name}
+            </h4>
+            {isOwned && (
+              <Badge variant="secondary" className="text-[10px] px-1.5 py-0">Owner</Badge>
+            )}
+          </div>
           <p className="text-xs text-muted-foreground flex items-center gap-1 justify-center">
             {page.privacy === "public" ? (
               <Globe className="h-3 w-3" />
@@ -204,7 +275,7 @@ const Lab = () => {
               className="h-8 w-8"
               onClick={(e) => {
                 e.stopPropagation();
-                // Navigate to analytics
+                setShowAnalytics(true);
               }}
             >
               <BarChart3 className="h-4 w-4" />
@@ -215,7 +286,7 @@ const Lab = () => {
               className="h-8 w-8"
               onClick={(e) => {
                 e.stopPropagation();
-                // Navigate to settings
+                navigate(`/page/${page.id}/settings`);
               }}
             >
               <Settings className="h-4 w-4" />
@@ -256,9 +327,14 @@ const Lab = () => {
           "min-w-0",
           viewMode === "grid" ? "" : "flex-1"
         )}>
-          <h4 className="font-medium text-sm truncate">
-            {group.name}
-          </h4>
+          <div className="flex items-center gap-1.5">
+            <h4 className="font-medium text-sm truncate">
+              {group.name}
+            </h4>
+            {isOwned && (
+              <Badge variant="secondary" className="text-[10px] px-1.5 py-0">Owner</Badge>
+            )}
+          </div>
           <p className="text-xs text-muted-foreground flex items-center gap-1 justify-center">
             {group.privacy === "public" ? (
               <Globe className="h-3 w-3" />
@@ -276,6 +352,7 @@ const Lab = () => {
               className="h-8 w-8"
               onClick={(e) => {
                 e.stopPropagation();
+                setShowAnalytics(true);
               }}
             >
               <BarChart3 className="h-4 w-4" />
@@ -286,6 +363,7 @@ const Lab = () => {
               className="h-8 w-8"
               onClick={(e) => {
                 e.stopPropagation();
+                navigate(`/community/${group.id}/settings`);
               }}
             >
               <Settings className="h-4 w-4" />
@@ -306,29 +384,59 @@ const Lab = () => {
         {/* Header */}
         <div className="sticky top-0 z-40 bg-background/80 backdrop-blur-xl border-b border-border">
           <div className="flex items-center justify-between h-14 px-4 max-w-screen-xl mx-auto">
-            <h1 className="font-semibold text-lg flex items-center gap-2">
+            <div className="flex items-center gap-2">
               <Sparkles className="h-5 w-5 text-primary" />
-              Lab
-            </h1>
-            <div className="flex gap-2">
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => setShowCreatePage(true)}
-                className="gap-1.5"
-              >
-                <FileText className="h-4 w-4" />
-                Page
-              </Button>
-              <Button
-                size="sm"
-                onClick={() => setShowCreateGroup(true)}
-                className="gap-1.5"
-              >
-                <Users className="h-4 w-4" />
-                Group
-              </Button>
+              <div>
+                <h1 className="font-semibold text-lg leading-tight">Lab</h1>
+                <p className="text-[10px] text-muted-foreground leading-none">Create & manage your presence</p>
+              </div>
             </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleRefresh}
+            >
+              <RefreshCw className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+
+        {/* Active Identity Badge */}
+        <div className="px-4 py-3 border-b border-border">
+          <button
+            onClick={() => setShowIdentitySwitcher(true)}
+            className="flex items-center gap-3 p-3 w-full rounded-xl bg-muted/50 hover:bg-muted transition-colors"
+          >
+            <Avatar className="h-10 w-10">
+              <AvatarImage src={profile?.avatar_url || ""} />
+              <AvatarFallback>
+                <UserCircle className="h-5 w-5" />
+              </AvatarFallback>
+            </Avatar>
+            <div className="flex-1 text-left">
+              <p className="font-medium text-sm">{profile?.display_name || profile?.username}</p>
+              <p className="text-xs text-muted-foreground">Active Identity · Personal Account</p>
+            </div>
+            <RefreshCw className="h-4 w-4 text-muted-foreground" />
+          </button>
+        </div>
+
+        {/* Feature Cards Grid */}
+        <div className="px-4 py-3">
+          <div className="grid grid-cols-4 gap-2">
+            {featureCards.map((card) => (
+              <motion.button
+                key={card.id}
+                whileTap={{ scale: 0.95 }}
+                onClick={card.onClick}
+                className="flex flex-col items-center gap-2 p-3 rounded-xl bg-card border border-border hover:bg-muted/50 transition-colors"
+              >
+                <div className={cn("p-2 rounded-xl", card.bgColor)}>
+                  <card.icon className={cn("h-5 w-5", card.color)} />
+                </div>
+                <span className="text-[11px] font-medium text-center leading-tight">{card.label}</span>
+              </motion.button>
+            ))}
           </div>
         </div>
 
@@ -399,10 +507,16 @@ const Lab = () => {
               <TabsTrigger value="pages" className="gap-2">
                 <FileText className="h-4 w-4" />
                 Pages
+                {pages && pages.length > 0 && (
+                  <Badge variant="secondary" className="ml-1">{pages.length}</Badge>
+                )}
               </TabsTrigger>
               <TabsTrigger value="groups" className="gap-2">
                 <Users className="h-4 w-4" />
                 Groups
+                {groups && groups.length > 0 && (
+                  <Badge variant="secondary" className="ml-1">{groups.length}</Badge>
+                )}
               </TabsTrigger>
             </TabsList>
 
@@ -529,7 +643,7 @@ const Lab = () => {
                 </motion.div>
 
                 {/* Joined Groups */}
-                {joinedGroups && joinedGroups.length > 0 && (
+                {joinedGroups && joinedGroups.filter((g: any) => g?.created_by !== user?.id).length > 0 && (
                   <motion.div variants={itemVariants}>
                     <h3 className="text-sm font-medium text-muted-foreground mb-2 px-1">
                       Joined
@@ -537,7 +651,7 @@ const Lab = () => {
                     <div className={cn(
                       viewMode === "grid" ? "grid grid-cols-2 gap-2" : "space-y-2"
                     )}>
-                      {joinedGroups.map((group: any) => renderGroupCard(group, false))}
+                      {joinedGroups.filter((g: any) => g?.created_by !== user?.id).map((group: any) => renderGroupCard(group, false))}
                     </div>
                   </motion.div>
                 )}
@@ -547,8 +661,11 @@ const Lab = () => {
         </div>
       </div>
 
+      {/* Dialogs */}
       <CreatePageDialog open={showCreatePage} onOpenChange={setShowCreatePage} />
       <CreateGroupDialog open={showCreateGroup} onOpenChange={setShowCreateGroup} />
+      <LabIdentitySwitcher open={showIdentitySwitcher} onOpenChange={setShowIdentitySwitcher} />
+      <LabAnalyticsPanel open={showAnalytics} onOpenChange={setShowAnalytics} />
     </MainLayout>
   );
 };
