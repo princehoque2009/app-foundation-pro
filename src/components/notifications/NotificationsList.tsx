@@ -17,6 +17,7 @@ import {
   Send,
   CheckCircle,
   Trash2,
+  Star,
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { useNavigate } from "react-router-dom";
@@ -40,9 +41,11 @@ const getIcon = (type: string) => {
     case 'message':
     case 'support_response':
       return <Send className="h-4 w-4 text-primary" />;
-    case 'system_warning':
+    case 'advisor_suggestion':
     case 'advisor_guidance':
     case 'advisor_feedback':
+      return <Star className="h-4 w-4 text-amber-500" />;
+    case 'system_warning':
       return <Settings className="h-4 w-4 text-amber-500" />;
     default:
       return <Bell className="h-4 w-4 text-muted-foreground" />;

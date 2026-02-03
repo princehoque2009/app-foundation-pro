@@ -153,6 +153,51 @@ export type Database = {
           },
         ]
       }
+      advisor_suggestions: {
+        Row: {
+          advisor_id: string
+          context: string | null
+          created_at: string | null
+          id: string
+          message: string
+          opened_at: string | null
+          priority: string
+          seen_at: string | null
+          status: string
+          target_id: string | null
+          target_type: string | null
+          user_id: string
+        }
+        Insert: {
+          advisor_id: string
+          context?: string | null
+          created_at?: string | null
+          id?: string
+          message: string
+          opened_at?: string | null
+          priority?: string
+          seen_at?: string | null
+          status?: string
+          target_id?: string | null
+          target_type?: string | null
+          user_id: string
+        }
+        Update: {
+          advisor_id?: string
+          context?: string | null
+          created_at?: string | null
+          id?: string
+          message?: string
+          opened_at?: string | null
+          priority?: string
+          seen_at?: string | null
+          status?: string
+          target_id?: string | null
+          target_type?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       app_settings: {
         Row: {
           description: string | null
