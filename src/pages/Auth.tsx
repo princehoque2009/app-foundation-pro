@@ -582,8 +582,14 @@ const Auth = () => {
                 <button
                   type="button"
                   onClick={() => {
-                    setIsLogin(!isLogin);
-                    resetForm();
+                    const newIsLogin = !isLogin;
+                    setEmail("");
+                    setPassword("");
+                    setUsername("");
+                    setDisplayName("");
+                    setDateOfBirth("");
+                    setSignupStep("auth");
+                    setIsLogin(newIsLogin);
                   }}
                   className="text-primary hover:underline font-medium"
                 >
