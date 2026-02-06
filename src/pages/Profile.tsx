@@ -20,7 +20,7 @@ const Profile = () => {
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [selectedPostId, setSelectedPostId] = useState<string | null>(null);
   const [showAnalytics, setShowAnalytics] = useState(false);
-  const [showAbout, setShowAbout] = useState(true);
+  const [showAbout, setShowAbout] = useState(false);
 
   // Fetch profile
   const { data: profile, isLoading: profileLoading } = useQuery({
