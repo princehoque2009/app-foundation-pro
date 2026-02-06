@@ -1,7 +1,7 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Heart, MessageCircle, Share2, Bookmark, UserCircle } from "lucide-react";
+import { Heart, MessageCircle, Share2, Bookmark, UserCircle, Gift } from "lucide-react";
 import { useState } from "react";
 import { useToggleLike, usePostLikes } from "@/hooks/usePostInteractions";
 import { formatDistanceToNow } from "date-fns";
@@ -22,7 +22,7 @@ import { useUserRoles } from "@/hooks/useUserRoles";
 import { MediaCarousel } from "./MediaCarousel";
 import { PostMedia } from "@/hooks/usePosts";
 import { GiftPrangsPostDialog } from "@/components/wallet/GiftPrangsPostDialog";
-import { PrangsIcon } from "@/components/wallet/PrangsIcon";
+
 
 interface PostCardProps {
   id: string;
@@ -329,7 +329,7 @@ export const PostCard = ({ id, author, content, image, video, mediaItems, likes,
                   onClick={() => setShowGiftDialog(true)}
                   title="Gift Prangs"
                 >
-                  <PrangsIcon size="xs" />
+                  <Gift className="h-5 w-5" />
                 </Button>
                 <Button
                   variant="ghost"
