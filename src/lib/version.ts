@@ -1,8 +1,8 @@
 // Prangon App Version
-export const APP_VERSION = "1.9.0";
-export const BUILD_NUMBER = "160";
+export const APP_VERSION = "2.0.0";
+export const BUILD_NUMBER = "200";
 export const APP_NAME = "Prangon";
-export const RELEASE_DATE = "2026-02-02";
+export const RELEASE_DATE = "2026-02-06";
 export const COPYRIGHT_YEAR = new Date().getFullYear();
 
 export const getVersionInfo = () => ({

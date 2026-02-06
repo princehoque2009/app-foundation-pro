@@ -12,6 +12,7 @@ import { AdminLogsViewer } from "@/components/admin/AdminLogsViewer";
 import { AdminAnnouncements } from "@/components/admin/AdminAnnouncements";
 import { AdvancedRevenuePanel } from "@/components/admin/AdvancedRevenuePanel";
 import { AdvertisementPanel } from "@/components/admin/AdvertisementPanel";
+import { AdminWalletRequests } from "@/components/admin/AdminWalletRequests";
 
 const Admin = () => {
   const { isAdmin, loading } = useRoles();
@@ -54,6 +55,8 @@ const Admin = () => {
         return <AdminAppSettings />;
       case "revenue":
         return <AdvancedRevenuePanel />;
+      case "wallet":
+        return <AdminWalletRequests />;
       case "logs":
         return <AdminLogsViewer />;
       default:

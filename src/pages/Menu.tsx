@@ -41,6 +41,7 @@ import {
   Zap,
   FlaskConical,
   FileText,
+  Wallet,
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -372,6 +373,25 @@ const Menu = () => {
                 <Info className="h-5 w-5 text-foreground" />
                 <span className="text-xs text-muted-foreground">About</span>
               </button>
+            </div>
+          </Card>
+        </motion.div>
+
+        {/* Wallet */}
+        <motion.div variants={itemVariants}>
+          <Card
+            className="p-4 cursor-pointer hover:bg-muted/50 transition-colors border-border/50"
+            onClick={() => navigate("/wallet")}
+          >
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-xl bg-primary/10">
+                <Wallet className="h-5 w-5 text-primary" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-medium text-sm">Wallet</h3>
+                <p className="text-xs text-muted-foreground">Prangs & transactions</p>
+              </div>
+              <ChevronRight className="h-5 w-5 text-muted-foreground" />
             </div>
           </Card>
         </motion.div>
