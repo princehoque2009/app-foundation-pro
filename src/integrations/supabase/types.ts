@@ -1489,6 +1489,8 @@ export type Database = {
           balance: number
           created_at: string
           id: string
+          last_daily_claim: string | null
+          subscription_expires_at: string | null
           total_received: number
           total_sent: number
           updated_at: string
@@ -1498,6 +1500,8 @@ export type Database = {
           balance?: number
           created_at?: string
           id?: string
+          last_daily_claim?: string | null
+          subscription_expires_at?: string | null
           total_received?: number
           total_sent?: number
           updated_at?: string
@@ -1507,6 +1511,8 @@ export type Database = {
           balance?: number
           created_at?: string
           id?: string
+          last_daily_claim?: string | null
+          subscription_expires_at?: string | null
           total_received?: number
           total_sent?: number
           updated_at?: string
