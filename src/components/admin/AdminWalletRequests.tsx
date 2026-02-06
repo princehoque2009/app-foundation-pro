@@ -77,12 +77,20 @@ export const AdminWalletRequests = () => {
         .single();
 
       if (wallet) {
+        const updateData: any = {
+          balance: (wallet as any).balance + tx.amount,
+          total_received: ((wallet as any).total_received || 0) + tx.amount,
+        };
+
+        // If this is the monthly pack (200 Prangs), activate subscription for 30 days
+        if (tx.amount === 200) {
+          updateData.subscription_expires_at = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+          updateData.last_daily_claim = null;
+        }
+
         await supabase
           .from("wallets" as any)
-          .update({
-            balance: (wallet as any).balance + tx.amount,
-            total_received: ((wallet as any).total_received || 0) + tx.amount,
-          } as any)
+          .update(updateData as any)
           .eq("user_id", tx.user_id);
       }
     },

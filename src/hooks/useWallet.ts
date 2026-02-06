@@ -17,7 +17,6 @@ export const useWallet = () => {
         .eq("user_id", user.id)
         .single();
       if (error) {
-        // Auto-create wallet if it doesn't exist
         if (error.code === "PGRST116") {
           const { data: newWallet, error: createError } = await supabase
             .from("wallets" as any)
@@ -85,7 +84,6 @@ export const useWallet = () => {
         throw new Error("Insufficient balance");
       }
 
-      // Deduct from sender
       const { error: deductError } = await supabase
         .from("wallets" as any)
         .update({
@@ -95,7 +93,6 @@ export const useWallet = () => {
         .eq("user_id", user.id);
       if (deductError) throw deductError;
 
-      // Add to receiver
       const { data: recipientWallet } = await supabase
         .from("wallets" as any)
         .select("*")
@@ -112,7 +109,6 @@ export const useWallet = () => {
           .eq("user_id", params.recipientId);
       }
 
-      // Create sender transaction
       await supabase.from("wallet_transactions" as any).insert({
         user_id: user.id,
         type: "gift_sent",
@@ -121,7 +117,6 @@ export const useWallet = () => {
         related_user_id: params.recipientId,
       } as any);
 
-      // Create receiver transaction
       await supabase.from("wallet_transactions" as any).insert({
         user_id: params.recipientId,
         type: "gift_received",
@@ -144,6 +139,59 @@ export const useWallet = () => {
     },
   });
 
+  // Daily claim
+  const dailyClaimMutation = useMutation({
+    mutationFn: async () => {
+      if (!user?.id || !wallet) throw new Error("Not authenticated");
+      const w = wallet as any;
+      const today = new Date().toISOString().split("T")[0];
+
+      if (!w.subscription_expires_at || new Date(w.subscription_expires_at) < new Date()) {
+        throw new Error("No active subscription");
+      }
+      if (w.last_daily_claim === today) {
+        throw new Error("Already claimed today");
+      }
+
+      const claimAmount = 5;
+
+      const { error } = await supabase
+        .from("wallets" as any)
+        .update({
+          balance: (w.balance || 0) + claimAmount,
+          total_received: (w.total_received || 0) + claimAmount,
+          last_daily_claim: today,
+        } as any)
+        .eq("user_id", user.id);
+      if (error) throw error;
+
+      await supabase.from("wallet_transactions" as any).insert({
+        user_id: user.id,
+        type: "daily_claim",
+        amount: claimAmount,
+        status: "completed",
+      } as any);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["wallet"] });
+      queryClient.invalidateQueries({ queryKey: ["wallet-transactions"] });
+      toast({ title: "Claimed!", description: "+5 Prangs added to your wallet." });
+    },
+    onError: (err: any) => {
+      toast({ title: "Claim failed", description: err.message, variant: "destructive" });
+    },
+  });
+
+  const hasActiveSubscription = wallet
+    ? !!(wallet as any).subscription_expires_at && new Date((wallet as any).subscription_expires_at) > new Date()
+    : false;
+
+  const canClaimToday = wallet
+    ? hasActiveSubscription && (wallet as any).last_daily_claim !== new Date().toISOString().split("T")[0]
+    : false;
+
+  const subscriptionExpiresAt = wallet ? (wallet as any).subscription_expires_at : null;
+
   return {
     wallet,
     walletLoading,
@@ -153,5 +201,10 @@ export const useWallet = () => {
     isPurchasing: purchaseMutation.isPending,
     giftPrangs: giftMutation.mutateAsync,
     isGifting: giftMutation.isPending,
+    claimDaily: dailyClaimMutation.mutateAsync,
+    isClaiming: dailyClaimMutation.isPending,
+    hasActiveSubscription,
+    canClaimToday,
+    subscriptionExpiresAt,
   };
 };

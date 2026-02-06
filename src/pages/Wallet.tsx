@@ -19,6 +19,8 @@ import {
   CheckCircle2,
   XCircle,
   ChevronRight,
+  Sparkles,
+  CalendarCheck,
 } from "lucide-react";
 import { format } from "date-fns";
 
@@ -33,7 +35,7 @@ type View = "main" | "purchase" | "history";
 
 const Wallet = () => {
   const navigate = useNavigate();
-  const { wallet, walletLoading, transactions, purchasePrangs, isPurchasing } = useWallet();
+  const { wallet, walletLoading, transactions, purchasePrangs, isPurchasing, hasActiveSubscription, canClaimToday, claimDaily, isClaiming, subscriptionExpiresAt } = useWallet();
   const [view, setView] = useState<View>("main");
   const [selectedPack, setSelectedPack] = useState<number | null>(null);
   const [paymentMethod, setPaymentMethod] = useState("bkash");
@@ -77,6 +79,7 @@ const Wallet = () => {
       case "purchase":
       case "gift_received":
       case "admin_credit":
+      case "daily_claim":
         return <ArrowDownLeft className="h-4 w-4 text-emerald-500" />;
       case "gift_sent":
         return <ArrowUpRight className="h-4 w-4 text-destructive" />;
@@ -91,6 +94,7 @@ const Wallet = () => {
       case "gift_sent": return "Gift Sent";
       case "gift_received": return "Gift Received";
       case "admin_credit": return "Admin Credit";
+      case "daily_claim": return "Daily Claim";
       default: return type;
     }
   };
@@ -141,6 +145,34 @@ const Wallet = () => {
                     </div>
                   </div>
                 </Card>
+
+                {/* Daily Claim Card */}
+                {hasActiveSubscription && (
+                  <Card className="p-4 border-primary/20 bg-gradient-to-r from-primary/5 to-accent/5">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 rounded-full bg-primary/10">
+                          <Sparkles className="h-5 w-5 text-primary" />
+                        </div>
+                        <div>
+                          <p className="font-semibold text-sm">Daily Claim</p>
+                          <p className="text-xs text-muted-foreground">
+                            +5 Prangs/day · Expires {subscriptionExpiresAt ? format(new Date(subscriptionExpiresAt), "MMM d") : ""}
+                          </p>
+                        </div>
+                      </div>
+                      <Button
+                        size="sm"
+                        disabled={!canClaimToday || isClaiming}
+                        onClick={() => claimDaily()}
+                        className="gap-1.5"
+                      >
+                        <CalendarCheck className="h-4 w-4" />
+                        {isClaiming ? "..." : canClaimToday ? "Claim" : "Claimed"}
+                      </Button>
+                    </div>
+                  </Card>
+                )}
 
                 {/* Action Buttons */}
                 <div className="grid grid-cols-2 gap-3">
