@@ -7,6 +7,7 @@ import { PrangsIcon } from "@/components/wallet/PrangsIcon";
 import { format } from "date-fns";
 import { CheckCircle2, XCircle, Clock, User } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { AdminGiftAll } from "./AdminGiftAll";
 
 export const AdminWalletRequests = () => {
   const queryClient = useQueryClient();
@@ -227,6 +228,8 @@ export const AdminWalletRequests = () => {
           )}
         </Card>
       </div>
+      {/* Admin Gift System */}
+      <AdminGiftAll />
     </div>
   );
 };

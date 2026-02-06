@@ -21,6 +21,8 @@ import { UserRoleBadges } from "@/components/ui/RoleBadge";
 import { useUserRoles } from "@/hooks/useUserRoles";
 import { MediaCarousel } from "./MediaCarousel";
 import { PostMedia } from "@/hooks/usePosts";
+import { GiftPrangsPostDialog } from "@/components/wallet/GiftPrangsPostDialog";
+import { PrangsIcon } from "@/components/wallet/PrangsIcon";
 
 interface PostCardProps {
   id: string;
@@ -44,6 +46,7 @@ export const PostCard = ({ id, author, content, image, video, mediaItems, likes,
   const [showComments, setShowComments] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showHeartAnimation, setShowHeartAnimation] = useState(false);
+  const [showGiftDialog, setShowGiftDialog] = useState(false);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { user } = useAuth();
@@ -318,24 +321,35 @@ export const PostCard = ({ id, author, content, image, video, mediaItems, likes,
                   <Share2 className="h-5 w-5" />
                 </Button>
               </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-10 px-3 rounded-full hover:bg-primary/10 transition-all"
-                onClick={() => {
-                  if (isSaved) {
-                    unsavePost.mutate(id);
-                  } else {
-                    savePost.mutate(id);
-                  }
-                }}
-                disabled={savePost.isPending || unsavePost.isPending}
-              >
-                <Bookmark className={cn(
-                  "h-5 w-5 transition-all",
-                  isSaved && "fill-primary text-primary"
-                )} />
-              </Button>
+              <div className="flex items-center gap-0.5">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-10 px-3 rounded-full hover:bg-primary/10 transition-all"
+                  onClick={() => setShowGiftDialog(true)}
+                  title="Gift Prangs"
+                >
+                  <PrangsIcon size="xs" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-10 px-3 rounded-full hover:bg-primary/10 transition-all"
+                  onClick={() => {
+                    if (isSaved) {
+                      unsavePost.mutate(id);
+                    } else {
+                      savePost.mutate(id);
+                    }
+                  }}
+                  disabled={savePost.isPending || unsavePost.isPending}
+                >
+                  <Bookmark className={cn(
+                    "h-5 w-5 transition-all",
+                    isSaved && "fill-primary text-primary"
+                  )} />
+                </Button>
+              </div>
             </div>
           </div>
         </CardContent>
@@ -354,6 +368,13 @@ export const PostCard = ({ id, author, content, image, video, mediaItems, likes,
         currentMediaType={video ? "video" : image ? "image" : undefined}
         open={showEditDialog}
         onOpenChange={setShowEditDialog}
+      />
+
+      <GiftPrangsPostDialog
+        open={showGiftDialog}
+        onOpenChange={setShowGiftDialog}
+        recipientId={author.userId || userProfile?.id || ""}
+        recipientName={author.name}
       />
     </>
   );
