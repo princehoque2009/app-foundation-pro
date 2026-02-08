@@ -55,6 +55,7 @@ export const useWallet = () => {
       paymentMethod: string;
       senderNumber: string;
       transactionId: string;
+      screenshotUrl?: string;
     }) => {
       if (!user?.id) throw new Error("Not authenticated");
       const { error } = await supabase.from("wallet_transactions" as any).insert({
@@ -77,53 +78,16 @@ export const useWallet = () => {
     },
   });
 
+  // Server-side gift via edge function
   const giftMutation = useMutation({
     mutationFn: async (params: { recipientId: string; amount: number }) => {
       if (!user?.id) throw new Error("Not authenticated");
-      if (!wallet || (wallet as any).balance < params.amount) {
-        throw new Error("Insufficient balance");
-      }
-
-      const { error: deductError } = await supabase
-        .from("wallets" as any)
-        .update({
-          balance: (wallet as any).balance - params.amount,
-          total_sent: ((wallet as any).total_sent || 0) + params.amount,
-        } as any)
-        .eq("user_id", user.id);
-      if (deductError) throw deductError;
-
-      const { data: recipientWallet } = await supabase
-        .from("wallets" as any)
-        .select("*")
-        .eq("user_id", params.recipientId)
-        .single();
-
-      if (recipientWallet) {
-        await supabase
-          .from("wallets" as any)
-          .update({
-            balance: (recipientWallet as any).balance + params.amount,
-            total_received: ((recipientWallet as any).total_received || 0) + params.amount,
-          } as any)
-          .eq("user_id", params.recipientId);
-      }
-
-      await supabase.from("wallet_transactions" as any).insert({
-        user_id: user.id,
-        type: "gift_sent",
-        amount: params.amount,
-        status: "completed",
-        related_user_id: params.recipientId,
-      } as any);
-
-      await supabase.from("wallet_transactions" as any).insert({
-        user_id: params.recipientId,
-        type: "gift_received",
-        amount: params.amount,
-        status: "completed",
-        related_user_id: user.id,
-      } as any);
+      const { data, error } = await supabase.functions.invoke("wallet-transaction", {
+        body: { action: "gift", recipientId: params.recipientId, amount: params.amount },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["wallet"] });
@@ -131,54 +95,50 @@ export const useWallet = () => {
       toast({ title: "Gift sent!", description: "Prangs have been sent successfully." });
     },
     onError: (err: any) => {
-      toast({
-        title: "Gift failed",
-        description: err.message || "Could not send gift.",
-        variant: "destructive",
-      });
+      toast({ title: "Gift failed", description: err.message || "Could not send gift.", variant: "destructive" });
     },
   });
 
-  // Daily claim
+  // Server-side daily claim
   const dailyClaimMutation = useMutation({
     mutationFn: async () => {
-      if (!user?.id || !wallet) throw new Error("Not authenticated");
-      const w = wallet as any;
-      const today = new Date().toISOString().split("T")[0];
-
-      if (!w.subscription_expires_at || new Date(w.subscription_expires_at) < new Date()) {
-        throw new Error("No active subscription");
-      }
-      if (w.last_daily_claim === today) {
-        throw new Error("Already claimed today");
-      }
-
-      const claimAmount = 5;
-
-      const { error } = await supabase
-        .from("wallets" as any)
-        .update({
-          balance: (w.balance || 0) + claimAmount,
-          total_received: (w.total_received || 0) + claimAmount,
-          last_daily_claim: today,
-        } as any)
-        .eq("user_id", user.id);
+      if (!user?.id) throw new Error("Not authenticated");
+      const { data, error } = await supabase.functions.invoke("wallet-transaction", {
+        body: { action: "daily_claim" },
+      });
       if (error) throw error;
-
-      await supabase.from("wallet_transactions" as any).insert({
-        user_id: user.id,
-        type: "daily_claim",
-        amount: claimAmount,
-        status: "completed",
-      } as any);
+      if (data?.error) throw new Error(data.error);
+      return data;
     },
-    onSuccess: () => {
+    onSuccess: (data: any) => {
       queryClient.invalidateQueries({ queryKey: ["wallet"] });
       queryClient.invalidateQueries({ queryKey: ["wallet-transactions"] });
-      toast({ title: "Claimed!", description: "+5 Prangs added to your wallet." });
+      toast({ title: "Claimed!", description: `+${data?.amount || 10} Prangs added to your wallet.` });
     },
     onError: (err: any) => {
       toast({ title: "Claim failed", description: err.message, variant: "destructive" });
+    },
+  });
+
+  // Server-side store purchase
+  const storePurchaseMutation = useMutation({
+    mutationFn: async (params: { itemId: string }) => {
+      if (!user?.id) throw new Error("Not authenticated");
+      const { data, error } = await supabase.functions.invoke("wallet-transaction", {
+        body: { action: "store_purchase", itemId: params.itemId },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      return data;
+    },
+    onSuccess: (data: any) => {
+      queryClient.invalidateQueries({ queryKey: ["wallet"] });
+      queryClient.invalidateQueries({ queryKey: ["wallet-transactions"] });
+      queryClient.invalidateQueries({ queryKey: ["store-purchases"] });
+      toast({ title: "Purchase successful!", description: `You bought ${data?.item || "an item"}.` });
+    },
+    onError: (err: any) => {
+      toast({ title: "Purchase failed", description: err.message, variant: "destructive" });
     },
   });
 
@@ -203,6 +163,8 @@ export const useWallet = () => {
     isGifting: giftMutation.isPending,
     claimDaily: dailyClaimMutation.mutateAsync,
     isClaiming: dailyClaimMutation.isPending,
+    purchaseStoreItem: storePurchaseMutation.mutateAsync,
+    isPurchasingItem: storePurchaseMutation.isPending,
     hasActiveSubscription,
     canClaimToday,
     subscriptionExpiresAt,

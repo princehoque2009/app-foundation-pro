@@ -2,6 +2,7 @@ import { useState } from "react";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AccountSettings } from "@/components/settings/AccountSettings";
+import { SecuritySettings } from "@/components/settings/SecuritySettings";
 import { PrivacySettings } from "@/components/settings/PrivacySettings";
 import { NotificationSettings } from "@/components/settings/NotificationSettings";
 import { VerificationRequest } from "@/components/settings/VerificationRequest";
@@ -66,6 +67,7 @@ const Settings = () => {
               <TabsTrigger value="privacy">Privacy</TabsTrigger>
               <TabsTrigger value="notifications">Notifications</TabsTrigger>
               <TabsTrigger value="appearance">Appearance</TabsTrigger>
+              <TabsTrigger value="security">Security</TabsTrigger>
               <TabsTrigger value="data">Data & Storage</TabsTrigger>
               <TabsTrigger value="verification">Verification</TabsTrigger>
               <TabsTrigger value="terms">Privacy & Terms</TabsTrigger>
@@ -83,6 +85,10 @@ const Settings = () => {
           
           <TabsContent value="notifications" className="mt-6">
             <NotificationSettings />
+          </TabsContent>
+
+          <TabsContent value="security" className="mt-6">
+            <SecuritySettings />
           </TabsContent>
 
           <TabsContent value="appearance" className="mt-6 space-y-6">
