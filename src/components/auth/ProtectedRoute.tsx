@@ -3,6 +3,7 @@ import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAppSettings } from "@/contexts/AppSettingsContext";
 import { useRoles } from "@/contexts/RolesContext";
+import { useDeviceEnforcement } from "@/hooks/useDeviceEnforcement";
 import Maintenance from "@/pages/Maintenance";
 
 interface ProtectedRouteProps {
@@ -26,6 +27,9 @@ export const ProtectedRoute = ({
   const { settings, loading: settingsLoading, refetch: refetchSettings } = useAppSettings();
   const { isAdmin, isModerator, isAdvisor, isSupport, hasAnyRole, loading: rolesLoading } = useRoles();
   const location = useLocation();
+
+  // Device enforcement — registers device on mount + periodic check
+  useDeviceEnforcement();
 
   // Show loading while checking auth
   if (authLoading) {

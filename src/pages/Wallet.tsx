@@ -6,7 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PrangsIcon } from "@/components/wallet/PrangsIcon";
+import { WalletStore } from "@/components/wallet/WalletStore";
 import { useWallet } from "@/hooks/useWallet";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -32,21 +34,52 @@ import {
   Gift,
   Send,
   Shield,
+  ShoppingBag,
+  Store,
+  Filter,
+  Search,
+  ArrowDown,
+  ArrowUp,
+  Gem,
 } from "lucide-react";
 import { format } from "date-fns";
 
 const packs = [
-  { price: "৳14", prangs: 50, popular: false, icon: Zap, color: "from-blue-500/20 to-cyan-500/20 border-blue-500/30", iconColor: "text-blue-500" },
-  { price: "৳24", prangs: 100, popular: true, icon: Star, color: "from-primary/20 to-orange-500/20 border-primary/30", iconColor: "text-primary" },
-  { price: "৳49", prangs: 250, popular: false, icon: TrendingUp, color: "from-emerald-500/20 to-teal-500/20 border-emerald-500/30", iconColor: "text-emerald-500" },
-  { price: "৳99", prangs: 200, popular: false, label: "Monthly Pack", sublabel: "200 + daily claims", icon: Crown, color: "from-amber-500/20 to-yellow-500/20 border-amber-500/30", iconColor: "text-amber-500" },
+  {
+    price: "৳14", prangs: 50, popular: false, icon: Zap,
+    color: "from-blue-500/20 to-cyan-500/20 border-blue-500/30",
+    iconColor: "text-blue-500", bgGlow: "bg-blue-500/10",
+  },
+  {
+    price: "৳24", prangs: 100, popular: true, icon: Star,
+    color: "from-primary/20 to-orange-500/20 border-primary/30",
+    iconColor: "text-primary", label: "Most Popular", bgGlow: "bg-primary/10",
+  },
+  {
+    price: "৳49", prangs: 250, popular: false, icon: TrendingUp,
+    color: "from-emerald-500/20 to-teal-500/20 border-emerald-500/30",
+    iconColor: "text-emerald-500", label: "Best Value", bgGlow: "bg-emerald-500/10",
+  },
+  {
+    price: "৳99", prangs: 500, popular: false, icon: Crown,
+    color: "from-amber-500/20 to-yellow-500/20 border-amber-500/30",
+    iconColor: "text-amber-500",
+    label: "Monthly Pack",
+    sublabel: "500 instant + 10/day (300 bonus)",
+    totalLabel: "800 total",
+    bgGlow: "bg-amber-500/10",
+  },
 ];
 
-type View = "main" | "purchase" | "history";
+type View = "main" | "purchase" | "history" | "store";
+type TxFilter = "all" | "sent" | "received" | "purchases";
 
 const Wallet = () => {
   const navigate = useNavigate();
-  const { wallet, walletLoading, transactions, purchasePrangs, isPurchasing, hasActiveSubscription, canClaimToday, claimDaily, isClaiming, subscriptionExpiresAt } = useWallet();
+  const {
+    wallet, walletLoading, transactions, purchasePrangs, isPurchasing,
+    hasActiveSubscription, canClaimToday, claimDaily, isClaiming, subscriptionExpiresAt,
+  } = useWallet();
   const [view, setView] = useState<View>("main");
   const [selectedPack, setSelectedPack] = useState<number | null>(null);
   const [paymentMethod, setPaymentMethod] = useState("bkash");
@@ -54,6 +87,8 @@ const Wallet = () => {
   const [transactionId, setTransactionId] = useState("");
   const [screenshotFile, setScreenshotFile] = useState<File | null>(null);
   const [screenshotPreview, setScreenshotPreview] = useState<string | null>(null);
+  const [txFilter, setTxFilter] = useState<TxFilter>("all");
+  const [txSearch, setTxSearch] = useState("");
 
   const balance = (wallet as any)?.balance || 0;
 
@@ -68,7 +103,7 @@ const Wallet = () => {
   };
 
   const handlePurchase = async () => {
-    if (selectedPack === null || !senderNumber || !transactionId) return;
+    if (selectedPack === null || !senderNumber || !transactionId || !screenshotFile) return;
     const pack = packs[selectedPack];
     await purchasePrangs({
       amount: parseInt(pack.price.replace("৳", "")),
@@ -78,6 +113,10 @@ const Wallet = () => {
       transactionId,
     });
     setView("main");
+    resetForm();
+  };
+
+  const resetForm = () => {
     setSelectedPack(null);
     setSenderNumber("");
     setTransactionId("");
@@ -85,19 +124,21 @@ const Wallet = () => {
     setScreenshotPreview(null);
   };
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case "completed":
-      case "approved":
-        return <CheckCircle2 className="h-4 w-4 text-emerald-500" />;
-      case "pending":
-        return <Clock className="h-4 w-4 text-amber-500" />;
-      case "rejected":
-        return <XCircle className="h-4 w-4 text-destructive" />;
-      default:
-        return null;
-    }
-  };
+  const filteredTransactions = transactions?.filter((tx: any) => {
+    const matchesFilter =
+      txFilter === "all" ? true :
+      txFilter === "sent" ? ["gift_sent", "store_purchase"].includes(tx.type) :
+      txFilter === "received" ? ["gift_received", "admin_credit", "daily_claim"].includes(tx.type) :
+      txFilter === "purchases" ? tx.type === "purchase" : true;
+
+    const matchesSearch = txSearch
+      ? (tx.type?.toLowerCase().includes(txSearch.toLowerCase()) ||
+         tx.reference?.toLowerCase().includes(txSearch.toLowerCase()) ||
+         String(tx.amount).includes(txSearch))
+      : true;
+
+    return matchesFilter && matchesSearch;
+  });
 
   const getStatusBadge = (status: string) => {
     const styles: Record<string, string> = {
@@ -114,20 +155,15 @@ const Wallet = () => {
   };
 
   const getTypeIcon = (type: string) => {
-    const base = "h-8 w-8 rounded-full flex items-center justify-center";
+    const base = "h-9 w-9 rounded-xl flex items-center justify-center";
     switch (type) {
-      case "purchase":
-        return <div className={`${base} bg-blue-500/10`}><ShoppingCart className="h-4 w-4 text-blue-500" /></div>;
-      case "gift_received":
-        return <div className={`${base} bg-emerald-500/10`}><Gift className="h-4 w-4 text-emerald-500" /></div>;
-      case "gift_sent":
-        return <div className={`${base} bg-primary/10`}><Send className="h-4 w-4 text-primary" /></div>;
-      case "admin_credit":
-        return <div className={`${base} bg-purple-500/10`}><Shield className="h-4 w-4 text-purple-500" /></div>;
-      case "daily_claim":
-        return <div className={`${base} bg-amber-500/10`}><Sparkles className="h-4 w-4 text-amber-500" /></div>;
-      default:
-        return <div className={`${base} bg-muted`}><CreditCard className="h-4 w-4 text-muted-foreground" /></div>;
+      case "purchase": return <div className={`${base} bg-blue-500/10`}><ShoppingCart className="h-4 w-4 text-blue-500" /></div>;
+      case "gift_received": return <div className={`${base} bg-emerald-500/10`}><Gift className="h-4 w-4 text-emerald-500" /></div>;
+      case "gift_sent": return <div className={`${base} bg-primary/10`}><Send className="h-4 w-4 text-primary" /></div>;
+      case "admin_credit": return <div className={`${base} bg-purple-500/10`}><Shield className="h-4 w-4 text-purple-500" /></div>;
+      case "daily_claim": return <div className={`${base} bg-amber-500/10`}><Sparkles className="h-4 w-4 text-amber-500" /></div>;
+      case "store_purchase": return <div className={`${base} bg-fuchsia-500/10`}><ShoppingBag className="h-4 w-4 text-fuchsia-500" /></div>;
+      default: return <div className={`${base} bg-muted`}><CreditCard className="h-4 w-4 text-muted-foreground" /></div>;
     }
   };
 
@@ -138,9 +174,14 @@ const Wallet = () => {
       case "gift_received": return "Gift Received";
       case "admin_credit": return "Admin Credit";
       case "daily_claim": return "Daily Claim";
+      case "store_purchase": return "Store Purchase";
       default: return type;
     }
   };
+
+  const isSend = (type: string) => ["gift_sent", "store_purchase"].includes(type);
+
+  const viewTitle = view === "main" ? "Wallet" : view === "purchase" ? "Purchase Prangs" : view === "store" ? "Prangs Store" : "Transactions";
 
   return (
     <MainLayout>
@@ -156,7 +197,7 @@ const Wallet = () => {
             </button>
             <h1 className="font-semibold text-lg flex items-center gap-2">
               <PrangsIcon size="sm" />
-              {view === "main" ? "Wallet" : view === "purchase" ? "Purchase Prangs" : "Transaction History"}
+              {viewTitle}
             </h1>
             <div className="w-9" />
           </div>
@@ -165,26 +206,26 @@ const Wallet = () => {
         <div className="p-4 max-w-screen-xl mx-auto space-y-5">
           <AnimatePresence mode="wait">
             {view === "main" && (
-              <motion.div
-                key="main"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                className="space-y-5"
-              >
-                {/* Premium Balance Card */}
-                <Card className="relative overflow-hidden border-0 shadow-lg">
-                  <div className="absolute inset-0 bg-gradient-to-br from-primary via-primary/90 to-primary/70" />
-                  <div className="absolute inset-0 opacity-10">
-                    <div className="absolute top-4 right-4 w-32 h-32 rounded-full bg-white/20 blur-2xl" />
-                    <div className="absolute bottom-4 left-4 w-24 h-24 rounded-full bg-white/10 blur-xl" />
+              <motion.div key="main" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="space-y-5">
+                {/* Premium Balance Card with glossy effect */}
+                <Card className="relative overflow-hidden border-0 shadow-2xl">
+                  <div className="absolute inset-0 bg-gradient-to-br from-primary via-primary/90 to-indigo-600" />
+                  {/* Glossy shine */}
+                  <div className="absolute inset-0">
+                    <div className="absolute -top-12 -right-12 w-48 h-48 rounded-full bg-white/10 blur-3xl" />
+                    <div className="absolute bottom-0 left-0 w-32 h-32 rounded-full bg-white/5 blur-2xl" />
+                    <div className="absolute top-1/3 left-1/4 w-full h-px bg-gradient-to-r from-transparent via-white/20 to-transparent rotate-12" />
+                  </div>
+                  {/* Watermark */}
+                  <div className="absolute bottom-2 right-3 opacity-[0.06]">
+                    <PrangsIcon size="lg" />
                   </div>
                   <div className="relative p-6 text-center text-white">
                     <motion.div
                       initial={{ scale: 0.8, opacity: 0 }}
                       animate={{ scale: 1, opacity: 1 }}
                       transition={{ delay: 0.1, type: "spring", stiffness: 200 }}
-                      className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-white/20 backdrop-blur-sm mb-3 mx-auto"
+                      className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-white/15 backdrop-blur-md mb-3 mx-auto shadow-lg"
                     >
                       <PrangsIcon size="lg" />
                     </motion.div>
@@ -192,52 +233,47 @@ const Wallet = () => {
                       initial={{ scale: 0.5, opacity: 0 }}
                       animate={{ scale: 1, opacity: 1 }}
                       transition={{ delay: 0.2, type: "spring" }}
-                      className="text-5xl font-black tracking-tight"
+                      className="text-5xl font-black tracking-tight drop-shadow-lg"
                     >
                       {walletLoading ? "..." : balance.toLocaleString()}
                     </motion.div>
-                    <p className="text-white/80 mt-1 font-medium text-sm">Available Prangs</p>
+                    <p className="text-white/70 mt-1 font-medium text-sm tracking-wide">Available Prangs</p>
                     <div className="flex justify-center gap-8 mt-5">
                       <div className="text-center">
                         <div className="flex items-center justify-center gap-1.5">
-                          <ArrowDownLeft className="h-3.5 w-3.5 text-emerald-300" />
+                          <ArrowDown className="h-3.5 w-3.5 text-emerald-300" />
                           <span className="font-bold text-lg">{((wallet as any)?.total_received || 0).toLocaleString()}</span>
                         </div>
-                        <p className="text-white/60 text-xs mt-0.5">Received</p>
+                        <p className="text-white/50 text-xs mt-0.5">Received</p>
                       </div>
-                      <div className="w-px bg-white/20" />
+                      <div className="w-px bg-white/15 rounded-full" />
                       <div className="text-center">
                         <div className="flex items-center justify-center gap-1.5">
-                          <ArrowUpRight className="h-3.5 w-3.5 text-orange-300" />
+                          <ArrowUp className="h-3.5 w-3.5 text-orange-300" />
                           <span className="font-bold text-lg">{((wallet as any)?.total_sent || 0).toLocaleString()}</span>
                         </div>
-                        <p className="text-white/60 text-xs mt-0.5">Sent</p>
+                        <p className="text-white/50 text-xs mt-0.5">Sent</p>
                       </div>
                     </div>
                   </div>
                 </Card>
 
-                {/* Daily Claim Card */}
+                {/* Daily Claim */}
                 {hasActiveSubscription && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.15 }}
-                  >
+                  <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
                     <Card className="p-4 border-amber-500/20 bg-gradient-to-r from-amber-500/5 via-yellow-500/5 to-orange-500/5 overflow-hidden relative">
-                      <div className="absolute top-0 right-0 w-20 h-20 bg-amber-500/10 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2" />
+                      <div className="absolute top-0 right-0 w-24 h-24 bg-amber-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
                       <div className="flex items-center justify-between relative">
                         <div className="flex items-center gap-3">
-                          <div className="p-2.5 rounded-xl bg-gradient-to-br from-amber-500/20 to-yellow-500/20">
+                          <div className="p-2.5 rounded-xl bg-gradient-to-br from-amber-500/20 to-yellow-500/20 shadow-sm">
                             <Sparkles className="h-5 w-5 text-amber-500" />
                           </div>
                           <div>
                             <p className="font-bold text-sm flex items-center gap-1.5">
-                              Daily Claim
-                              <Crown className="h-3.5 w-3.5 text-amber-500" />
+                              Daily Claim <Crown className="h-3.5 w-3.5 text-amber-500" />
                             </p>
                             <p className="text-xs text-muted-foreground">
-                              +5 Prangs/day · Expires {subscriptionExpiresAt ? format(new Date(subscriptionExpiresAt), "MMM d, yyyy") : ""}
+                              +10 Prangs/day · Expires {subscriptionExpiresAt ? format(new Date(subscriptionExpiresAt), "MMM d") : ""}
                             </p>
                           </div>
                         </div>
@@ -255,63 +291,92 @@ const Wallet = () => {
                   </motion.div>
                 )}
 
-                {/* Action Buttons */}
-                <div className="grid grid-cols-2 gap-3">
-                  <motion.div whileTap={{ scale: 0.97 }}>
-                    <Button
-                      className="w-full h-14 gap-2.5 text-base rounded-2xl shadow-lg font-semibold"
-                      onClick={() => setView("purchase")}
-                    >
-                      <ShoppingCart className="h-5 w-5" />
-                      Purchase
-                    </Button>
-                  </motion.div>
-                  <motion.div whileTap={{ scale: 0.97 }}>
-                    <Button
-                      variant="outline"
-                      className="w-full h-14 gap-2.5 text-base rounded-2xl font-semibold"
-                      onClick={() => setView("history")}
-                    >
-                      <History className="h-5 w-5" />
-                      History
-                    </Button>
-                  </motion.div>
+                {/* Quick Actions */}
+                <div className="grid grid-cols-4 gap-2">
+                  {[
+                    { icon: ShoppingCart, label: "Buy", view: "purchase" as View, color: "text-blue-500", bg: "bg-blue-500/10" },
+                    { icon: Store, label: "Store", view: "store" as View, color: "text-fuchsia-500", bg: "bg-fuchsia-500/10" },
+                    { icon: History, label: "History", view: "history" as View, color: "text-emerald-500", bg: "bg-emerald-500/10" },
+                    { icon: Gift, label: "Gift", view: "main" as View, color: "text-orange-500", bg: "bg-orange-500/10" },
+                  ].map(({ icon: Icon, label, view: v, color, bg }) => (
+                    <motion.div key={label} whileTap={{ scale: 0.93 }}>
+                      <button
+                        className="w-full flex flex-col items-center gap-1.5 p-3 rounded-2xl hover:bg-muted/50 transition-colors"
+                        onClick={() => setView(v)}
+                      >
+                        <div className={`p-3 rounded-xl ${bg}`}>
+                          <Icon className={`h-5 w-5 ${color}`} />
+                        </div>
+                        <span className="text-xs font-semibold">{label}</span>
+                      </button>
+                    </motion.div>
+                  ))}
                 </div>
 
-                {/* Recent Transactions */}
+                {/* Packs Preview */}
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="font-bold text-sm flex items-center gap-1.5">
+                      <Gem className="h-4 w-4 text-primary" /> Get Prangs
+                    </h3>
+                    <button onClick={() => setView("purchase")} className="text-xs text-primary font-semibold flex items-center gap-1 hover:underline">
+                      See all <ChevronRight className="h-3 w-3" />
+                    </button>
+                  </div>
+                  <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
+                    {packs.map((pack, i) => {
+                      const Icon = pack.icon;
+                      return (
+                        <motion.div key={i} whileTap={{ scale: 0.96 }} className="min-w-[130px]">
+                          <Card
+                            className={`p-3.5 cursor-pointer bg-gradient-to-br ${pack.color} relative overflow-hidden hover:shadow-md transition-all`}
+                            onClick={() => { setSelectedPack(i); setView("purchase"); }}
+                          >
+                            {pack.label && (
+                              <Badge className="absolute -top-0 right-0 text-[8px] rounded-bl-lg rounded-tr-lg rounded-tl-none rounded-br-none px-1.5 py-0.5 font-bold">
+                                {pack.label === "Most Popular" ? "⭐" : pack.label === "Best Value" ? "💎" : "👑"} {pack.label}
+                              </Badge>
+                            )}
+                            <div className={`p-1.5 rounded-lg ${pack.bgGlow} w-fit mb-2`}>
+                              <Icon className={`h-4 w-4 ${pack.iconColor}`} />
+                            </div>
+                            <span className="font-black text-xl">{pack.prangs}</span>
+                            <PrangsIcon size="xs" />
+                            <p className="text-lg font-black text-primary mt-1">{pack.price}</p>
+                          </Card>
+                        </motion.div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Recent Activity */}
                 {transactions && transactions.length > 0 && (
                   <Card className="overflow-hidden border-border/50">
                     <div className="flex items-center justify-between p-4 border-b border-border/50">
                       <h3 className="font-bold text-sm">Recent Activity</h3>
-                      <button
-                        onClick={() => setView("history")}
-                        className="text-xs text-primary font-semibold flex items-center gap-1 hover:underline"
-                      >
+                      <button onClick={() => setView("history")} className="text-xs text-primary font-semibold flex items-center gap-1 hover:underline">
                         View all <ChevronRight className="h-3 w-3" />
                       </button>
                     </div>
-                    {transactions.slice(0, 5).map((tx: any, i: number) => (
+                    {transactions.slice(0, 4).map((tx: any, i: number) => (
                       <motion.div
                         key={tx.id}
                         initial={{ opacity: 0, x: -10 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: i * 0.05 }}
-                        className="flex items-center justify-between p-3.5 px-4 border-b border-border/30 last:border-0 hover:bg-muted/30 transition-colors"
+                        className="flex items-center justify-between p-3.5 px-4 border-b border-border/30 last:border-0"
                       >
                         <div className="flex items-center gap-3">
                           {getTypeIcon(tx.type)}
                           <div>
                             <p className="text-sm font-semibold">{getTypeLabel(tx.type)}</p>
-                            <p className="text-[11px] text-muted-foreground">
-                              {format(new Date(tx.created_at), "MMM d, yyyy")}
-                            </p>
+                            <p className="text-[11px] text-muted-foreground">{format(new Date(tx.created_at), "MMM d, yyyy")}</p>
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className={`text-sm font-bold tabular-nums ${
-                            tx.type === "gift_sent" ? "text-destructive" : "text-emerald-500"
-                          }`}>
-                            {tx.type === "gift_sent" ? "-" : "+"}{tx.amount}
+                          <span className={`text-sm font-bold tabular-nums ${isSend(tx.type) ? "text-destructive" : "text-emerald-500"}`}>
+                            {isSend(tx.type) ? "-" : "+"}{tx.amount}
                           </span>
                           <PrangsIcon size="xs" />
                           {getStatusBadge(tx.status)}
@@ -323,63 +388,45 @@ const Wallet = () => {
               </motion.div>
             )}
 
+            {/* Purchase View */}
             {view === "purchase" && (
-              <motion.div
-                key="purchase"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                className="space-y-6"
-              >
-                {/* Pack Selection */}
+              <motion.div key="purchase" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="space-y-6">
                 <div className="space-y-3">
                   <Label className="text-sm font-bold flex items-center gap-2">
-                    <Zap className="h-4 w-4 text-primary" />
-                    Choose your Pack
+                    <Zap className="h-4 w-4 text-primary" /> Choose your Pack
                   </Label>
                   <div className="grid grid-cols-2 gap-3">
                     {packs.map((pack, i) => {
                       const Icon = pack.icon;
                       return (
-                        <motion.div
-                          key={i}
-                          whileTap={{ scale: 0.96 }}
-                          whileHover={{ y: -2 }}
-                        >
+                        <motion.div key={i} whileTap={{ scale: 0.96 }} whileHover={{ y: -2 }}>
                           <Card
                             className={`p-4 cursor-pointer transition-all relative overflow-hidden bg-gradient-to-br ${pack.color} ${
-                              selectedPack === i
-                                ? "ring-2 ring-primary shadow-lg scale-[1.02]"
-                                : "hover:shadow-md"
+                              selectedPack === i ? "ring-2 ring-primary shadow-lg scale-[1.02]" : "hover:shadow-md"
                             }`}
                             onClick={() => setSelectedPack(i)}
                           >
-                            {pack.popular && (
-                              <Badge className="absolute -top-0 right-0 text-[9px] rounded-bl-lg rounded-tr-lg rounded-tl-none rounded-br-none px-2 py-1 font-bold">
-                                ⭐ POPULAR
+                            {pack.label && (
+                              <Badge className="absolute -top-0 right-0 text-[8px] rounded-bl-lg rounded-tr-lg rounded-tl-none rounded-br-none px-1.5 py-0.5 font-bold">
+                                {pack.label === "Most Popular" ? "⭐" : pack.label === "Best Value" ? "💎" : "👑"} {pack.label}
                               </Badge>
                             )}
-                            <div className={`p-2 rounded-xl bg-background/60 backdrop-blur-sm w-fit mb-3`}>
+                            <div className={`p-2 rounded-xl ${pack.bgGlow} backdrop-blur-sm w-fit mb-3`}>
                               <Icon className={`h-5 w-5 ${pack.iconColor}`} />
                             </div>
                             <div className="flex items-baseline gap-1.5 mb-1">
                               <span className="font-black text-2xl tracking-tight">{pack.prangs}</span>
                               <PrangsIcon size="xs" />
                             </div>
-                            <p className="text-xs text-muted-foreground font-medium">
-                              {pack.label || `${pack.prangs} Prangs`}
-                            </p>
-                            {pack.sublabel && (
-                              <p className="text-[10px] text-muted-foreground/70 mt-0.5">{pack.sublabel}</p>
+                            {pack.sublabel && <p className="text-[10px] text-muted-foreground/70">{pack.sublabel}</p>}
+                            {pack.totalLabel && (
+                              <p className="text-[9px] font-bold text-amber-600 mt-0.5">{pack.totalLabel}</p>
                             )}
                             <div className="mt-2 pt-2 border-t border-border/30">
                               <p className="text-lg font-black text-primary">{pack.price}</p>
                             </div>
                             {selectedPack === i && (
-                              <motion.div
-                                layoutId="pack-check"
-                                className="absolute top-2 left-2"
-                              >
+                              <motion.div layoutId="pack-check" className="absolute top-2 left-2">
                                 <CheckCircle2 className="h-5 w-5 text-primary fill-primary/20" />
                               </motion.div>
                             )}
@@ -393,8 +440,7 @@ const Wallet = () => {
                 {/* Payment Method */}
                 <div className="space-y-3">
                   <Label className="text-sm font-bold flex items-center gap-2">
-                    <CreditCard className="h-4 w-4 text-primary" />
-                    Payment Method
+                    <CreditCard className="h-4 w-4 text-primary" /> Payment Method
                   </Label>
                   <div className="grid grid-cols-2 gap-3">
                     {[
@@ -404,16 +450,12 @@ const Wallet = () => {
                       <motion.div key={m.id} whileTap={{ scale: 0.96 }}>
                         <Card
                           className={`p-3.5 cursor-pointer text-center transition-all font-bold text-sm ${
-                            paymentMethod === m.id
-                              ? "ring-2 ring-primary bg-primary/5 border-primary/30"
-                              : `bg-gradient-to-br ${m.color}`
+                            paymentMethod === m.id ? "ring-2 ring-primary bg-primary/5 border-primary/30" : `bg-gradient-to-br ${m.color}`
                           }`}
                           onClick={() => setPaymentMethod(m.id)}
                         >
                           {m.label}
-                          {paymentMethod === m.id && (
-                            <CheckCircle2 className="h-4 w-4 text-primary inline ml-2" />
-                          )}
+                          {paymentMethod === m.id && <CheckCircle2 className="h-4 w-4 text-primary inline ml-2" />}
                         </Card>
                       </motion.div>
                     ))}
@@ -432,45 +474,30 @@ const Wallet = () => {
                   </div>
                 </Card>
 
-                {/* Modern Form */}
+                {/* Form */}
                 <div className="space-y-4">
                   <div className="space-y-2">
                     <Label className="text-xs font-bold flex items-center gap-1.5 text-muted-foreground uppercase tracking-wider">
-                      <Phone className="h-3.5 w-3.5" />
-                      Sender Number
+                      <Phone className="h-3.5 w-3.5" /> Sender Number
                     </Label>
-                    <Input
-                      placeholder="01XXXXXXXXX"
-                      value={senderNumber}
-                      onChange={(e) => setSenderNumber(e.target.value)}
-                      className="h-12 rounded-xl text-base font-medium bg-muted/30 border-border/50 focus:bg-background"
-                    />
+                    <Input placeholder="01XXXXXXXXX" value={senderNumber} onChange={(e) => setSenderNumber(e.target.value)}
+                      className="h-12 rounded-xl text-base font-medium bg-muted/30 border-border/50 focus:bg-background" />
                   </div>
                   <div className="space-y-2">
                     <Label className="text-xs font-bold flex items-center gap-1.5 text-muted-foreground uppercase tracking-wider">
-                      <Hash className="h-3.5 w-3.5" />
-                      Transaction ID
+                      <Hash className="h-3.5 w-3.5" /> Transaction ID
                     </Label>
-                    <Input
-                      placeholder="Enter transaction ID from receipt"
-                      value={transactionId}
-                      onChange={(e) => setTransactionId(e.target.value)}
-                      className="h-12 rounded-xl text-base font-medium bg-muted/30 border-border/50 focus:bg-background"
-                    />
+                    <Input placeholder="Enter transaction ID from receipt" value={transactionId} onChange={(e) => setTransactionId(e.target.value)}
+                      className="h-12 rounded-xl text-base font-medium bg-muted/30 border-border/50 focus:bg-background" />
                   </div>
                   <div className="space-y-2">
                     <Label className="text-xs font-bold flex items-center gap-1.5 text-muted-foreground uppercase tracking-wider">
-                      <Camera className="h-3.5 w-3.5" />
-                      Payment Screenshot
+                      <Camera className="h-3.5 w-3.5" /> Payment Screenshot <span className="text-destructive">*</span>
                     </Label>
                     <div className="relative">
                       {screenshotPreview ? (
                         <div className="relative rounded-xl overflow-hidden border border-border/50">
-                          <img
-                            src={screenshotPreview}
-                            alt="Payment screenshot"
-                            className="w-full max-h-48 object-contain bg-muted/20 pointer-events-auto"
-                          />
+                          <img src={screenshotPreview} alt="Payment screenshot" className="w-full max-h-48 object-contain bg-muted/20" />
                           <button
                             onClick={() => { setScreenshotFile(null); setScreenshotPreview(null); }}
                             className="absolute top-2 right-2 p-1.5 bg-background/80 backdrop-blur-sm rounded-full hover:bg-background transition-colors"
@@ -484,13 +511,8 @@ const Wallet = () => {
                             <Camera className="h-6 w-6 text-muted-foreground group-hover:text-primary transition-colors" />
                           </div>
                           <p className="text-sm font-medium text-muted-foreground">Tap to upload screenshot</p>
-                          <p className="text-xs text-muted-foreground/60 mt-0.5">PNG, JPG up to 5MB</p>
-                          <input
-                            type="file"
-                            accept="image/*"
-                            className="hidden"
-                            onChange={handleScreenshot}
-                          />
+                          <p className="text-xs text-muted-foreground/60 mt-0.5">Required — PNG, JPG up to 5MB</p>
+                          <input type="file" accept="image/*" className="hidden" onChange={handleScreenshot} />
                         </label>
                       )}
                     </div>
@@ -501,7 +523,7 @@ const Wallet = () => {
                   <Button
                     className="w-full h-14 gap-2.5 text-base rounded-2xl font-bold shadow-lg"
                     onClick={handlePurchase}
-                    disabled={selectedPack === null || !senderNumber || !transactionId || isPurchasing}
+                    disabled={selectedPack === null || !senderNumber || !transactionId || !screenshotFile || isPurchasing}
                   >
                     <PrangsIcon size="sm" />
                     {isPurchasing ? "Submitting..." : "Submit Purchase Request"}
@@ -510,41 +532,80 @@ const Wallet = () => {
               </motion.div>
             )}
 
+            {/* Store View */}
+            {view === "store" && (
+              <motion.div key="store" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
+                {/* Balance mini card */}
+                <Card className="p-3 mb-4 bg-gradient-to-r from-primary/5 to-transparent border-primary/15 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <PrangsIcon size="sm" />
+                    <span className="font-bold">{balance.toLocaleString()}</span>
+                    <span className="text-xs text-muted-foreground">available</span>
+                  </div>
+                  <Button size="sm" variant="outline" className="rounded-xl text-xs" onClick={() => setView("purchase")}>
+                    <ShoppingCart className="h-3.5 w-3.5 mr-1" /> Get More
+                  </Button>
+                </Card>
+                <WalletStore />
+              </motion.div>
+            )}
+
+            {/* History View */}
             {view === "history" && (
-              <motion.div
-                key="history"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-              >
+              <motion.div key="history" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="space-y-4">
+                {/* Search */}
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search transactions..."
+                    value={txSearch}
+                    onChange={(e) => setTxSearch(e.target.value)}
+                    className="pl-10 h-11 rounded-xl bg-muted/30"
+                  />
+                </div>
+
+                {/* Filters */}
+                <div className="flex gap-2 overflow-x-auto scrollbar-hide">
+                  {([
+                    { key: "all", label: "All" },
+                    { key: "sent", label: "Sent" },
+                    { key: "received", label: "Received" },
+                    { key: "purchases", label: "Purchases" },
+                  ] as { key: TxFilter; label: string }[]).map(({ key, label }) => (
+                    <Button
+                      key={key}
+                      size="sm"
+                      variant={txFilter === key ? "default" : "outline"}
+                      className="rounded-full text-xs whitespace-nowrap"
+                      onClick={() => setTxFilter(key)}
+                    >
+                      {label}
+                    </Button>
+                  ))}
+                </div>
+
                 <Card className="overflow-hidden border-border/50">
-                  {transactions && transactions.length > 0 ? (
-                    transactions.map((tx: any, i: number) => (
+                  {filteredTransactions && filteredTransactions.length > 0 ? (
+                    filteredTransactions.map((tx: any, i: number) => (
                       <motion.div
                         key={tx.id}
                         initial={{ opacity: 0, x: -10 }}
                         animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: i * 0.03 }}
-                        className="flex items-center justify-between p-3.5 px-4 border-b border-border/30 last:border-0 hover:bg-muted/20 transition-colors"
+                        transition={{ delay: i * 0.02 }}
+                        className="flex items-center justify-between p-3.5 px-4 border-b border-border/30 last:border-0"
                       >
                         <div className="flex items-center gap-3">
                           {getTypeIcon(tx.type)}
                           <div>
                             <p className="text-sm font-semibold">{getTypeLabel(tx.type)}</p>
-                            <p className="text-[11px] text-muted-foreground">
-                              {format(new Date(tx.created_at), "MMM d, yyyy · h:mm a")}
-                            </p>
-                            {tx.reference && (
-                              <p className="text-[10px] text-muted-foreground/60 font-mono">Ref: {tx.reference}</p>
-                            )}
+                            <p className="text-[11px] text-muted-foreground">{format(new Date(tx.created_at), "MMM d, yyyy · h:mm a")}</p>
+                            {tx.reference && <p className="text-[10px] text-muted-foreground/60 font-mono">Ref: {tx.reference}</p>}
                           </div>
                         </div>
                         <div className="flex flex-col items-end gap-1">
                           <div className="flex items-center gap-1.5">
-                            <span className={`text-sm font-bold tabular-nums ${
-                              tx.type === "gift_sent" ? "text-destructive" : "text-emerald-500"
-                            }`}>
-                              {tx.type === "gift_sent" ? "-" : "+"}{tx.amount}
+                            <span className={`text-sm font-bold tabular-nums ${isSend(tx.type) ? "text-destructive" : "text-emerald-500"}`}>
+                              {isSend(tx.type) ? "-" : "+"}{tx.amount}
                             </span>
                             <PrangsIcon size="xs" />
                           </div>
@@ -557,8 +618,8 @@ const Wallet = () => {
                       <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-muted/50 mb-4">
                         <History className="h-8 w-8 text-muted-foreground/40" />
                       </div>
-                      <p className="font-semibold text-muted-foreground">No transactions yet</p>
-                      <p className="text-xs text-muted-foreground/60 mt-1">Your activity will appear here</p>
+                      <p className="font-semibold text-muted-foreground">No transactions found</p>
+                      <p className="text-xs text-muted-foreground/60 mt-1">Try a different filter</p>
                     </div>
                   )}
                 </Card>

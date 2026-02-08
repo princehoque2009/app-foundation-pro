@@ -1262,6 +1262,83 @@ export type Database = {
           },
         ]
       }
+      store_items: {
+        Row: {
+          category: string
+          created_at: string
+          description: string | null
+          icon: string | null
+          id: string
+          is_active: boolean
+          metadata: Json | null
+          name: string
+          price: number
+          updated_at: string
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          description?: string | null
+          icon?: string | null
+          id?: string
+          is_active?: boolean
+          metadata?: Json | null
+          name: string
+          price?: number
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          description?: string | null
+          icon?: string | null
+          id?: string
+          is_active?: boolean
+          metadata?: Json | null
+          name?: string
+          price?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      store_purchases: {
+        Row: {
+          created_at: string
+          expires_at: string | null
+          id: string
+          item_id: string
+          price_paid: number
+          status: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          item_id: string
+          price_paid?: number
+          status?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          item_id?: string
+          price_paid?: number
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "store_purchases_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "store_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       stories: {
         Row: {
           created_at: string
@@ -1335,6 +1412,42 @@ export type Database = {
           status?: string
           subject?: string
           updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_devices: {
+        Row: {
+          created_at: string
+          device_id: string
+          device_name: string | null
+          id: string
+          ip_address: string | null
+          is_active: boolean
+          last_seen_at: string
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          device_id: string
+          device_name?: string | null
+          id?: string
+          ip_address?: string | null
+          is_active?: boolean
+          last_seen_at?: string
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          device_id?: string
+          device_name?: string | null
+          id?: string
+          ip_address?: string | null
+          is_active?: boolean
+          last_seen_at?: string
+          user_agent?: string | null
           user_id?: string
         }
         Relationships: []
@@ -1444,6 +1557,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      wallet_flags: {
+        Row: {
+          created_at: string
+          details: Json | null
+          flag_type: string
+          id: string
+          resolved: boolean
+          resolved_at: string | null
+          resolved_by: string | null
+          severity: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          details?: Json | null
+          flag_type: string
+          id?: string
+          resolved?: boolean
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          details?: Json | null
+          flag_type?: string
+          id?: string
+          resolved?: boolean
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       wallet_transactions: {
         Row: {
