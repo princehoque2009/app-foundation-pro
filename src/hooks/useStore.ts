@@ -1,9 +1,27 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 
 export const useStore = () => {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
+
+  // Real-time subscription for store purchases
+  useEffect(() => {
+    if (!user?.id) return;
+    const channel = supabase
+      .channel(`store-realtime-${user.id}`)
+      .on(
+        "postgres_changes" as any,
+        { event: "*", schema: "public", table: "store_purchases", filter: `user_id=eq.${user.id}` },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["store-purchases", user.id] });
+        }
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [user?.id, queryClient]);
 
   const { data: storeItems, isLoading: storeLoading } = useQuery({
     queryKey: ["store-items"],

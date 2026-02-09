@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/hooks/use-toast";
@@ -6,6 +7,29 @@ import { toast } from "@/hooks/use-toast";
 export const useWallet = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+
+  // Real-time subscription for wallet balance updates
+  useEffect(() => {
+    if (!user?.id) return;
+    const channel = supabase
+      .channel(`wallet-realtime-${user.id}`)
+      .on(
+        "postgres_changes" as any,
+        { event: "*", schema: "public", table: "wallets", filter: `user_id=eq.${user.id}` },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["wallet", user.id] });
+        }
+      )
+      .on(
+        "postgres_changes" as any,
+        { event: "INSERT", schema: "public", table: "wallet_transactions", filter: `user_id=eq.${user.id}` },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["wallet-transactions", user.id] });
+        }
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [user?.id, queryClient]);
 
   const { data: wallet, isLoading: walletLoading } = useQuery({
     queryKey: ["wallet", user?.id],
