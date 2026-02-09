@@ -21,6 +21,7 @@ import { FollowersFollowingDialog } from "./FollowersFollowingDialog";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 import { toast } from "@/hooks/use-toast";
+import { useActiveEffects } from "@/hooks/useActiveEffects";
 
 interface ProfileHeaderProps {
   profile: any;
@@ -47,6 +48,7 @@ export const ProfileHeader = ({
   const [isAvatarUploaderOpen, setIsAvatarUploaderOpen] = useState(false);
   const [isFollowersDialogOpen, setIsFollowersDialogOpen] = useState(false);
   const [followersDialogTab, setFollowersDialogTab] = useState<"followers" | "following">("followers");
+  const { effects } = useActiveEffects(userId);
 
   const openFollowersDialog = (tab: "followers" | "following") => {
     setFollowersDialogTab(tab);
@@ -117,7 +119,10 @@ export const ProfileHeader = ({
             >
               <div className={cn(
                 "p-[3px] rounded-full bg-card shadow-lg",
-                "ring-4 ring-background"
+                "ring-4 ring-background",
+                effects.hasNeonFrame && "ring-4 ring-fuchsia-500 shadow-[0_0_20px_rgba(217,70,239,0.5)] animate-pulse",
+                effects.hasPremiumFrame && !effects.hasNeonFrame && "ring-4 ring-amber-500 shadow-[0_0_15px_rgba(245,158,11,0.4)]",
+                effects.hasSpotlight && "shadow-[0_0_30px_rgba(249,115,22,0.6)]"
               )}>
                 <Avatar className="h-24 w-24 sm:h-28 sm:w-28 border-2 border-background">
                   <AvatarImage 
@@ -219,7 +224,12 @@ export const ProfileHeader = ({
           >
             {/* Name + Verified + Roles */}
             <div className="flex items-center gap-2 flex-wrap">
-              <h1 className="text-xl sm:text-2xl font-bold text-foreground leading-tight">
+              <h1 className={cn(
+                "text-xl sm:text-2xl font-bold leading-tight",
+                effects.hasRainbowName
+                  ? "bg-gradient-to-r from-red-500 via-yellow-500 via-green-500 via-blue-500 to-purple-500 bg-clip-text text-transparent animate-gradient-x"
+                  : "text-foreground"
+              )}>
                 {profile?.display_name || profile?.username}
               </h1>
               {profile?.is_verified && <VerifiedBadge size="lg" />}

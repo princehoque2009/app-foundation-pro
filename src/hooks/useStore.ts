@@ -44,19 +44,31 @@ export const useStore = () => {
         .from("store_purchases" as any)
         .select("*, store_items(*)")
         .eq("user_id", user.id)
-        .eq("status", "active");
+        .order("created_at", { ascending: false });
       if (error) throw error;
       return (data || []) as any[];
     },
     enabled: !!user?.id,
   });
 
+  /** Check if user has an active (non-expired) purchase of this item icon */
   const hasItem = (itemIcon: string): boolean => {
     return purchases?.some((p: any) => {
       const item = p.store_items || p.item;
-      return item?.icon === itemIcon && p.status === "active";
+      if (item?.icon !== itemIcon || p.status !== "active") return false;
+      if (p.expires_at && new Date(p.expires_at) < new Date()) return false;
+      return true;
     }) || false;
   };
 
-  return { storeItems, storeLoading, purchases, purchasesLoading, hasItem };
+  /** Get the expiry date for an active item, or null */
+  const getItemExpiry = (itemIcon: string): string | null => {
+    const purchase = purchases?.find((p: any) => {
+      const item = p.store_items || p.item;
+      return item?.icon === itemIcon && p.status === "active" && (!p.expires_at || new Date(p.expires_at) > new Date());
+    });
+    return purchase?.expires_at || null;
+  };
+
+  return { storeItems, storeLoading, purchases, purchasesLoading, hasItem, getItemExpiry };
 };
