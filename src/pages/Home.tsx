@@ -41,10 +41,10 @@ const Home = () => {
                 <PostCard
                   id={post.id}
                   author={{
-                    name: post.profiles.display_name || post.profiles.username,
-                    username: post.profiles.username,
-                    avatar: post.profiles.avatar_url || undefined,
-                    isVerified: post.profiles.is_verified,
+                    name: post.profiles?.display_name || post.profiles?.username || "Unknown",
+                    username: post.profiles?.username || "unknown",
+                    avatar: post.profiles?.avatar_url || undefined,
+                    isVerified: post.profiles?.is_verified ?? false,
                     userId: post.user_id,
                   }}
                   content={post.caption || ""}
