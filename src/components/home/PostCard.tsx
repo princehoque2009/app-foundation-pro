@@ -22,7 +22,7 @@ import { useUserRoles } from "@/hooks/useUserRoles";
 import { MediaCarousel } from "./MediaCarousel";
 import { PostMedia } from "@/hooks/usePosts";
 import { GiftPrangsPostDialog } from "@/components/wallet/GiftPrangsPostDialog";
-
+import { useActiveEffects } from "@/hooks/useActiveEffects";
 
 interface PostCardProps {
   id: string;
@@ -53,6 +53,7 @@ export const PostCard = ({ id, author, content, image, video, mediaItems, likes,
   
   // Fetch user roles for role badge
   const { data: userRoles } = useUserRoles({ userId: author.userId });
+  const { effects: authorEffects } = useActiveEffects(author.userId);
   const [isImageLoaded, setIsImageLoaded] = useState(false);
   
   const { data: likeData } = usePostLikes(id);
@@ -161,7 +162,14 @@ export const PostCard = ({ id, author, content, image, video, mediaItems, likes,
               onClick={handleProfileClick}
             >
               <div className="relative">
-                <div className="p-[2px] rounded-full bg-gradient-to-br from-primary via-primary/80 to-primary/60">
+                <div className={cn(
+                  "p-[2px] rounded-full",
+                  authorEffects.hasNeonFrame
+                    ? "bg-gradient-to-br from-fuchsia-500 via-purple-500 to-pink-500 shadow-[0_0_10px_rgba(217,70,239,0.4)]"
+                    : authorEffects.hasPremiumFrame
+                    ? "bg-gradient-to-br from-amber-400 via-yellow-500 to-amber-600 shadow-[0_0_8px_rgba(245,158,11,0.3)]"
+                    : "bg-gradient-to-br from-primary via-primary/80 to-primary/60"
+                )}>
                   <Avatar className="h-10 w-10 border-2 border-background transition-transform group-hover:scale-105">
                     <AvatarImage src={author.avatar || undefined} alt={author.name} />
                     <AvatarFallback className="bg-muted text-muted-foreground">
@@ -172,9 +180,17 @@ export const PostCard = ({ id, author, content, image, video, mediaItems, likes,
               </div>
               <div>
                 <div className="flex items-center gap-1.5">
-                  <p className="font-semibold text-sm text-foreground group-hover:text-primary transition-colors leading-tight flex items-center gap-1">
+                  <p className={cn(
+                    "font-semibold text-sm group-hover:text-primary transition-colors leading-tight flex items-center gap-1",
+                    authorEffects.hasRainbowName
+                      ? "bg-gradient-to-r from-red-500 via-yellow-500 via-green-500 via-blue-500 to-purple-500 bg-clip-text text-transparent"
+                      : "text-foreground"
+                  )}>
                     {author.name}
                     {author.isVerified && <VerifiedBadge size="sm" />}
+                    {authorEffects.hasCustomBadge && (
+                      <span className="inline-flex items-center justify-center h-4 w-4 rounded-full bg-gradient-to-r from-violet-500 to-purple-600 text-[8px] text-white font-bold ml-0.5">★</span>
+                    )}
                   </p>
                 </div>
                 <div className="flex items-center gap-2">

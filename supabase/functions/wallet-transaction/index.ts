@@ -221,18 +221,25 @@ Deno.serve(async (req) => {
         });
       }
 
-      // Check if already purchased (for badges/decorations)
-      if (item.category === "badge" || item.category === "decoration") {
-        const { data: existing } = await supabaseAdmin
-          .from("store_purchases")
-          .select("id")
-          .eq("user_id", userId)
-          .eq("item_id", itemId)
-          .eq("status", "active")
-          .maybeSingle();
+      // Check if already has active (non-expired) purchase
+      const { data: existing } = await supabaseAdmin
+        .from("store_purchases")
+        .select("id, expires_at")
+        .eq("user_id", userId)
+        .eq("item_id", itemId)
+        .eq("status", "active")
+        .maybeSingle();
 
-        if (existing) {
-          return new Response(JSON.stringify({ error: "Already purchased" }), {
+      if (existing) {
+        // Check if it's expired
+        if (existing.expires_at && new Date(existing.expires_at) < new Date()) {
+          // Mark old one as expired
+          await supabaseAdmin
+            .from("store_purchases")
+            .update({ status: "expired" })
+            .eq("id", existing.id);
+        } else {
+          return new Response(JSON.stringify({ error: "Already active" }), {
             status: 400,
             headers: { ...corsHeaders, "Content-Type": "application/json" },
           });
@@ -248,13 +255,9 @@ Deno.serve(async (req) => {
         })
         .eq("user_id", userId);
 
-      // Calculate expiry for boosts
-      let expiresAt = null;
-      if (item.icon === "boost_24" || item.icon === "spotlight") {
-        expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
-      } else if (item.icon === "boost_7d") {
-        expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
-      }
+      // Calculate expiry from item metadata
+      const durationDays = item.metadata?.duration_days || 30;
+      const expiresAt = new Date(Date.now() + durationDays * 24 * 60 * 60 * 1000).toISOString();
 
       // Create purchase
       await supabaseAdmin.from("store_purchases").insert({

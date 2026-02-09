@@ -7,6 +7,7 @@ import { ConfirmTransactionDialog } from "@/components/wallet/ConfirmTransaction
 import { useWallet } from "@/hooks/useWallet";
 import { useStore } from "@/hooks/useStore";
 import { motion } from "framer-motion";
+import { formatDistanceToNow } from "date-fns";
 import {
   BadgeCheck,
   Sparkles,
@@ -18,14 +19,9 @@ import {
   ShoppingBag,
   Lock,
   CheckCircle2,
+  Clock,
+  Timer,
 } from "lucide-react";
-
-const categoryIcons: Record<string, any> = {
-  badge: BadgeCheck,
-  decoration: Palette,
-  boost: Rocket,
-  gift: Star,
-};
 
 const itemIcons: Record<string, any> = {
   verified: BadgeCheck,
@@ -60,9 +56,22 @@ const itemIconColors: Record<string, string> = {
   custom_badge: "text-violet-500",
 };
 
+const durationLabels: Record<number, string> = {
+  1: "24 hours",
+  7: "7 days",
+  30: "30 days",
+  90: "90 days",
+};
+
+const categoryIcons: Record<string, any> = {
+  badge: BadgeCheck,
+  decoration: Palette,
+  boost: Rocket,
+};
+
 export const WalletStore = () => {
   const { wallet, purchaseStoreItem, isPurchasingItem } = useWallet();
-  const { storeItems, storeLoading, hasItem } = useStore();
+  const { storeItems, storeLoading, hasItem, getItemExpiry } = useStore();
   const balance = (wallet as any)?.balance || 0;
 
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -127,6 +136,9 @@ export const WalletStore = () => {
           const iconColor = itemIconColors[item.icon] || "text-primary";
           const owned = hasItem(item.icon);
           const canAfford = balance >= item.price;
+          const durationDays = item.metadata?.duration_days;
+          const durationLabel = durationDays ? durationLabels[durationDays] || `${durationDays}d` : null;
+          const expiresAt = owned ? getItemExpiry(item.icon) : null;
 
           return (
             <motion.div
@@ -136,13 +148,25 @@ export const WalletStore = () => {
               transition={{ delay: i * 0.05 }}
               whileTap={{ scale: 0.97 }}
             >
-              <Card className={`p-4 relative overflow-hidden bg-gradient-to-br ${gradient} ${owned ? "opacity-70" : ""}`}>
-                {item.category === "boost" && (
-                  <Badge className="absolute top-1.5 right-1.5 text-[8px] px-1.5 py-0.5 bg-orange-500">
-                    ⚡ BOOST
+              <Card className={`p-4 relative overflow-hidden bg-gradient-to-br ${gradient} ${owned ? "ring-2 ring-emerald-500/40" : ""}`}>
+                {/* Duration badge */}
+                {durationLabel && !owned && (
+                  <Badge variant="outline" className="absolute top-1.5 right-1.5 text-[8px] px-1.5 py-0.5 gap-0.5 bg-background/80 backdrop-blur-sm">
+                    <Timer className="h-2.5 w-2.5" />
+                    {durationLabel}
                   </Badge>
                 )}
-                {owned && (
+
+                {/* Active indicator with remaining time */}
+                {owned && expiresAt && (
+                  <div className="absolute top-1.5 right-1.5 flex items-center gap-1">
+                    <Badge className="text-[8px] px-1.5 py-0.5 gap-0.5 bg-emerald-500 hover:bg-emerald-500">
+                      <Clock className="h-2.5 w-2.5" />
+                      {formatDistanceToNow(new Date(expiresAt))}
+                    </Badge>
+                  </div>
+                )}
+                {owned && !expiresAt && (
                   <div className="absolute top-1.5 right-1.5">
                     <CheckCircle2 className="h-5 w-5 text-emerald-500 fill-emerald-500/20" />
                   </div>
@@ -166,7 +190,7 @@ export const WalletStore = () => {
                     disabled={owned || !canAfford || isPurchasingItem}
                     onClick={() => handleBuy(item)}
                   >
-                    {owned ? "Owned" : !canAfford ? <Lock className="h-3 w-3" /> : "Buy"}
+                    {owned ? "Active" : !canAfford ? <Lock className="h-3 w-3" /> : "Buy"}
                   </Button>
                 </div>
               </Card>
@@ -187,7 +211,9 @@ export const WalletStore = () => {
         open={confirmOpen}
         onOpenChange={setConfirmOpen}
         title="Confirm Purchase"
-        description="You're about to purchase an item from the Prangs Store."
+        description={selectedItem?.metadata?.duration_days
+          ? `This item will be active for ${durationLabels[selectedItem.metadata.duration_days] || selectedItem.metadata.duration_days + " days"}.`
+          : "You're about to purchase an item from the Prangs Store."}
         amount={selectedItem?.price || 0}
         currentBalance={balance}
         onConfirm={handleConfirm}
