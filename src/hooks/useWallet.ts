@@ -130,7 +130,11 @@ export const useWallet = () => {
       const { data, error } = await supabase.functions.invoke("wallet-transaction", {
         body: { action: "daily_claim" },
       });
-      if (error) throw error;
+      if (error) {
+        // Parse the error body for a user-friendly message
+        const msg = typeof error === "object" && "message" in error ? error.message : "Could not claim daily Prangs.";
+        throw new Error(msg);
+      }
       if (data?.error) throw new Error(data.error);
       return data;
     },
