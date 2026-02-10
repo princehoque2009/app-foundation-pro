@@ -6,25 +6,15 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useIsMobile } from "@/hooks/use-mobile";
 import {
-  LayoutDashboard,
-  Users,
-  MessageSquare,
-  FileText,
-  BadgeCheck,
-  Bell,
-  Settings,
-  Shield,
-  Search,
-  Menu,
-  X,
-  ChevronRight,
-  Activity,
-  DollarSign,
-  Wallet,
+  LayoutDashboard, Users, MessageSquare, FileText, BadgeCheck, Bell,
+  Settings, Shield, Search, Menu, X, ChevronRight, Activity,
+  DollarSign, Wallet, ArrowLeft,
 } from "lucide-react";
 
 interface AdminLayoutProps {
@@ -36,30 +26,28 @@ interface AdminLayoutProps {
 const sidebarItems = [
   { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
   { id: "users", label: "Users", icon: Users },
-  { id: "messenger", label: "Messenger Control", icon: MessageSquare },
-  { id: "reports", label: "Content & Reports", icon: FileText },
+  { id: "messenger", label: "Messenger", icon: MessageSquare },
+  { id: "reports", label: "Reports", icon: FileText },
   { id: "verification", label: "Verification", icon: BadgeCheck },
   { id: "notifications", label: "Notifications", icon: Bell },
-  { id: "advertisements", label: "Advertisements", icon: Activity },
+  { id: "advertisements", label: "Ads", icon: Activity },
   { id: "revenue", label: "Revenue", icon: DollarSign },
-  { id: "wallet", label: "Wallet Requests", icon: Wallet },
-  { id: "settings", label: "App Settings", icon: Settings },
-  { id: "logs", label: "Logs & Security", icon: Activity },
+  { id: "wallet", label: "Wallet", icon: Wallet },
+  { id: "settings", label: "Settings", icon: Settings },
+  { id: "logs", label: "Logs", icon: Activity },
 ];
 
 export const AdminLayout = ({ children, activeSection, onSectionChange }: AdminLayoutProps) => {
   const { user } = useAuth();
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const isMobile = useIsMobile();
+  const [sidebarOpen, setSidebarOpen] = useState(!isMobile);
+  const [mobileSheetOpen, setMobileSheetOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
   const { data: profile } = useQuery({
     queryKey: ["admin-profile", user?.id],
     queryFn: async () => {
-      const { data } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", user?.id)
-        .single();
+      const { data } = await supabase.from("profiles").select("*").eq("id", user?.id).single();
       return data;
     },
     enabled: !!user?.id,
@@ -68,20 +56,11 @@ export const AdminLayout = ({ children, activeSection, onSectionChange }: AdminL
   const { data: stats } = useQuery({
     queryKey: ["admin-quick-stats"],
     queryFn: async () => {
-      const [
-        { count: pendingReports },
-        { count: pendingVerifications },
-        { count: openTickets },
-      ] = await Promise.all([
+      const [{ count: pendingReports }, { count: pendingVerifications }] = await Promise.all([
         supabase.from("reports").select("*", { count: "exact", head: true }).eq("status", "pending"),
         supabase.from("verification_requests").select("*", { count: "exact", head: true }).eq("status", "pending"),
-        supabase.from("support_tickets").select("*", { count: "exact", head: true }).eq("status", "open"),
       ]);
-      return {
-        pendingReports: pendingReports || 0,
-        pendingVerifications: pendingVerifications || 0,
-        openTickets: openTickets || 0,
-      };
+      return { pendingReports: pendingReports || 0, pendingVerifications: pendingVerifications || 0 };
     },
   });
 
@@ -91,6 +70,96 @@ export const AdminLayout = ({ children, activeSection, onSectionChange }: AdminL
     return 0;
   };
 
+  const handleSectionChange = (section: string) => {
+    onSectionChange(section);
+    if (isMobile) setMobileSheetOpen(false);
+  };
+
+  const SidebarContent = () => (
+    <nav className="p-2 space-y-1">
+      {sidebarItems.map((item) => {
+        const badgeCount = getBadgeCount(item.id);
+        return (
+          <button
+            key={item.id}
+            onClick={() => handleSectionChange(item.id)}
+            className={cn(
+              "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all",
+              "hover:bg-muted/50",
+              activeSection === item.id && "bg-primary/10 text-primary font-medium"
+            )}
+          >
+            <item.icon className="h-5 w-5 shrink-0" />
+            <span className="flex-1 text-left text-sm">{item.label}</span>
+            {badgeCount > 0 && (
+              <Badge className="bg-destructive text-destructive-foreground text-xs">
+                {badgeCount}
+              </Badge>
+            )}
+          </button>
+        );
+      })}
+    </nav>
+  );
+
+  // Mobile layout
+  if (isMobile) {
+    return (
+      <div className="min-h-screen bg-background">
+        {/* Mobile Top Bar */}
+        <header className="sticky top-0 z-40 h-14 bg-background/80 backdrop-blur-xl border-b border-border">
+          <div className="h-full px-3 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Sheet open={mobileSheetOpen} onOpenChange={setMobileSheetOpen}>
+                <SheetTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-9 w-9">
+                    <Menu className="h-5 w-5" />
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="left" className="w-[260px] p-0">
+                  <div className="h-14 flex items-center gap-2 px-4 border-b border-border">
+                    <Shield className="h-5 w-5 text-primary" />
+                    <span className="font-semibold">Admin</span>
+                  </div>
+                  <ScrollArea className="h-[calc(100vh-8rem)]">
+                    <SidebarContent />
+                  </ScrollArea>
+                  {/* Profile */}
+                  <div className="absolute bottom-0 left-0 right-0 p-3 border-t border-border bg-card">
+                    <div className="flex items-center gap-3">
+                      <Avatar className="h-8 w-8">
+                        <AvatarImage src={profile?.avatar_url} />
+                        <AvatarFallback>{profile?.username?.[0]?.toUpperCase()}</AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate">{profile?.display_name || profile?.username}</p>
+                        <Badge variant="outline" className="text-[10px]">Admin</Badge>
+                      </div>
+                    </div>
+                  </div>
+                </SheetContent>
+              </Sheet>
+              <h1 className="text-base font-semibold truncate">
+                {sidebarItems.find(i => i.id === activeSection)?.label}
+              </h1>
+            </div>
+            <Link to="/">
+              <Button variant="ghost" size="sm" className="gap-1 text-xs h-8">
+                <ArrowLeft className="h-3.5 w-3.5" /> Exit
+              </Button>
+            </Link>
+          </div>
+        </header>
+
+        {/* Page Content */}
+        <div className="p-3">
+          {children}
+        </div>
+      </div>
+    );
+  }
+
+  // Desktop layout
   return (
     <div className="min-h-screen bg-background flex">
       {/* Sidebar */}
@@ -100,7 +169,6 @@ export const AdminLayout = ({ children, activeSection, onSectionChange }: AdminL
           sidebarOpen ? "w-64" : "w-16"
         )}
       >
-        {/* Logo */}
         <div className="h-16 flex items-center justify-between px-4 border-b border-border">
           {sidebarOpen && (
             <div className="flex items-center gap-2">
@@ -108,53 +176,34 @@ export const AdminLayout = ({ children, activeSection, onSectionChange }: AdminL
               <span className="font-semibold text-lg">Admin</span>
             </div>
           )}
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="shrink-0"
-          >
+          <Button variant="ghost" size="icon" onClick={() => setSidebarOpen(!sidebarOpen)} className="shrink-0">
             {sidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </Button>
         </div>
 
-        {/* Navigation */}
         <ScrollArea className="h-[calc(100vh-8rem)]">
-          <nav className="p-2 space-y-1">
-            {sidebarItems.map((item) => {
-              const badgeCount = getBadgeCount(item.id);
-              return (
+          {sidebarOpen ? (
+            <SidebarContent />
+          ) : (
+            <nav className="p-2 space-y-1">
+              {sidebarItems.map((item) => (
                 <button
                   key={item.id}
                   onClick={() => onSectionChange(item.id)}
                   className={cn(
-                    "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all",
+                    "w-full flex items-center justify-center p-2.5 rounded-lg transition-all",
                     "hover:bg-muted/50",
-                    activeSection === item.id && "bg-primary/10 text-primary font-medium"
+                    activeSection === item.id && "bg-primary/10 text-primary"
                   )}
+                  title={item.label}
                 >
-                  <item.icon className="h-5 w-5 shrink-0" />
-                  {sidebarOpen && (
-                    <>
-                      <span className="flex-1 text-left text-sm">{item.label}</span>
-                      {badgeCount > 0 && (
-                        <Badge className="bg-destructive text-destructive-foreground text-xs">
-                          {badgeCount}
-                        </Badge>
-                      )}
-                      <ChevronRight className={cn(
-                        "h-4 w-4 text-muted-foreground transition-transform",
-                        activeSection === item.id && "rotate-90"
-                      )} />
-                    </>
-                  )}
+                  <item.icon className="h-5 w-5" />
                 </button>
-              );
-            })}
-          </nav>
+              ))}
+            </nav>
+          )}
         </ScrollArea>
 
-        {/* Admin Profile */}
         <div className="absolute bottom-0 left-0 right-0 p-3 border-t border-border bg-card">
           <div className={cn("flex items-center gap-3", !sidebarOpen && "justify-center")}>
             <Avatar className="h-9 w-9">
@@ -172,43 +221,22 @@ export const AdminLayout = ({ children, activeSection, onSectionChange }: AdminL
       </aside>
 
       {/* Main Content */}
-      <main className={cn(
-        "flex-1 transition-all duration-300",
-        sidebarOpen ? "ml-64" : "ml-16"
-      )}>
-        {/* Top Bar */}
+      <main className={cn("flex-1 transition-all duration-300", sidebarOpen ? "ml-64" : "ml-16")}>
         <header className="sticky top-0 z-30 h-16 bg-background/80 backdrop-blur-xl border-b border-border">
           <div className="h-full px-6 flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <h1 className="text-xl font-semibold capitalize">
-                {sidebarItems.find(i => i.id === activeSection)?.label}
-              </h1>
-            </div>
-
+            <h1 className="text-xl font-semibold capitalize">
+              {sidebarItems.find(i => i.id === activeSection)?.label}
+            </h1>
             <div className="flex items-center gap-4">
               <div className="relative w-64">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search users, posts..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-9"
-                />
+                <Input placeholder="Search..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-9" />
               </div>
-
-              <Link to="/">
-                <Button variant="outline" size="sm">
-                  Exit Admin
-                </Button>
-              </Link>
+              <Link to="/"><Button variant="outline" size="sm">Exit Admin</Button></Link>
             </div>
           </div>
         </header>
-
-        {/* Page Content */}
-        <div className="p-6">
-          {children}
-        </div>
+        <div className="p-6">{children}</div>
       </main>
     </div>
   );

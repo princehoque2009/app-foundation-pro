@@ -377,8 +377,8 @@ const Menu = () => {
           </Card>
         </motion.div>
 
-        {/* Wallet */}
-        <motion.div variants={itemVariants}>
+        {/* Wallet & Manage */}
+        <motion.div variants={itemVariants} className="space-y-2">
           <Card
             className="p-4 cursor-pointer hover:bg-muted/50 transition-colors border-border/50"
             onClick={() => navigate("/wallet")}
@@ -390,6 +390,21 @@ const Menu = () => {
               <div className="flex-1">
                 <h3 className="font-medium text-sm">Wallet</h3>
                 <p className="text-xs text-muted-foreground">Prangs & transactions</p>
+              </div>
+              <ChevronRight className="h-5 w-5 text-muted-foreground" />
+            </div>
+          </Card>
+          <Card
+            className="p-4 cursor-pointer hover:bg-muted/50 transition-colors border-border/50"
+            onClick={() => navigate("/wallet?view=manage")}
+          >
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-xl bg-muted">
+                <Settings className="h-5 w-5 text-foreground" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-medium text-sm">Manage Effects</h3>
+                <p className="text-xs text-muted-foreground">Toggle purchased features</p>
               </div>
               <ChevronRight className="h-5 w-5 text-muted-foreground" />
             </div>

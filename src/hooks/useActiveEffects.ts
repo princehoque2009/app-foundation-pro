@@ -55,10 +55,10 @@ export const useActiveEffects = (userId?: string) => {
         .select("*, store_items!inner(icon)")
         .eq("user_id", userId)
         .eq("status", "active");
-      if (error) throw error;
-
-      // Filter out expired on client side too
-      const active = (data || []).filter((p: any) => !p.expires_at || new Date(p.expires_at) > new Date());
+      // Filter out expired AND disabled
+      const active = (data || []).filter((p: any) => 
+        p.status === "active" && (!p.expires_at || new Date(p.expires_at) > new Date())
+      );
       const icons = new Set(active.map((p: any) => p.store_items?.icon));
 
       return {

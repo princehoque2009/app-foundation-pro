@@ -9,18 +9,9 @@ import { useStore } from "@/hooks/useStore";
 import { motion } from "framer-motion";
 import { formatDistanceToNow } from "date-fns";
 import {
-  BadgeCheck,
-  Sparkles,
-  Rocket,
-  Crown,
-  Palette,
-  Frame,
-  Star,
-  ShoppingBag,
-  Lock,
-  CheckCircle2,
-  Clock,
-  Timer,
+  BadgeCheck, Sparkles, Rocket, Crown, Palette, Frame, Star,
+  ShoppingBag, Lock, CheckCircle2, Clock, Timer, Smile,
+  MessageCircle, Megaphone, Eye, TrendingUp,
 } from "lucide-react";
 
 const itemIcons: Record<string, any> = {
@@ -32,28 +23,11 @@ const itemIcons: Record<string, any> = {
   boost_7d: Rocket,
   spotlight: Star,
   custom_badge: Frame,
-};
-
-const itemGradients: Record<string, string> = {
-  verified: "from-blue-500/15 to-indigo-500/15 border-blue-500/25",
-  frame_gold: "from-amber-500/15 to-yellow-500/15 border-amber-500/25",
-  frame_neon: "from-fuchsia-500/15 to-purple-500/15 border-fuchsia-500/25",
-  rainbow: "from-pink-500/15 to-orange-500/15 border-pink-500/25",
-  boost_24: "from-emerald-500/15 to-teal-500/15 border-emerald-500/25",
-  boost_7d: "from-cyan-500/15 to-blue-500/15 border-cyan-500/25",
-  spotlight: "from-orange-500/15 to-red-500/15 border-orange-500/25",
-  custom_badge: "from-violet-500/15 to-purple-500/15 border-violet-500/25",
-};
-
-const itemIconColors: Record<string, string> = {
-  verified: "text-blue-500",
-  frame_gold: "text-amber-500",
-  frame_neon: "text-fuchsia-500",
-  rainbow: "text-pink-500",
-  boost_24: "text-emerald-500",
-  boost_7d: "text-cyan-500",
-  spotlight: "text-orange-500",
-  custom_badge: "text-violet-500",
+  custom_emoji: Smile,
+  chat_theme: MessageCircle,
+  announcement: Megaphone,
+  profile_views: Eye,
+  trending: TrendingUp,
 };
 
 const durationLabels: Record<number, string> = {
@@ -132,8 +106,6 @@ export const WalletStore = () => {
       <div className="grid grid-cols-2 gap-3">
         {filteredItems?.map((item: any, i: number) => {
           const Icon = itemIcons[item.icon] || ShoppingBag;
-          const gradient = itemGradients[item.icon] || "from-muted/50 to-muted/30 border-border/50";
-          const iconColor = itemIconColors[item.icon] || "text-primary";
           const owned = hasItem(item.icon);
           const canAfford = balance >= item.price;
           const durationDays = item.metadata?.duration_days;
@@ -148,7 +120,7 @@ export const WalletStore = () => {
               transition={{ delay: i * 0.05 }}
               whileTap={{ scale: 0.97 }}
             >
-              <Card className={`p-4 relative overflow-hidden bg-gradient-to-br ${gradient} ${owned ? "ring-2 ring-emerald-500/40" : ""}`}>
+              <Card className={`p-4 relative overflow-hidden border-border/50 ${owned ? "ring-2 ring-emerald-500/40" : ""}`}>
                 {/* Duration badge */}
                 {durationLabel && !owned && (
                   <Badge variant="outline" className="absolute top-1.5 right-1.5 text-[8px] px-1.5 py-0.5 gap-0.5 bg-background/80 backdrop-blur-sm">
@@ -172,8 +144,9 @@ export const WalletStore = () => {
                   </div>
                 )}
 
-                <div className={`p-2.5 rounded-xl bg-background/60 backdrop-blur-sm w-fit mb-3`}>
-                  <Icon className={`h-6 w-6 ${iconColor}`} />
+                {/* B&W icon */}
+                <div className="p-2.5 rounded-xl bg-muted w-fit mb-3">
+                  <Icon className="h-6 w-6 text-foreground grayscale" />
                 </div>
 
                 <h4 className="font-bold text-sm leading-tight">{item.name}</h4>
