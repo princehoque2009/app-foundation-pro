@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -41,7 +41,9 @@ import {
   ArrowDown,
   ArrowUp,
   Gem,
+  Settings2,
 } from "lucide-react";
+import { ManagePurchases } from "@/components/wallet/ManagePurchases";
 import { format } from "date-fns";
 
 const packs = [
@@ -71,16 +73,18 @@ const packs = [
   },
 ];
 
-type View = "main" | "purchase" | "history" | "store";
+type View = "main" | "purchase" | "history" | "store" | "manage";
 type TxFilter = "all" | "sent" | "received" | "purchases";
 
 const Wallet = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const {
     wallet, walletLoading, transactions, purchasePrangs, isPurchasing,
     hasActiveSubscription, canClaimToday, claimDaily, isClaiming, subscriptionExpiresAt,
   } = useWallet();
-  const [view, setView] = useState<View>("main");
+  const initialView = (searchParams.get("view") as View) || "main";
+  const [view, setView] = useState<View>(initialView);
   const [selectedPack, setSelectedPack] = useState<number | null>(null);
   const [paymentMethod, setPaymentMethod] = useState("bkash");
   const [senderNumber, setSenderNumber] = useState("");
@@ -181,7 +185,7 @@ const Wallet = () => {
 
   const isSend = (type: string) => ["gift_sent", "store_purchase"].includes(type);
 
-  const viewTitle = view === "main" ? "Wallet" : view === "purchase" ? "Purchase Prangs" : view === "store" ? "Prangs Store" : "Transactions";
+  const viewTitle = view === "main" ? "Wallet" : view === "purchase" ? "Purchase Prangs" : view === "store" ? "Prangs Store" : view === "manage" ? "Manage Effects" : "Transactions";
 
   return (
     <MainLayout>
@@ -235,9 +239,9 @@ const Wallet = () => {
                       transition={{ delay: 0.2, type: "spring" }}
                       className="text-5xl font-black tracking-tight drop-shadow-lg"
                     >
-                      {walletLoading ? "..." : balance.toLocaleString()}
+                      {walletLoading ? "..." : Number(balance).toLocaleString()}
                     </motion.div>
-                    <p className="text-white/70 mt-1 font-medium text-sm tracking-wide">Available Prangs</p>
+                     <p className="text-white/70 mt-1 font-medium text-sm tracking-wide">Available Prangs</p>
                     <div className="flex justify-center gap-8 mt-5">
                       <div className="text-center">
                         <div className="flex items-center justify-center gap-1.5">
@@ -297,7 +301,7 @@ const Wallet = () => {
                     { icon: ShoppingCart, label: "Buy", view: "purchase" as View, color: "text-blue-500", bg: "bg-blue-500/10" },
                     { icon: Store, label: "Store", view: "store" as View, color: "text-fuchsia-500", bg: "bg-fuchsia-500/10" },
                     { icon: History, label: "History", view: "history" as View, color: "text-emerald-500", bg: "bg-emerald-500/10" },
-                    { icon: Gift, label: "Gift", view: "main" as View, color: "text-orange-500", bg: "bg-orange-500/10" },
+                    { icon: Settings2, label: "Manage", view: "manage" as View, color: "text-amber-500", bg: "bg-amber-500/10" },
                   ].map(({ icon: Icon, label, view: v, color, bg }) => (
                     <motion.div key={label} whileTap={{ scale: 0.93 }}>
                       <button
@@ -539,7 +543,7 @@ const Wallet = () => {
                 <Card className="p-3 mb-4 bg-gradient-to-r from-primary/5 to-transparent border-primary/15 flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <PrangsIcon size="sm" />
-                    <span className="font-bold">{balance.toLocaleString()}</span>
+                    <span className="font-bold">{Number(balance).toLocaleString()}</span>
                     <span className="text-xs text-muted-foreground">available</span>
                   </div>
                   <Button size="sm" variant="outline" className="rounded-xl text-xs" onClick={() => setView("purchase")}>
@@ -547,6 +551,13 @@ const Wallet = () => {
                   </Button>
                 </Card>
                 <WalletStore />
+              </motion.div>
+            )}
+
+            {/* Manage View */}
+            {view === "manage" && (
+              <motion.div key="manage" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
+                <ManagePurchases onBack={() => setView("main")} />
               </motion.div>
             )}
 

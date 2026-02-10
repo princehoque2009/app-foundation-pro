@@ -120,7 +120,7 @@ export const ProfileHeader = ({
               <div className={cn(
                 "p-[3px] rounded-full bg-card shadow-lg",
                 "ring-4 ring-background",
-                effects.hasNeonFrame && "ring-4 ring-fuchsia-500 shadow-[0_0_20px_rgba(217,70,239,0.5)] animate-pulse",
+                effects.hasNeonFrame && "ring-4 ring-fuchsia-500 shadow-[0_0_20px_rgba(217,70,239,0.5)]",
                 effects.hasPremiumFrame && !effects.hasNeonFrame && "ring-4 ring-amber-500 shadow-[0_0_15px_rgba(245,158,11,0.4)]",
                 effects.hasSpotlight && "shadow-[0_0_30px_rgba(249,115,22,0.6)]"
               )}>

@@ -91,10 +91,12 @@ export const MediaCarousel = ({ media, onDoubleClick, className }: MediaCarousel
                 src={currentMedia.media_url}
                 alt={`Post media ${currentIndex + 1}`}
                 className={cn(
-                  "w-full object-cover max-h-[500px] transition-opacity duration-300 pointer-events-none select-none",
+                  "w-full object-cover max-h-[500px] transition-opacity duration-200 pointer-events-none select-none",
                   isImageLoaded ? "opacity-100" : "opacity-0 h-0"
                 )}
-                loading="lazy"
+                loading="eager"
+                decoding="async"
+                fetchPriority="high"
                 onLoad={() => setIsImageLoaded(true)}
                 draggable={false}
                 onContextMenu={(e) => e.preventDefault()}

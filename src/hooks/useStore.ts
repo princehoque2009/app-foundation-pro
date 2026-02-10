@@ -55,7 +55,7 @@ export const useStore = () => {
   const hasItem = (itemIcon: string): boolean => {
     return purchases?.some((p: any) => {
       const item = p.store_items || p.item;
-      if (item?.icon !== itemIcon || p.status !== "active") return false;
+      if (item?.icon !== itemIcon || !["active"].includes(p.status)) return false;
       if (p.expires_at && new Date(p.expires_at) < new Date()) return false;
       return true;
     }) || false;
