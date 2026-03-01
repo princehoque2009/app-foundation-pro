@@ -4,7 +4,6 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { 
-  Settings, 
   UserCircle, 
   Share2, 
   Edit3,
@@ -200,15 +199,6 @@ export const ProfileHeader = ({
                     title="Wallet"
                   >
                     <Wallet className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => navigate("/settings")}
-                    className="rounded-full h-8 w-8"
-                    title="Settings"
-                  >
-                    <Settings className="h-4 w-4" />
                   </Button>
                 </>
               ) : null}

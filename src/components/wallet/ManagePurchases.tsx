@@ -53,36 +53,30 @@ export const ManagePurchases = ({ onBack }: ManagePurchasesProps) => {
 
   const togglePurchase = async (purchaseId: string, currentStatus: string) => {
     const newStatus = currentStatus === "active" ? "disabled" : "active";
-    const { error } = await supabase
-      .from("store_purchases" as any)
-      .update({ status: newStatus } as any)
-      .eq("id", purchaseId);
+    try {
+      const { error } = await supabase
+        .from("store_purchases")
+        .update({ status: newStatus })
+        .eq("id", purchaseId);
 
-    if (error) {
-      toast({ title: "Error", description: "Failed to update", variant: "destructive" });
-      return;
+      if (error) throw error;
+
+      queryClient.invalidateQueries({ queryKey: ["store-purchases"] });
+      queryClient.invalidateQueries({ queryKey: ["active-effects", user?.id] });
+      toast({
+        title: newStatus === "active" ? "Effect enabled" : "Effect disabled",
+        description: newStatus === "active" ? "This effect is now visible." : "This effect has been hidden.",
+      });
+    } catch (error: any) {
+      toast({ title: "Error", description: error.message || "Failed to update", variant: "destructive" });
     }
-
-    queryClient.invalidateQueries({ queryKey: ["store-purchases"] });
-    queryClient.invalidateQueries({ queryKey: ["active-effects"] });
-    toast({
-      title: newStatus === "active" ? "Effect enabled" : "Effect disabled",
-      description: newStatus === "active" ? "This effect is now visible." : "This effect has been hidden.",
-    });
   };
 
-  const saveEmoji = async (purchaseId: string) => {
+  const saveEmoji = async (_purchaseId: string) => {
     if (!emojiValue.trim()) return;
-    // Store the custom emoji in the purchase metadata via a simple update
-    // We'll use the 'reference' concept - store it in a custom way
-    const { error } = await supabase
-      .from("store_purchases" as any)
-      .update({ price_paid: undefined } as any) // no-op to trigger update
-      .eq("id", purchaseId);
-
-    // For now we store emoji preference in localStorage until we add a metadata column
     localStorage.setItem(`custom_emoji_${user?.id}`, emojiValue);
     setEditingEmoji(null);
+    queryClient.invalidateQueries({ queryKey: ["active-effects", user?.id] });
     toast({ title: "Emoji saved!", description: `Your custom emoji is now: ${emojiValue}` });
   };
 

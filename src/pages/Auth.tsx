@@ -168,6 +168,22 @@ const Auth = () => {
         });
         return;
       }
+
+      // Check if display name is available
+      const { data: existingName } = await supabase
+        .from("profiles")
+        .select("id")
+        .eq("display_name", displayName)
+        .maybeSingle();
+
+      if (existingName) {
+        toast({
+          title: "Nickname taken",
+          description: "This display name is already in use. Please choose another.",
+          variant: "destructive",
+        });
+        return;
+      }
       
       setSignupStep("profile");
     } catch (error: any) {

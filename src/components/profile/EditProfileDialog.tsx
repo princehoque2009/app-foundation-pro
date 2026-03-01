@@ -52,6 +52,34 @@ export const EditProfileDialog = ({ profile, open, onOpenChange }: EditProfileDi
         avatar_url = publicUrl;
       }
 
+      // Check if username changed and is unique
+      if (username !== profile?.username) {
+        const { data: existingUser } = await supabase
+          .from("profiles")
+          .select("id")
+          .eq("username", username)
+          .neq("id", user?.id)
+          .maybeSingle();
+
+        if (existingUser) {
+          throw new Error("This username is already taken. Please choose another.");
+        }
+      }
+
+      // Check if display_name is unique (nickname)
+      if (displayName && displayName !== profile?.display_name) {
+        const { data: existingName } = await supabase
+          .from("profiles")
+          .select("id")
+          .eq("display_name", displayName)
+          .neq("id", user?.id)
+          .maybeSingle();
+
+        if (existingName) {
+          throw new Error("This display name is already in use. Please choose another.");
+        }
+      }
+
       // Update profile
       const { error } = await supabase
         .from("profiles")

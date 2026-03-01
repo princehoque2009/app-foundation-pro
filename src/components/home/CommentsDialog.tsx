@@ -259,9 +259,25 @@ const CommentItem = ({ comment, onReply, replies, level = 0, postOwnerId, pinned
 export const CommentsDialog = ({ postId, open, onOpenChange }: CommentsDialogProps) => {
   const [comment, setComment] = useState("");
   const [replyingTo, setReplyingTo] = useState<any>(null);
+  const [mentionQuery, setMentionQuery] = useState<string | null>(null);
   const { data: comments, isLoading } = usePostComments(postId);
   const createComment = useCreateComment();
   const { user } = useAuth();
+
+  // Mention search
+  const { data: mentionResults } = useQuery({
+    queryKey: ["mention-search", mentionQuery],
+    queryFn: async () => {
+      if (!mentionQuery || mentionQuery.length < 1) return [];
+      const { data } = await supabase
+        .from("profiles")
+        .select("id, username, display_name, avatar_url")
+        .or(`username.ilike.%${mentionQuery}%,display_name.ilike.%${mentionQuery}%`)
+        .limit(5);
+      return data || [];
+    },
+    enabled: !!mentionQuery && mentionQuery.length >= 1,
+  });
 
   // Fetch post to get owner and pinned comment
   const { data: post } = useQuery({
@@ -281,6 +297,23 @@ export const CommentsDialog = ({ postId, open, onOpenChange }: CommentsDialogPro
   const postOwnerId = post?.user_id;
   const pinnedCommentIds = post?.pinned_comment_id ? [post.pinned_comment_id] : [];
 
+  const handleCommentChange = (value: string) => {
+    setComment(value);
+    // Detect @mention
+    const match = value.match(/@(\w*)$/);
+    if (match) {
+      setMentionQuery(match[1]);
+    } else {
+      setMentionQuery(null);
+    }
+  };
+
+  const insertMention = (username: string) => {
+    const newComment = comment.replace(/@\w*$/, `@${username} `);
+    setComment(newComment);
+    setMentionQuery(null);
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!comment.trim()) return;
@@ -295,6 +328,7 @@ export const CommentsDialog = ({ postId, open, onOpenChange }: CommentsDialogPro
         onSuccess: () => {
           setComment("");
           setReplyingTo(null);
+          setMentionQuery(null);
         },
       }
     );
@@ -383,11 +417,42 @@ export const CommentsDialog = ({ postId, open, onOpenChange }: CommentsDialogPro
           )}
         </AnimatePresence>
 
+        {/* Mention suggestions */}
+        <AnimatePresence>
+          {mentionQuery !== null && mentionResults && mentionResults.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: 5 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 5 }}
+              className="px-4 py-2 border-t border-border bg-card space-y-1 max-h-40 overflow-y-auto"
+            >
+              {mentionResults.map((u: any) => (
+                <button
+                  key={u.id}
+                  onClick={() => insertMention(u.username)}
+                  className="flex items-center gap-2 w-full p-2 rounded-lg hover:bg-muted transition-colors text-left"
+                >
+                  <Avatar className="h-7 w-7">
+                    <AvatarImage src={u.avatar_url || undefined} />
+                    <AvatarFallback className="text-xs bg-primary/10 text-primary">
+                      {u.username?.charAt(0).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium truncate">{u.display_name || u.username}</p>
+                    <p className="text-xs text-muted-foreground">@{u.username}</p>
+                  </div>
+                </button>
+              ))}
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         <form onSubmit={handleSubmit} className="flex gap-2 p-4 border-t border-border shrink-0 bg-card">
           <Input
             placeholder={replyingTo ? "Write a reply..." : "Add a comment..."}
             value={comment}
-            onChange={(e) => setComment(e.target.value)}
+            onChange={(e) => handleCommentChange(e.target.value)}
             disabled={createComment.isPending}
             className="rounded-full bg-muted/50 border-0 h-11 focus-visible:ring-1 focus-visible:ring-primary"
           />
