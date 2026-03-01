@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { PrangsIcon } from "@/components/wallet/PrangsIcon";
 import { ConfirmTransactionDialog } from "@/components/wallet/ConfirmTransactionDialog";
+import { PurchaseSuccessAnimation } from "@/components/wallet/PurchaseSuccessAnimation";
 import { useWallet } from "@/hooks/useWallet";
 import { useStore } from "@/hooks/useStore";
 import { motion } from "framer-motion";
@@ -51,6 +52,10 @@ export const WalletStore = () => {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<any>(null);
   const [activeCategory, setActiveCategory] = useState<string>("all");
+  
+  // Purchase success animation state
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [successData, setSuccessData] = useState({ itemName: "", amount: 0, prevBalance: 0, newBalance: 0, duration: null as string | null });
 
   const categories = ["all", "badge", "decoration", "boost"];
 
@@ -65,9 +70,22 @@ export const WalletStore = () => {
 
   const handleConfirm = async () => {
     if (!selectedItem) return;
+    const prevBal = balance;
     await purchaseStoreItem({ itemId: selectedItem.id });
+    
+    const durationDays = selectedItem.metadata?.duration_days;
+    const durLabel = durationDays ? (durationLabels[durationDays] || `${durationDays} days`) : null;
+    
+    setSuccessData({
+      itemName: selectedItem.name,
+      amount: selectedItem.price,
+      prevBalance: prevBal,
+      newBalance: prevBal - selectedItem.price,
+      duration: durLabel,
+    });
     setConfirmOpen(false);
     setSelectedItem(null);
+    setShowSuccess(true);
   };
 
   if (storeLoading) {
@@ -146,7 +164,7 @@ export const WalletStore = () => {
 
                 {/* B&W icon */}
                 <div className="p-2.5 rounded-xl bg-muted w-fit mb-3">
-                  <Icon className="h-6 w-6 text-foreground grayscale" />
+                  <Icon className="h-6 w-6 text-foreground grayscale opacity-70" />
                 </div>
 
                 <h4 className="font-bold text-sm leading-tight">{item.name}</h4>
@@ -192,6 +210,17 @@ export const WalletStore = () => {
         onConfirm={handleConfirm}
         isLoading={isPurchasingItem}
         itemName={selectedItem?.name}
+      />
+
+      {/* Success Animation */}
+      <PurchaseSuccessAnimation
+        open={showSuccess}
+        onClose={() => setShowSuccess(false)}
+        itemName={successData.itemName}
+        amount={successData.amount}
+        previousBalance={successData.prevBalance}
+        newBalance={successData.newBalance}
+        duration={successData.duration}
       />
     </div>
   );

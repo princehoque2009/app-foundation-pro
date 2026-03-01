@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { cn } from "@/lib/utils";
-import { ChevronLeft, ChevronRight, Play } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
+import { PrangonVideoPlayer } from "@/components/video/PrangonVideoPlayer";
 
 interface MediaItem {
   id: string;
@@ -72,16 +73,11 @@ export const MediaCarousel = ({ media, onDoubleClick, className }: MediaCarousel
           }}
         >
           {currentMedia.media_type === "video" ? (
-            <div className="relative">
-              <video
-                src={currentMedia.media_url}
-                controls
-                className="w-full max-h-[500px]"
-                preload="metadata"
-                controlsList="nodownload"
-                onContextMenu={(e) => e.preventDefault()}
-              />
-            </div>
+            <PrangonVideoPlayer
+              src={currentMedia.media_url}
+              className="w-full max-h-[500px]"
+              compact
+            />
           ) : (
             <>
               {!isImageLoaded && (
