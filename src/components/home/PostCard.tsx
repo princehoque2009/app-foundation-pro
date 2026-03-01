@@ -23,6 +23,7 @@ import { MediaCarousel } from "./MediaCarousel";
 import { PostMedia } from "@/hooks/usePosts";
 import { GiftPrangsPostDialog } from "@/components/wallet/GiftPrangsPostDialog";
 import { useActiveEffects } from "@/hooks/useActiveEffects";
+import { PrangonVideoPlayer } from "@/components/video/PrangonVideoPlayer";
 
 interface PostCardProps {
   id: string;
@@ -269,12 +270,10 @@ export const PostCard = ({ id, author, content, image, video, mediaItems, likes,
                 </>
               )}
               {video && (
-                <video 
-                  src={video} 
-                  controls 
+                <PrangonVideoPlayer
+                  src={video}
                   className="w-full max-h-[500px]"
-                  preload="metadata"
-                  controlsList="nodownload"
+                  compact
                 />
               )}
               

@@ -104,8 +104,16 @@ export const ReelCard = ({
         ref={videoRef}
         src={videoUrl}
         loop
+        muted
         playsInline
+        preload="metadata"
         className="absolute inset-0 w-full h-full object-cover"
+        onClick={() => {
+          if (videoRef.current) {
+            if (videoRef.current.paused) videoRef.current.play();
+            else videoRef.current.pause();
+          }
+        }}
       />
       
       {/* Gradient overlay */}
