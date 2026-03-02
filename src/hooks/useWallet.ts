@@ -114,7 +114,10 @@ export const useWallet = () => {
       return data;
     },
     onSuccess: () => {
+      // Force refetch wallet balance immediately after gifting
+      queryClient.invalidateQueries({ queryKey: ["wallet", user?.id] });
       queryClient.invalidateQueries({ queryKey: ["wallet"] });
+      queryClient.invalidateQueries({ queryKey: ["wallet-transactions", user?.id] });
       queryClient.invalidateQueries({ queryKey: ["wallet-transactions"] });
       toast({ title: "Gift sent!", description: "Prangs have been sent successfully." });
     },
