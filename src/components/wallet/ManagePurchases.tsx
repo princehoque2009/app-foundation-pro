@@ -13,11 +13,12 @@ import { motion } from "framer-motion";
 import {
   BadgeCheck, Sparkles, Rocket, Crown, Palette, Frame, Star,
   ShoppingBag, Clock, ArrowLeft, ToggleLeft, Smile,
+  MessageCircle, Megaphone, Eye, TrendingUp,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-const itemIcons: Record<string, any> = {
+const itemIcons: Record<string, React.ComponentType<any>> = {
   verified: BadgeCheck,
   frame_gold: Crown,
   frame_neon: Sparkles,
@@ -27,6 +28,10 @@ const itemIcons: Record<string, any> = {
   spotlight: Star,
   custom_badge: Frame,
   custom_emoji: Smile,
+  chat_theme: MessageCircle,
+  announcement: Megaphone,
+  profile_views: Eye,
+  trending: TrendingUp,
 };
 
 interface ManagePurchasesProps {
@@ -40,14 +45,15 @@ export const ManagePurchases = ({ onBack }: ManagePurchasesProps) => {
   const [editingEmoji, setEditingEmoji] = useState<string | null>(null);
   const [emojiValue, setEmojiValue] = useState("");
 
-  const activePurchases = purchases?.filter((p: any) => {
-    if (p.status !== "active") return false;
+  // Show ALL non-expired purchases (both active and disabled) so user can toggle back on
+  const manageable = purchases?.filter((p: any) => {
     if (p.expires_at && new Date(p.expires_at) < new Date()) return false;
-    return true;
+    if (p.status === "expired") return false;
+    return p.status === "active" || p.status === "disabled";
   }) || [];
 
   const expiredPurchases = purchases?.filter((p: any) => {
-    return p.status === "expired" || p.status === "disabled" ||
+    return p.status === "expired" ||
       (p.expires_at && new Date(p.expires_at) < new Date());
   }) || [];
 
@@ -55,8 +61,8 @@ export const ManagePurchases = ({ onBack }: ManagePurchasesProps) => {
     const newStatus = currentStatus === "active" ? "disabled" : "active";
     try {
       const { error } = await supabase
-        .from("store_purchases")
-        .update({ status: newStatus })
+        .from("store_purchases" as any)
+        .update({ status: newStatus } as any)
         .eq("id", purchaseId);
 
       if (error) throw error;
@@ -101,16 +107,16 @@ export const ManagePurchases = ({ onBack }: ManagePurchasesProps) => {
         </div>
       </div>
 
-      {/* Active Purchases */}
-      {activePurchases.length > 0 && (
+      {/* Manageable Purchases (active + disabled, non-expired) */}
+      {manageable.length > 0 && (
         <div className="space-y-2">
           <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wide px-1">
-            Active ({activePurchases.length})
+            Your Features ({manageable.length})
           </h3>
-          {activePurchases.map((purchase: any, i: number) => {
+          {manageable.map((purchase: any, i: number) => {
             const item = purchase.store_items;
             const Icon = itemIcons[item?.icon] || ShoppingBag;
-            const isDisabled = purchase.status === "disabled";
+            const isEnabled = purchase.status === "active";
 
             return (
               <motion.div
@@ -119,14 +125,20 @@ export const ManagePurchases = ({ onBack }: ManagePurchasesProps) => {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.05 }}
               >
-                <Card className="p-4">
+                <Card className={`p-4 transition-all ${!isEnabled ? "opacity-60" : ""}`}>
                   <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-xl bg-muted">
-                      <Icon className="h-5 w-5 text-foreground" />
+                    <div className={`p-2 rounded-xl ${isEnabled ? "bg-primary/10" : "bg-muted"}`}>
+                      <Icon className={`h-5 w-5 ${isEnabled ? "text-primary" : "text-muted-foreground"}`} />
                     </div>
                     <div className="flex-1 min-w-0">
                       <h4 className="font-semibold text-sm">{item?.name || "Unknown Item"}</h4>
                       <div className="flex items-center gap-2 mt-0.5">
+                        <Badge
+                          variant={isEnabled ? "default" : "outline"}
+                          className="text-[9px] px-1.5 py-0"
+                        >
+                          {isEnabled ? "Active" : "Disabled"}
+                        </Badge>
                         {purchase.expires_at && (
                           <Badge variant="outline" className="text-[9px] px-1.5 py-0 gap-0.5">
                             <Clock className="h-2.5 w-2.5" />
@@ -136,13 +148,13 @@ export const ManagePurchases = ({ onBack }: ManagePurchasesProps) => {
                       </div>
                     </div>
                     <Switch
-                      checked={purchase.status === "active"}
+                      checked={isEnabled}
                       onCheckedChange={() => togglePurchase(purchase.id, purchase.status)}
                     />
                   </div>
 
                   {/* Custom emoji editor */}
-                  {item?.icon === "custom_badge" && purchase.status === "active" && (
+                  {(item?.icon === "custom_badge" || item?.icon === "custom_emoji") && isEnabled && (
                     <div className="mt-3 pt-3 border-t border-border/50">
                       {editingEmoji === purchase.id ? (
                         <div className="flex items-center gap-2">
@@ -179,8 +191,8 @@ export const ManagePurchases = ({ onBack }: ManagePurchasesProps) => {
         </div>
       )}
 
-      {/* No active purchases */}
-      {activePurchases.length === 0 && (
+      {/* No manageable purchases */}
+      {manageable.length === 0 && (
         <Card className="p-8 text-center">
           <ToggleLeft className="h-10 w-10 mx-auto text-muted-foreground/30 mb-3" />
           <p className="text-sm text-muted-foreground">No active effects</p>

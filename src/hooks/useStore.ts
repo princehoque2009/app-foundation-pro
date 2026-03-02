@@ -51,11 +51,13 @@ export const useStore = () => {
     enabled: !!user?.id,
   });
 
-  /** Check if user has an active (non-expired) purchase of this item icon */
+  /** Check if user has an active (non-expired) purchase of this item icon.
+   *  "disabled" items are owned but toggled off, so they count as "has" for store duplicate prevention. */
   const hasItem = (itemIcon: string): boolean => {
     return purchases?.some((p: any) => {
       const item = p.store_items || p.item;
-      if (item?.icon !== itemIcon || !["active"].includes(p.status)) return false;
+      if (item?.icon !== itemIcon) return false;
+      if (!["active", "disabled"].includes(p.status)) return false;
       if (p.expires_at && new Date(p.expires_at) < new Date()) return false;
       return true;
     }) || false;
