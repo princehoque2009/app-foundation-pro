@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Heart, MessageCircle, Share2, Bookmark } from "lucide-react";
 import { useToggleLike, usePostLikes } from "@/hooks/usePostInteractions";
 import { formatDistanceToNow } from "date-fns";
-import { useState, useRef, useEffect } from "react";
+import { useState, memo } from "react";
 import { CommentsDialog } from "../home/CommentsDialog";
 import { PostMenu } from "../home/PostMenu";
 import { useNavigate } from "react-router-dom";
@@ -11,6 +11,8 @@ import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
+import { PrangonVideoPlayer } from "@/components/video/PrangonVideoPlayer";
+import { RenderMentions } from "@/components/ui/RenderMentions";
 
 interface ReelCardProps {
   id: string;
@@ -27,7 +29,7 @@ interface ReelCardProps {
   isInView: boolean;
 }
 
-export const ReelCard = ({
+export const ReelCard = memo(({
   id,
   author,
   caption,
@@ -39,7 +41,6 @@ export const ReelCard = ({
 }: ReelCardProps) => {
   const [showComments, setShowComments] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
-  const videoRef = useRef<HTMLVideoElement>(null);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { user } = useAuth();
@@ -48,16 +49,6 @@ export const ReelCard = ({
   const toggleLike = useToggleLike(id);
   
   const isLiked = likeData?.isLiked || false;
-
-  useEffect(() => {
-    if (videoRef.current) {
-      if (isInView) {
-        videoRef.current.play();
-      } else {
-        videoRef.current.pause();
-      }
-    }
-  }, [isInView]);
 
   const handleLike = () => {
     toggleLike.mutate(isLiked);
@@ -100,29 +91,27 @@ export const ReelCard = ({
 
   return (
     <div className="relative h-screen w-full snap-start snap-always">
-      <video
-        ref={videoRef}
+      {/* Custom Prangon Video Player for Reels */}
+      <PrangonVideoPlayer
         src={videoUrl}
-        loop
+        autoPlay={isInView}
+        isInView={isInView}
         muted
-        playsInline
-        preload="metadata"
-        className="absolute inset-0 w-full h-full object-cover"
-        onClick={() => {
-          if (videoRef.current) {
-            if (videoRef.current.paused) videoRef.current.play();
-            else videoRef.current.pause();
-          }
-        }}
+        loop
+        className="absolute inset-0 w-full h-full !rounded-none"
+        compact
       />
       
       {/* Gradient overlay */}
-      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent pointer-events-none z-[5]" />
 
       {/* Author info */}
-      <div className="absolute bottom-20 left-4 right-20 text-white">
+      <div className="absolute bottom-20 left-4 right-20 text-white z-[15]">
         <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-3">
+          <div 
+            className="flex items-center gap-3 cursor-pointer"
+            onClick={() => navigate(`/profile/${author.username}`)}
+          >
             <Avatar className="h-10 w-10 border-2 border-white ring-2 ring-primary/30">
               <AvatarImage src={author.avatar} alt={author.name} />
               <AvatarFallback className="bg-primary text-primary-foreground">
@@ -143,19 +132,23 @@ export const ReelCard = ({
             />
           </div>
         </div>
-        {caption && <p className="text-sm mb-2">{caption}</p>}
+        {caption && (
+          <p className="text-sm mb-2">
+            <RenderMentions text={caption} />
+          </p>
+        )}
         <p className="text-xs opacity-75">
           {formatDistanceToNow(new Date(timestamp), { addSuffix: true })}
         </p>
       </div>
 
       {/* Actions */}
-      <div className="absolute bottom-20 right-4 flex flex-col gap-4">
+      <div className="absolute bottom-20 right-4 flex flex-col gap-4 z-[15]">
         <div className="flex flex-col items-center">
           <Button
             variant="ghost"
             size="icon"
-            className="h-12 w-12 rounded-full bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white ripple"
+            className="h-12 w-12 rounded-full bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white"
             onClick={handleLike}
             disabled={toggleLike.isPending}
           >
@@ -170,7 +163,7 @@ export const ReelCard = ({
           <Button
             variant="ghost"
             size="icon"
-            className="h-12 w-12 rounded-full bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white ripple"
+            className="h-12 w-12 rounded-full bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white"
             onClick={() => setShowComments(true)}
           >
             <MessageCircle className="h-6 w-6" />
@@ -181,7 +174,7 @@ export const ReelCard = ({
         <Button
           variant="ghost"
           size="icon"
-          className="h-12 w-12 rounded-full bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white ripple"
+          className="h-12 w-12 rounded-full bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white"
         >
           <Share2 className="h-6 w-6" />
         </Button>
@@ -189,7 +182,7 @@ export const ReelCard = ({
         <Button
           variant="ghost"
           size="icon"
-          className="h-12 w-12 rounded-full bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white ripple"
+          className="h-12 w-12 rounded-full bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white"
           onClick={() => setIsSaved(!isSaved)}
         >
           <Bookmark className={`h-6 w-6 ${isSaved ? "fill-white" : ""}`} />
@@ -203,4 +196,6 @@ export const ReelCard = ({
       />
     </div>
   );
-};
+});
+
+ReelCard.displayName = "ReelCard";

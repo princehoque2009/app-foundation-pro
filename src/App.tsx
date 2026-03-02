@@ -42,7 +42,16 @@ import Lab from "./pages/Lab";
 import SuspendedAccount from "./pages/SuspendedAccount";
 import Wallet from "./pages/Wallet";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 30000,
+      gcTime: 300000,
+      refetchOnWindowFocus: false,
+      retry: 1,
+    },
+  },
+});
 
 const App = () => {
   const [showSplash, setShowSplash] = useState(true);

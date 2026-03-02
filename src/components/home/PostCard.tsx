@@ -24,6 +24,7 @@ import { PostMedia } from "@/hooks/usePosts";
 import { GiftPrangsPostDialog } from "@/components/wallet/GiftPrangsPostDialog";
 import { useActiveEffects } from "@/hooks/useActiveEffects";
 import { PrangonVideoPlayer } from "@/components/video/PrangonVideoPlayer";
+import { RenderMentions } from "@/components/ui/RenderMentions";
 
 interface PostCardProps {
   id: string;
@@ -215,7 +216,9 @@ export const PostCard = ({ id, author, content, image, video, mediaItems, likes,
 
           {/* Post Content - with content protection */}
           {content && (
-            <p className="text-sm px-4 pb-3 leading-relaxed text-foreground select-none pointer-events-none">{content}</p>
+            <p className="text-sm px-4 pb-3 leading-relaxed text-foreground select-none">
+              <RenderMentions text={content} />
+            </p>
           )}
 
           {/* Post Media - Multi-media carousel or single media */}

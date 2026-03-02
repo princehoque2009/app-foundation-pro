@@ -1,7 +1,7 @@
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, memo } from "react";
 import {
-  Play, Pause, Volume2, VolumeX, Maximize, Minimize,
-  RotateCcw, Loader2, SkipForward, SkipBack,
+  Play, Pause, Volume2, VolumeX, Volume1, Maximize, Minimize,
+  RotateCcw, Loader2, SkipForward, SkipBack, Settings2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
@@ -20,7 +20,7 @@ interface PrangonVideoPlayerProps {
   compact?: boolean;
 }
 
-export const PrangonVideoPlayer = ({
+export const PrangonVideoPlayer = memo(({
   src,
   poster,
   autoPlay = false,
@@ -37,10 +37,11 @@ export const PrangonVideoPlayer = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const progressRef = useRef<HTMLDivElement>(null);
   const hideControlsTimeout = useRef<ReturnType<typeof setTimeout>>();
+  const doubleTapTimeout = useRef<ReturnType<typeof setTimeout>>();
 
   const [isPlaying, setIsPlaying] = useState(false);
   const [isMuted, setIsMuted] = useState(initialMuted);
-  const [volume, setVolume] = useState(1);
+  const [volume, setVolume] = useState(initialMuted ? 0 : 1);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [buffered, setBuffered] = useState(0);
@@ -50,6 +51,11 @@ export const PrangonVideoPlayer = ({
   const [hasError, setHasError] = useState(false);
   const [isSeeking, setIsSeeking] = useState(false);
   const [showPlayPauseAnim, setShowPlayPauseAnim] = useState<"play" | "pause" | null>(null);
+  const [playbackRate, setPlaybackRate] = useState(1);
+  const [showSpeedMenu, setShowSpeedMenu] = useState(false);
+  const [showVolumeSlider, setShowVolumeSlider] = useState(false);
+  const [tapCount, setTapCount] = useState(0);
+  const [skipAnim, setSkipAnim] = useState<"fwd" | "bwd" | null>(null);
 
   const formatTime = (time: number) => {
     if (!isFinite(time)) return "0:00";
@@ -67,22 +73,30 @@ export const PrangonVideoPlayer = ({
       videoRef.current.play().catch(console.error);
       setShowPlayPauseAnim("play");
     }
-    setTimeout(() => setShowPlayPauseAnim(null), 600);
+    setTimeout(() => setShowPlayPauseAnim(null), 500);
   }, [isPlaying]);
 
   const toggleMute = useCallback(() => {
     if (!videoRef.current) return;
-    videoRef.current.muted = !isMuted;
-    setIsMuted(!isMuted);
+    const newMuted = !isMuted;
+    videoRef.current.muted = newMuted;
+    setIsMuted(newMuted);
+    if (newMuted) {
+      setVolume(0);
+    } else {
+      const v = videoRef.current.volume > 0 ? videoRef.current.volume : 0.7;
+      setVolume(v);
+      videoRef.current.volume = v;
+    }
   }, [isMuted]);
 
   const handleVolumeChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     if (!videoRef.current) return;
     const v = parseFloat(e.target.value);
     videoRef.current.volume = v;
+    videoRef.current.muted = v === 0;
     setVolume(v);
     setIsMuted(v === 0);
-    videoRef.current.muted = v === 0;
   }, []);
 
   const handleSeekStart = () => setIsSeeking(true);
@@ -109,11 +123,22 @@ export const PrangonVideoPlayer = ({
   const skipForward = useCallback(() => {
     if (!videoRef.current) return;
     videoRef.current.currentTime = Math.min(videoRef.current.currentTime + 10, duration);
+    setSkipAnim("fwd");
+    setTimeout(() => setSkipAnim(null), 500);
   }, [duration]);
 
   const skipBackward = useCallback(() => {
     if (!videoRef.current) return;
     videoRef.current.currentTime = Math.max(videoRef.current.currentTime - 10, 0);
+    setSkipAnim("bwd");
+    setTimeout(() => setSkipAnim(null), 500);
+  }, []);
+
+  const changePlaybackRate = useCallback((rate: number) => {
+    if (!videoRef.current) return;
+    videoRef.current.playbackRate = rate;
+    setPlaybackRate(rate);
+    setShowSpeedMenu(false);
   }, []);
 
   const toggleFullscreen = useCallback(async () => {
@@ -124,8 +149,7 @@ export const PrangonVideoPlayer = ({
       } else {
         await document.exitFullscreen();
       }
-    } catch (err) {
-      // fallback for iOS
+    } catch {
       const video = videoRef.current as any;
       if (video?.webkitEnterFullscreen) video.webkitEnterFullscreen();
     }
@@ -142,15 +166,51 @@ export const PrangonVideoPlayer = ({
     setShowControls(true);
     if (hideControlsTimeout.current) clearTimeout(hideControlsTimeout.current);
     if (isPlaying) {
-      hideControlsTimeout.current = setTimeout(() => setShowControls(false), 3000);
+      hideControlsTimeout.current = setTimeout(() => {
+        setShowControls(false);
+        setShowSpeedMenu(false);
+        setShowVolumeSlider(false);
+      }, 3000);
     }
   }, [isPlaying]);
+
+  // Double-tap to skip on sides
+  const handleVideoClick = useCallback((e: React.MouseEvent<HTMLVideoElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const width = rect.width;
+    const zone = x / width;
+
+    setTapCount(prev => prev + 1);
+    if (doubleTapTimeout.current) clearTimeout(doubleTapTimeout.current);
+
+    doubleTapTimeout.current = setTimeout(() => {
+      if (tapCount === 0) {
+        // single tap
+        togglePlay();
+      }
+      setTapCount(0);
+    }, 250);
+
+    if (tapCount >= 1) {
+      // double tap
+      clearTimeout(doubleTapTimeout.current);
+      setTapCount(0);
+      if (zone < 0.3) {
+        skipBackward();
+      } else if (zone > 0.7) {
+        skipForward();
+      } else {
+        togglePlay();
+      }
+    }
+  }, [tapCount, togglePlay, skipForward, skipBackward]);
 
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
 
-    const onPlay = () => { setIsPlaying(true); onPlay?.(); };
+    const onPlayEv = () => { setIsPlaying(true); onPlay?.(); };
     const onPauseEv = () => { setIsPlaying(false); onPause?.(); };
     const onTimeUpdate = () => { if (!isSeeking) setCurrentTime(video.currentTime); };
     const onDurationChange = () => setDuration(video.duration);
@@ -162,7 +222,7 @@ export const PrangonVideoPlayer = ({
     const onError = () => { setHasError(true); setIsLoading(false); };
     const onEndedEv = () => { setIsPlaying(false); onEnded?.(); };
 
-    video.addEventListener("play", onPlay);
+    video.addEventListener("play", onPlayEv);
     video.addEventListener("pause", onPauseEv);
     video.addEventListener("timeupdate", onTimeUpdate);
     video.addEventListener("durationchange", onDurationChange);
@@ -173,7 +233,7 @@ export const PrangonVideoPlayer = ({
     video.addEventListener("ended", onEndedEv);
 
     return () => {
-      video.removeEventListener("play", onPlay);
+      video.removeEventListener("play", onPlayEv);
       video.removeEventListener("pause", onPauseEv);
       video.removeEventListener("timeupdate", onTimeUpdate);
       video.removeEventListener("durationchange", onDurationChange);
@@ -201,11 +261,17 @@ export const PrangonVideoPlayer = ({
   }, []);
 
   useEffect(() => {
-    return () => { if (hideControlsTimeout.current) clearTimeout(hideControlsTimeout.current); };
+    return () => {
+      if (hideControlsTimeout.current) clearTimeout(hideControlsTimeout.current);
+      if (doubleTapTimeout.current) clearTimeout(doubleTapTimeout.current);
+    };
   }, []);
 
   const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
   const bufferedProgress = duration > 0 ? (buffered / duration) * 100 : 0;
+
+  const VolumeIcon = isMuted || volume === 0 ? VolumeX : volume < 0.5 ? Volume1 : Volume2;
+  const speeds = [0.5, 0.75, 1, 1.25, 1.5, 2];
 
   return (
     <div
@@ -248,8 +314,34 @@ export const PrangonVideoPlayer = ({
         playsInline
         preload="metadata"
         className="w-full h-full object-contain cursor-pointer"
-        onClick={togglePlay}
+        onClick={handleVideoClick}
       />
+
+      {/* Double-tap skip animations */}
+      <AnimatePresence>
+        {skipAnim && (
+          <motion.div
+            key={skipAnim}
+            initial={{ opacity: 0, scale: 0.7 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 1.2 }}
+            transition={{ duration: 0.3 }}
+            className={cn(
+              "absolute top-1/2 -translate-y-1/2 pointer-events-none z-30",
+              skipAnim === "bwd" ? "left-8" : "right-8"
+            )}
+          >
+            <div className="h-14 w-14 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
+              {skipAnim === "bwd" ? (
+                <SkipBack className="h-6 w-6 text-white" fill="white" />
+              ) : (
+                <SkipForward className="h-6 w-6 text-white" fill="white" />
+              )}
+              <span className="absolute -bottom-5 text-white text-xs font-semibold">10s</span>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Play/Pause center animation */}
       <AnimatePresence>
@@ -258,7 +350,7 @@ export const PrangonVideoPlayer = ({
             initial={{ scale: 0.5, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 1.5, opacity: 0 }}
-            transition={{ duration: 0.35 }}
+            transition={{ duration: 0.3 }}
             className="absolute inset-0 flex items-center justify-center pointer-events-none z-30"
           >
             <div className="h-16 w-16 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center">
@@ -272,7 +364,7 @@ export const PrangonVideoPlayer = ({
         )}
       </AnimatePresence>
 
-      {/* Large play button when paused and controls visible */}
+      {/* Large play button when paused */}
       {!isPlaying && !isLoading && !hasError && showControls && (
         <button
           onClick={togglePlay}
@@ -295,14 +387,13 @@ export const PrangonVideoPlayer = ({
           showControls || !isPlaying ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2 pointer-events-none"
         )}
       >
-        {/* Gradient bg */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent pointer-events-none" />
-        
+
         <div className="relative px-3 pb-3 pt-8">
           {/* Progress bar */}
           <div
             ref={progressRef}
-            className="relative h-1 group-hover:h-1.5 bg-white/20 rounded-full cursor-pointer mb-2.5 transition-all"
+            className="relative h-1 group-hover:h-2 bg-white/20 rounded-full cursor-pointer mb-2.5 transition-all"
             onClick={handleProgressClick}
             onMouseDown={handleSeekStart}
             onMouseMove={isSeeking ? handleSeekMove : undefined}
@@ -311,20 +402,17 @@ export const PrangonVideoPlayer = ({
             onTouchMove={handleSeekMove}
             onTouchEnd={handleSeekEnd}
           >
-            {/* Buffered */}
-            <div className="absolute h-full bg-white/30 rounded-full transition-all" style={{ width: `${bufferedProgress}%` }} />
-            {/* Progress */}
+            <div className="absolute h-full bg-white/30 rounded-full" style={{ width: `${bufferedProgress}%` }} />
             <div className="absolute h-full bg-primary rounded-full transition-[width] duration-75" style={{ width: `${progress}%` }} />
-            {/* Thumb */}
             <div
-              className="absolute top-1/2 h-3.5 w-3.5 bg-primary rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
+              className="absolute top-1/2 h-4 w-4 bg-primary rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
               style={{ left: `${progress}%`, transform: "translate(-50%, -50%)" }}
             />
           </div>
 
           {/* Buttons row */}
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5">
               <button onClick={togglePlay} className="text-white hover:text-primary transition-colors p-1">
                 {isPlaying ? <Pause className="h-5 w-5" fill="currentColor" /> : <Play className="h-5 w-5" fill="currentColor" />}
               </button>
@@ -341,19 +429,28 @@ export const PrangonVideoPlayer = ({
               )}
 
               {/* Volume */}
-              <div className="flex items-center gap-1.5 group/vol">
+              <div
+                className="relative flex items-center gap-1"
+                onMouseEnter={() => setShowVolumeSlider(true)}
+                onMouseLeave={() => setShowVolumeSlider(false)}
+              >
                 <button onClick={toggleMute} className="text-white hover:text-primary transition-colors p-1">
-                  {isMuted || volume === 0 ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
+                  <VolumeIcon className="h-4 w-4" />
                 </button>
-                <input
-                  type="range"
-                  min="0"
-                  max="1"
-                  step="0.05"
-                  value={isMuted ? 0 : volume}
-                  onChange={handleVolumeChange}
-                  className="w-0 group-hover/vol:w-16 transition-all duration-200 accent-primary h-1 cursor-pointer"
-                />
+                <div className={cn(
+                  "overflow-hidden transition-all duration-200",
+                  showVolumeSlider ? "w-20 opacity-100" : "w-0 opacity-0"
+                )}>
+                  <input
+                    type="range"
+                    min="0"
+                    max="1"
+                    step="0.02"
+                    value={volume}
+                    onChange={handleVolumeChange}
+                    className="w-full accent-primary h-1 cursor-pointer"
+                  />
+                </div>
               </div>
 
               <span className="text-white/80 text-[11px] font-mono tabular-nums ml-1">
@@ -361,12 +458,49 @@ export const PrangonVideoPlayer = ({
               </span>
             </div>
 
-            <button onClick={toggleFullscreen} className="text-white hover:text-primary transition-colors p-1">
-              {isFullscreen ? <Minimize className="h-5 w-5" /> : <Maximize className="h-5 w-5" />}
-            </button>
+            <div className="flex items-center gap-1">
+              {/* Playback speed */}
+              <div className="relative">
+                <button
+                  onClick={() => setShowSpeedMenu(!showSpeedMenu)}
+                  className="text-white/80 hover:text-white transition-colors px-1.5 py-0.5 text-[11px] font-semibold rounded"
+                >
+                  {playbackRate}x
+                </button>
+                <AnimatePresence>
+                  {showSpeedMenu && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 5 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 5 }}
+                      className="absolute bottom-full right-0 mb-2 bg-black/90 backdrop-blur-md rounded-lg overflow-hidden border border-white/10 shadow-xl"
+                    >
+                      {speeds.map(s => (
+                        <button
+                          key={s}
+                          onClick={() => changePlaybackRate(s)}
+                          className={cn(
+                            "block w-full px-4 py-1.5 text-xs text-left transition-colors whitespace-nowrap",
+                            s === playbackRate ? "text-primary bg-white/10" : "text-white/80 hover:bg-white/10"
+                          )}
+                        >
+                          {s}x
+                        </button>
+                      ))}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+
+              <button onClick={toggleFullscreen} className="text-white hover:text-primary transition-colors p-1">
+                {isFullscreen ? <Minimize className="h-5 w-5" /> : <Maximize className="h-5 w-5" />}
+              </button>
+            </div>
           </div>
         </div>
       </div>
     </div>
   );
-};
+});
+
+PrangonVideoPlayer.displayName = "PrangonVideoPlayer";
