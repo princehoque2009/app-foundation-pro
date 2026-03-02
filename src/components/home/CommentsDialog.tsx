@@ -20,6 +20,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { VerifiedBadge } from "@/components/ui/VerifiedBadge";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { RenderMentions } from "@/components/ui/RenderMentions";
 
 interface CommentsDialogProps {
   postId: string;
@@ -149,7 +150,7 @@ const CommentItem = ({ comment, onReply, replies, level = 0, postOwnerId, pinned
                     <span className="text-[10px] text-muted-foreground">(edited)</span>
                   )}
                 </div>
-                <p className="text-sm mt-0.5 break-words whitespace-pre-wrap">{comment.content}</p>
+                <p className="text-sm mt-0.5 break-words whitespace-pre-wrap"><RenderMentions text={comment.content} /></p>
               </div>
               
               {/* Actions Row */}

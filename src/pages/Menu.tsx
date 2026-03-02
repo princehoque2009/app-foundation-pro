@@ -39,7 +39,6 @@ import {
   Star,
   CircleUser,
   Zap,
-  FlaskConical,
   FileText,
   Wallet,
 } from "lucide-react";
@@ -317,29 +316,6 @@ const Menu = () => {
           </Card>
         </motion.div>
 
-        {/* Lab Section */}
-        <motion.div variants={itemVariants}>
-          <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2 px-1">
-            Lab
-          </h3>
-          <Card
-            className="p-4 cursor-pointer hover:bg-muted/50 transition-colors border-border/50"
-            onClick={() => navigate("/lab")}
-          >
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-xl bg-primary/10">
-                <FlaskConical className="h-5 w-5 text-primary" />
-              </div>
-              <div className="flex-1">
-                <h3 className="font-medium text-sm">Pages & Groups</h3>
-                <p className="text-xs text-muted-foreground">
-                  Create and manage your pages and community groups
-                </p>
-              </div>
-              <ChevronRight className="h-5 w-5 text-muted-foreground" />
-            </div>
-          </Card>
-        </motion.div>
 
         {/* Quick Actions - Minimal style */}
         <motion.div variants={itemVariants}>

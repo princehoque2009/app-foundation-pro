@@ -40,12 +40,6 @@ const SEARCHABLE_ITEMS: SearchItem[] = [
   { id: "data-storage", label: "Data & Storage", path: "/settings", category: "Settings" },
   { id: "account", label: "Account Settings", path: "/settings", category: "Settings" },
   
-  // Lab
-  { id: "lab", label: "Lab", description: "Pages & Groups", path: "/lab", category: "Lab" },
-  { id: "pages", label: "Pages", description: "Create and manage pages", path: "/lab", category: "Lab" },
-  { id: "community-groups", label: "Community Groups", description: "Create and manage groups", path: "/lab", category: "Lab" },
-  { id: "create-page", label: "Create Page", path: "/lab", category: "Lab" },
-  { id: "create-group", label: "Create Group", path: "/lab", category: "Lab" },
   
   // Legal
   { id: "community-standards", label: "Community Standards", path: "/community-standards", category: "Legal" },
