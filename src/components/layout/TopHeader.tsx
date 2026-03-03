@@ -1,13 +1,21 @@
-import { Search, Bell, Users, Menu as MenuIcon } from "lucide-react";
+import { Search, Bell, Users, Menu as MenuIcon, MessageSquareText } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useNotifications } from "@/hooks/useNotifications";
+import { useConversations } from "@/hooks/useConversations";
 import { Badge } from "@/components/ui/badge";
 import prangonLogo from "@/assets/prangon-logo.png";
 import { cn } from "@/lib/utils";
+import { useMemo } from "react";
 
 export const TopHeader = () => {
   const { unreadCount } = useNotifications();
+  const { conversations } = useConversations();
   const navigate = useNavigate();
+
+  const unreadMessages = useMemo(() => {
+    if (!conversations) return 0;
+    return conversations.filter((c: any) => c?.lastMessage && !c.lastMessage.is_read).length;
+  }, [conversations]);
 
   return (
     <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-xl border-b border-border/50">
@@ -31,6 +39,22 @@ export const TopHeader = () => {
             className="p-2.5 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-all"
           >
             <Users className="h-5 w-5" />
+          </Link>
+          <Link
+            to="/messages"
+            className="relative p-2.5 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-all"
+          >
+            <MessageSquareText className={cn(
+              "h-5 w-5",
+              unreadMessages > 0 && "text-primary"
+            )} />
+            {unreadMessages > 0 && (
+              <Badge 
+                className="absolute -top-0.5 -right-0.5 h-5 min-w-5 flex items-center justify-center p-0 text-[10px] bg-primary text-primary-foreground border-2 border-background"
+              >
+                {unreadMessages > 99 ? '99+' : unreadMessages}
+              </Badge>
+            )}
           </Link>
           <Link
             to="/notifications"

@@ -56,57 +56,40 @@ export const ReelCard = memo(({
 
   const handleDelete = async () => {
     if (!confirm("Are you sure you want to delete this reel?")) return;
-    
     try {
-      const { error } = await supabase
-        .from("posts")
-        .delete()
-        .eq("id", id);
-      
+      const { error } = await supabase.from("posts").delete().eq("id", id);
       if (error) throw error;
-      
       queryClient.invalidateQueries({ queryKey: ["posts"] });
-      queryClient.invalidateQueries({ queryKey: ["user-posts"] });
-      
-      toast({
-        title: "Reel deleted",
-        description: "Your reel has been deleted successfully",
-      });
-    } catch (error) {
-      console.error("Error deleting reel:", error);
-      toast({
-        title: "Error",
-        description: "Failed to delete reel. Please try again.",
-        variant: "destructive",
-      });
+      toast({ title: "Reel deleted" });
+    } catch {
+      toast({ title: "Error", description: "Failed to delete reel.", variant: "destructive" });
     }
   };
 
   const handleEdit = () => {
-    toast({
-      title: "Edit feature",
-      description: "Reel editing will be available soon!",
-    });
+    toast({ title: "Edit feature", description: "Reel editing will be available soon!" });
   };
 
   return (
-    <div className="relative h-screen w-full snap-start snap-always">
+    <div className="relative w-full snap-start snap-always" style={{ height: "100dvh" }}>
       {/* Custom Prangon Video Player for Reels */}
       <PrangonVideoPlayer
         src={videoUrl}
         autoPlay={isInView}
         isInView={isInView}
-        muted
         loop
         className="absolute inset-0 w-full h-full !rounded-none"
         compact
+        onDoubleTapLike={() => {
+          if (!isLiked) handleLike();
+        }}
       />
       
       {/* Gradient overlay */}
       <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent pointer-events-none z-[5]" />
 
       {/* Author info */}
-      <div className="absolute bottom-20 left-4 right-20 text-white z-[15]">
+      <div className="absolute bottom-24 left-4 right-20 text-white z-[15]">
         <div className="flex items-center justify-between mb-3">
           <div 
             className="flex items-center gap-3 cursor-pointer"
@@ -143,7 +126,7 @@ export const ReelCard = memo(({
       </div>
 
       {/* Actions */}
-      <div className="absolute bottom-20 right-4 flex flex-col gap-4 z-[15]">
+      <div className="absolute bottom-24 right-4 flex flex-col gap-4 z-[15]">
         <div className="flex flex-col items-center">
           <Button
             variant="ghost"
