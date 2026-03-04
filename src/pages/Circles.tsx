@@ -3,9 +3,8 @@ import { useState, useMemo, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
-import { Loader2, Plus, Search, CircleDot } from "lucide-react";
+import { CircleDot, Plus, Search } from "lucide-react";
 import { motion } from "framer-motion";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CircleCard } from "@/components/circles/CircleCard";
@@ -22,21 +21,28 @@ const Circles = () => {
   const [showCreate, setShowCreate] = useState(false);
   const [activeCircle, setActiveCircle] = useState<any>(null);
   const [activeFilter, setActiveFilter] = useState("For You");
-  const tabsRef = useRef<HTMLDivElement>(null);
 
   const { data: allCircles, isLoading } = useQuery({
     queryKey: ["circles", user?.id],
     queryFn: async () => {
       const { data: circles } = await supabase.from("community_groups").select("*").order("created_at", { ascending: false });
       if (!circles) return [];
+      // Get real member counts
+      const { data: memberCounts } = await supabase.from("community_group_members").select("group_id");
+      const countMap: Record<string, number> = {};
+      memberCounts?.forEach((m: any) => { countMap[m.group_id] = (countMap[m.group_id] || 0) + 1; });
+
       const { data: memberships } = await supabase.from("community_group_members").select("group_id").eq("user_id", user?.id || "");
       const memberGroupIds = new Set(memberships?.map((m: any) => m.group_id) || []);
-      return circles.map((c: any) => ({ ...c, is_member: memberGroupIds.has(c.id) }));
+      return circles.map((c: any) => ({
+        ...c,
+        is_member: memberGroupIds.has(c.id),
+        members_count: countMap[c.id] || 0,
+      }));
     },
     enabled: !!user?.id,
   });
 
-  // Fetch circle feed posts (from joined circles)
   const yourCircles = useMemo(() => allCircles?.filter((c: any) => c.is_member) || [], [allCircles]);
   const recommended = useMemo(() => allCircles?.filter((c: any) => !c.is_member) || [], [allCircles]);
 
@@ -54,6 +60,20 @@ const Circles = () => {
       return data || [];
     },
     enabled: yourCircles.length > 0,
+  });
+
+  // Poster profiles for feed
+  const feedPosterIds = [...new Set((circleFeedPosts || []).map((p: any) => p.user_id))];
+  const { data: feedPosterProfiles } = useQuery({
+    queryKey: ["feed-poster-profiles", feedPosterIds.join(",")],
+    queryFn: async () => {
+      if (feedPosterIds.length === 0) return {};
+      const { data } = await supabase.from("profiles").select("id, avatar_url, display_name, username").in("id", feedPosterIds as string[]);
+      const map: Record<string, any> = {};
+      data?.forEach((p: any) => { map[p.id] = p; });
+      return map;
+    },
+    enabled: feedPosterIds.length > 0,
   });
 
   const filteredCircles = useMemo(() => {
@@ -93,12 +113,12 @@ const Circles = () => {
         <div className="flex items-center justify-between px-4 pt-3 pb-2">
           <h1 className="text-xl font-bold text-foreground">Circles</h1>
           <div className="flex items-center gap-1">
-            <button className="p-2 rounded-full hover:bg-muted/60 transition-colors text-muted-foreground">
+            <button className="p-2 rounded-full hover:bg-muted/60 transition-colors text-muted-foreground min-h-[44px] min-w-[44px] flex items-center justify-center">
               <Search className="h-5 w-5" />
             </button>
             <button
               onClick={() => setShowCreate(true)}
-              className="p-2 rounded-full hover:bg-muted/60 transition-colors"
+              className="p-2 rounded-full hover:bg-muted/60 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
               style={{ color: "#FF5A5F" }}
             >
               <Plus className="h-5 w-5" strokeWidth={2.5} />
@@ -107,7 +127,7 @@ const Circles = () => {
         </div>
 
         {/* Filter Tabs */}
-        <div ref={tabsRef} className="flex gap-2 px-4 pb-3 overflow-x-auto scrollbar-hide">
+        <div className="flex gap-2 px-4 pb-3 overflow-x-auto scrollbar-hide">
           {FILTER_TABS.map((tab) => (
             <button
               key={tab}
@@ -137,7 +157,7 @@ const Circles = () => {
           </div>
         ) : (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }}>
-            {/* Your Circles preview list */}
+            {/* Your Circles preview */}
             {yourCircles.length > 0 && activeFilter !== "Your Circles" && (
               <section className="mb-4">
                 <div className="flex items-center justify-between px-4 mb-1">
@@ -152,7 +172,7 @@ const Circles = () => {
               </section>
             )}
 
-            {/* Grid/List of circles based on filter */}
+            {/* Grid of circles */}
             {activeFilter === "Your Circles" && yourCircles.length > 0 && (
               <section className="px-4 mb-4">
                 <div className="grid grid-cols-2 gap-3">
@@ -185,14 +205,21 @@ const Circles = () => {
                     const circle = yourCircles.find((c: any) => c.id === post.group_id);
                     if (!circle) return null;
                     return (
-                      <CircleFeedPost
+                      <motion.div
                         key={post.id}
-                        post={post}
-                        circle={circle}
-                        userId={user?.id}
-                        isAdmin={circle.created_by === user?.id}
-                        onDelete={handleDeletePost}
-                      />
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.2 }}
+                      >
+                        <CircleFeedPost
+                          post={post}
+                          circle={circle}
+                          userId={user?.id}
+                          isAdmin={circle.created_by === user?.id}
+                          onDelete={handleDeletePost}
+                          posterProfile={feedPosterProfiles?.[post.user_id]}
+                        />
+                      </motion.div>
                     );
                   })}
                 </div>
