@@ -1693,6 +1693,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_group_admin: {
+        Args: { p_group: string; p_user: string }
+        Returns: boolean
+      }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user" | "advisor" | "support" | "COO"
