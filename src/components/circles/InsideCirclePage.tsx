@@ -3,14 +3,14 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowLeft, Lock, Loader2, Plus, MoreVertical, Trash2, Pin, Settings, ImagePlus, Users, Shield } from "lucide-react";
+import { ArrowLeft, Lock, Settings, ImagePlus, Users, Shield } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { CircleFeedPost } from "./CircleFeedPost";
+import { CircleComposer } from "./CircleComposer";
 import { motion } from "framer-motion";
 
 interface InsideCirclePageProps {
@@ -19,6 +19,12 @@ interface InsideCirclePageProps {
   onBack: () => void;
 }
 
+const formatCount = (n: number) => {
+  if (n >= 10000) return (n / 1000).toFixed(0) + "K";
+  if (n >= 1000) return (n / 1000).toFixed(1) + "K";
+  return n.toString();
+};
+
 export const InsideCirclePage = ({ circle, userId, onBack }: InsideCirclePageProps) => {
   const queryClient = useQueryClient();
   const isAdmin = circle.created_by === userId;
@@ -26,7 +32,10 @@ export const InsideCirclePage = ({ circle, userId, onBack }: InsideCirclePagePro
   const { data: members } = useQuery({
     queryKey: ["circle-members", circle.id],
     queryFn: async () => {
-      const { data } = await supabase.from("community_group_members").select("*, profiles:user_id(*)").eq("group_id", circle.id) as any;
+      const { data } = await supabase
+        .from("community_group_members")
+        .select("*, profiles:user_id(*)")
+        .eq("group_id", circle.id) as any;
       return data || [];
     },
   });
@@ -34,27 +43,28 @@ export const InsideCirclePage = ({ circle, userId, onBack }: InsideCirclePagePro
   const { data: posts, isLoading: postsLoading } = useQuery({
     queryKey: ["circle-posts", circle.id],
     queryFn: async () => {
-      const { data } = await supabase.from("community_group_posts").select("*").eq("group_id", circle.id).order("created_at", { ascending: false }) as any;
+      const { data } = await supabase
+        .from("community_group_posts")
+        .select("*")
+        .eq("group_id", circle.id)
+        .order("created_at", { ascending: false }) as any;
       return data || [];
     },
   });
 
-  const [postText, setPostText] = useState("");
-  const [posting, setPosting] = useState(false);
-  const [showComposer, setShowComposer] = useState(false);
-
-  const handlePost = async () => {
-    if (!postText.trim()) return;
-    setPosting(true);
-    try {
-      await supabase.from("community_group_posts").insert({ group_id: circle.id, user_id: userId!, caption: postText.trim() });
-      queryClient.invalidateQueries({ queryKey: ["circle-posts", circle.id] });
-      setPostText("");
-      setShowComposer(false);
-      toast({ title: "Posted!" });
-    } catch { toast({ title: "Error posting", variant: "destructive" }); }
-    setPosting(false);
-  };
+  // Fetch poster profiles for feed
+  const posterIds = [...new Set((posts || []).map((p: any) => p.user_id))];
+  const { data: posterProfiles } = useQuery({
+    queryKey: ["circle-poster-profiles", circle.id, posterIds.join(",")],
+    queryFn: async () => {
+      if (posterIds.length === 0) return {};
+      const { data } = await supabase.from("profiles").select("id, avatar_url, display_name, username").in("id", posterIds as string[]);
+      const map: Record<string, any> = {};
+      data?.forEach((p: any) => { map[p.id] = p; });
+      return map;
+    },
+    enabled: posterIds.length > 0,
+  });
 
   const handleDeletePost = async (postId: string) => {
     await supabase.from("community_group_posts").delete().eq("id", postId);
@@ -62,6 +72,7 @@ export const InsideCirclePage = ({ circle, userId, onBack }: InsideCirclePagePro
   };
 
   const isMember = members?.some((m: any) => m.user_id === userId);
+  const memberCount = members?.length || circle.members_count || 0;
 
   return (
     <div className="min-h-screen bg-background">
@@ -96,14 +107,16 @@ export const InsideCirclePage = ({ circle, userId, onBack }: InsideCirclePagePro
         <div className="flex items-end gap-3">
           <Avatar className="h-16 w-16 border-4 border-background shadow-lg">
             <AvatarImage src={circle.logo_url} />
-            <AvatarFallback className="bg-primary text-primary-foreground text-xl font-bold">{circle.name?.charAt(0)}</AvatarFallback>
+            <AvatarFallback className="bg-primary text-primary-foreground text-xl font-bold">
+              {circle.name?.charAt(0)}
+            </AvatarFallback>
           </Avatar>
           <div className="pb-1 flex-1 min-w-0">
             <h1 className="text-lg font-bold text-foreground flex items-center gap-1.5 truncate">
               {circle.name}
               {circle.privacy === "private" && <Lock className="h-3.5 w-3.5 text-muted-foreground shrink-0" />}
             </h1>
-            <p className="text-xs text-muted-foreground">{members?.length || 0} members</p>
+            <p className="text-xs text-muted-foreground">{formatCount(memberCount)} members</p>
           </div>
         </div>
         {circle.description && (
@@ -114,39 +127,26 @@ export const InsideCirclePage = ({ circle, userId, onBack }: InsideCirclePagePro
       {/* Tabs */}
       <Tabs defaultValue="posts" className="mt-4">
         <TabsList className="w-full grid grid-cols-4 h-10 rounded-none bg-transparent border-b border-border/50 px-4">
-          <TabsTrigger value="posts" className="text-xs rounded-none border-b-2 border-transparent data-[state=active]:border-[#FF5A5F] data-[state=active]:text-[#FF5A5F] data-[state=active]:shadow-none">Posts</TabsTrigger>
-          <TabsTrigger value="media" className="text-xs rounded-none border-b-2 border-transparent data-[state=active]:border-[#FF5A5F] data-[state=active]:text-[#FF5A5F] data-[state=active]:shadow-none">Media</TabsTrigger>
-          <TabsTrigger value="members" className="text-xs rounded-none border-b-2 border-transparent data-[state=active]:border-[#FF5A5F] data-[state=active]:text-[#FF5A5F] data-[state=active]:shadow-none">Members</TabsTrigger>
-          <TabsTrigger value="about" className="text-xs rounded-none border-b-2 border-transparent data-[state=active]:border-[#FF5A5F] data-[state=active]:text-[#FF5A5F] data-[state=active]:shadow-none">About</TabsTrigger>
+          {["posts", "media", "members", "about"].map((tab) => (
+            <TabsTrigger
+              key={tab}
+              value={tab}
+              className="text-xs capitalize rounded-none border-b-2 border-transparent data-[state=active]:border-[#FF5A5F] data-[state=active]:text-[#FF5A5F] data-[state=active]:shadow-none"
+            >
+              {tab}
+            </TabsTrigger>
+          ))}
         </TabsList>
 
         <TabsContent value="posts" className="mt-0 px-4 space-y-3 pb-24 pt-3">
-          {/* Composer toggle */}
-          {isMember && !showComposer && (
-            <button
-              onClick={() => setShowComposer(true)}
-              className="w-full flex items-center gap-3 p-3 bg-card rounded-xl border border-border/40 text-muted-foreground text-sm hover:bg-muted/40 transition-colors"
-            >
-              <Avatar className="h-8 w-8">
-                <AvatarFallback className="bg-muted text-xs">You</AvatarFallback>
-              </Avatar>
-              <span>What's on your mind?</span>
-            </button>
-          )}
-          {showComposer && (
-            <motion.div
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="bg-card rounded-xl p-3 border border-border/40 space-y-2"
-            >
-              <Textarea placeholder="Share something with this circle..." value={postText} onChange={(e) => setPostText(e.target.value)} rows={3} className="resize-none border-0 bg-transparent focus-visible:ring-0 p-0 text-sm" />
-              <div className="flex justify-between items-center">
-                <Button size="sm" variant="ghost" onClick={() => setShowComposer(false)} className="text-xs">Cancel</Button>
-                <Button size="sm" onClick={handlePost} disabled={posting || !postText.trim()} className="rounded-full text-xs h-8 px-4" style={{ background: "#FF5A5F" }}>
-                  {posting ? <Loader2 className="h-3 w-3 animate-spin" /> : "Post"}
-                </Button>
-              </div>
-            </motion.div>
+          {/* FB-style Composer */}
+          {isMember && userId && (
+            <CircleComposer
+              circleId={circle.id}
+              circleName={circle.name}
+              userId={userId}
+              onPostCreated={() => queryClient.invalidateQueries({ queryKey: ["circle-posts", circle.id] })}
+            />
           )}
 
           {postsLoading ? (
@@ -171,20 +171,37 @@ export const InsideCirclePage = ({ circle, userId, onBack }: InsideCirclePagePro
             </div>
           ) : (
             posts?.map((post: any) => (
-              <CircleFeedPost
+              <motion.div
                 key={post.id}
-                post={post}
-                circle={circle}
-                userId={userId}
-                isAdmin={isAdmin}
-                onDelete={handleDeletePost}
-              />
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.2 }}
+              >
+                <CircleFeedPost
+                  post={post}
+                  circle={circle}
+                  userId={userId}
+                  isAdmin={isAdmin}
+                  onDelete={handleDeletePost}
+                  posterProfile={posterProfiles?.[post.user_id]}
+                />
+              </motion.div>
             ))
           )}
         </TabsContent>
 
         <TabsContent value="media" className="mt-0 px-4 pb-24 pt-3">
-          <p className="text-center text-sm text-muted-foreground py-12">Media content coming soon</p>
+          {posts?.filter((p: any) => p.media_url).length === 0 ? (
+            <p className="text-center text-sm text-muted-foreground py-12">No media yet</p>
+          ) : (
+            <div className="grid grid-cols-3 gap-1 rounded-xl overflow-hidden">
+              {posts?.filter((p: any) => p.media_url).map((p: any) => (
+                <div key={p.id} className="aspect-square bg-muted">
+                  <img src={p.media_url} className="w-full h-full object-cover" alt="" loading="lazy" />
+                </div>
+              ))}
+            </div>
+          )}
         </TabsContent>
 
         <TabsContent value="members" className="mt-0 px-4 space-y-1.5 pb-24 pt-3">
@@ -221,18 +238,6 @@ export const InsideCirclePage = ({ circle, userId, onBack }: InsideCirclePagePro
           </div>
         </TabsContent>
       </Tabs>
-
-      {/* Circle-specific FAB for posting */}
-      {isMember && (
-        <motion.button
-          whileTap={{ scale: 0.9 }}
-          onClick={() => setShowComposer(true)}
-          className="fixed bottom-24 right-4 z-40 w-12 h-12 rounded-full shadow-lg flex items-center justify-center"
-          style={{ background: "#FF5A5F" }}
-        >
-          <Plus className="h-5 w-5 text-white" strokeWidth={2.5} />
-        </motion.button>
-      )}
     </div>
   );
 };

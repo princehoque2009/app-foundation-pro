@@ -5,7 +5,15 @@ interface CirclePreviewItemProps {
   onOpen: (circle: any) => void;
 }
 
+const formatCount = (n: number) => {
+  if (n >= 10000) return (n / 1000).toFixed(0) + "K";
+  if (n >= 1000) return (n / 1000).toFixed(1) + "K";
+  return n.toString();
+};
+
 export const CirclePreviewItem = ({ circle, onOpen }: CirclePreviewItemProps) => {
+  const postCount = circle.posts_count || 0;
+
   return (
     <button
       onClick={() => onOpen(circle)}
@@ -20,10 +28,11 @@ export const CirclePreviewItem = ({ circle, onOpen }: CirclePreviewItemProps) =>
       <div className="flex-1 min-w-0">
         <p className="text-sm font-semibold text-foreground truncate">{circle.name}</p>
         <p className="text-[11px] text-muted-foreground">
-          {circle.members_count || 0} members
+          {formatCount(circle.members_count || 0)} members
+          {postCount > 0 && <span className="ml-1">· {postCount} new posts</span>}
         </p>
       </div>
-      <div className="h-2 w-2 rounded-full bg-[#FF5A5F] shrink-0" />
+      {postCount > 0 && <div className="h-2.5 w-2.5 rounded-full bg-[#FF5A5F] shrink-0" />}
     </button>
   );
 };
