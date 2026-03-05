@@ -99,7 +99,7 @@ export const CircleComposer = ({ circleId, circleName, userId, onPostCreated }: 
           onClick={() => setExpanded(true)}
           className="flex-1 h-10 px-4 rounded-full bg-muted/60 text-sm text-muted-foreground text-left hover:bg-muted transition-colors"
         >
-          Write something…
+          Write something to this Circle…
         </button>
       </div>
 
