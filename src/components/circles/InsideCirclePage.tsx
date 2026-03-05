@@ -35,11 +35,19 @@ export const InsideCirclePage = ({ circle, userId, onBack }: InsideCirclePagePro
   const { data: members } = useQuery({
     queryKey: ["circle-members", circle.id],
     queryFn: async () => {
-      const { data } = await supabase
+      const { data: memberRows } = await supabase
         .from("community_group_members")
-        .select("*, profiles:user_id(*)")
-        .eq("group_id", circle.id) as any;
-      return data || [];
+        .select("*")
+        .eq("group_id", circle.id);
+      if (!memberRows || memberRows.length === 0) return [];
+      const userIds = memberRows.map((m: any) => m.user_id);
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("id, avatar_url, display_name, username")
+        .in("id", userIds);
+      const profileMap: Record<string, any> = {};
+      profiles?.forEach((p: any) => { profileMap[p.id] = p; });
+      return memberRows.map((m: any) => ({ ...m, profiles: profileMap[m.user_id] || null }));
     },
   });
 
