@@ -12,6 +12,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { CircleFeedPost } from "./CircleFeedPost";
 import { CircleComposer } from "./CircleComposer";
 import { motion } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 
 interface InsideCirclePageProps {
   circle: any;
@@ -27,7 +28,9 @@ const formatCount = (n: number) => {
 
 export const InsideCirclePage = ({ circle, userId, onBack }: InsideCirclePageProps) => {
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const isAdmin = circle.created_by === userId;
+  const [bannerLoaded, setBannerLoaded] = useState(false);
 
   const { data: members } = useQuery({
     queryKey: ["circle-members", circle.id],
@@ -52,7 +55,6 @@ export const InsideCirclePage = ({ circle, userId, onBack }: InsideCirclePagePro
     },
   });
 
-  // Fetch poster profiles for feed
   const posterIds = [...new Set((posts || []).map((p: any) => p.user_id))];
   const { data: posterProfiles } = useQuery({
     queryKey: ["circle-poster-profiles", circle.id, posterIds.join(",")],
@@ -73,22 +75,32 @@ export const InsideCirclePage = ({ circle, userId, onBack }: InsideCirclePagePro
 
   const isMember = members?.some((m: any) => m.user_id === userId);
   const memberCount = members?.length || circle.members_count || 0;
+  const memberAvatars = (members || []).slice(0, 5);
 
   return (
     <div className="min-h-screen bg-background">
       {/* Banner */}
       <div className="relative">
-        <div
-          className="h-40 bg-gradient-to-br from-primary/15 to-accent/15 bg-cover bg-center"
-          style={circle.banner_url ? { backgroundImage: `url(${circle.banner_url})` } : {}}
-        />
-        <button onClick={onBack} className="absolute top-3 left-3 p-2 rounded-full bg-black/30 text-white backdrop-blur-sm">
+        {circle.banner_url ? (
+          <>
+            {!bannerLoaded && <div className="h-44 bg-gradient-to-br from-primary/15 to-accent/15 animate-pulse" />}
+            <img
+              src={circle.banner_url}
+              alt=""
+              className={`w-full h-44 object-cover ${bannerLoaded ? "" : "hidden"}`}
+              onLoad={() => setBannerLoaded(true)}
+            />
+          </>
+        ) : (
+          <div className="h-44 bg-gradient-to-br from-primary/20 via-accent/10 to-primary/5" />
+        )}
+        <button onClick={onBack} className="absolute top-3 left-3 p-2 rounded-full bg-black/30 text-white backdrop-blur-sm min-h-[44px] min-w-[44px] flex items-center justify-center">
           <ArrowLeft className="h-5 w-5" />
         </button>
         {isAdmin && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button className="absolute top-3 right-3 p-2 rounded-full bg-black/30 text-white backdrop-blur-sm">
+              <button className="absolute top-3 right-3 p-2 rounded-full bg-black/30 text-white backdrop-blur-sm min-h-[44px] min-w-[44px] flex items-center justify-center">
                 <Settings className="h-5 w-5" />
               </button>
             </DropdownMenuTrigger>
@@ -103,11 +115,11 @@ export const InsideCirclePage = ({ circle, userId, onBack }: InsideCirclePagePro
       </div>
 
       {/* Profile section */}
-      <div className="px-4 -mt-8 relative z-10">
+      <div className="px-4 -mt-10 relative z-10">
         <div className="flex items-end gap-3">
-          <Avatar className="h-16 w-16 border-4 border-background shadow-lg">
+          <Avatar className="h-20 w-20 border-4 border-background shadow-lg">
             <AvatarImage src={circle.logo_url} />
-            <AvatarFallback className="bg-primary text-primary-foreground text-xl font-bold">
+            <AvatarFallback className="bg-primary text-primary-foreground text-2xl font-bold">
               {circle.name?.charAt(0)}
             </AvatarFallback>
           </Avatar>
@@ -119,14 +131,32 @@ export const InsideCirclePage = ({ circle, userId, onBack }: InsideCirclePagePro
             <p className="text-xs text-muted-foreground">{formatCount(memberCount)} members</p>
           </div>
         </div>
+
         {circle.description && (
           <p className="text-xs text-muted-foreground mt-2 line-clamp-2">{circle.description}</p>
+        )}
+
+        {/* Members preview row */}
+        {memberAvatars.length > 0 && (
+          <div className="flex items-center gap-2 mt-3">
+            <div className="flex -space-x-2">
+              {memberAvatars.map((m: any) => (
+                <Avatar key={m.id} className="h-7 w-7 border-2 border-background cursor-pointer" onClick={() => navigate(`/profile/${m.user_id}`)}>
+                  <AvatarImage src={m.profiles?.avatar_url} />
+                  <AvatarFallback className="text-[9px] bg-muted">{m.profiles?.username?.charAt(0)?.toUpperCase()}</AvatarFallback>
+                </Avatar>
+              ))}
+            </div>
+            {memberCount > 5 && (
+              <span className="text-[11px] text-muted-foreground">+{memberCount - 5} members</span>
+            )}
+          </div>
         )}
       </div>
 
       {/* Tabs */}
       <Tabs defaultValue="posts" className="mt-4">
-        <TabsList className="w-full grid grid-cols-4 h-10 rounded-none bg-transparent border-b border-border/50 px-4">
+        <TabsList className="w-full grid grid-cols-4 h-10 rounded-none bg-transparent border-b border-border/50 px-4 sticky top-0 z-20 bg-background">
           {["posts", "media", "members", "about"].map((tab) => (
             <TabsTrigger
               key={tab}
@@ -139,7 +169,6 @@ export const InsideCirclePage = ({ circle, userId, onBack }: InsideCirclePagePro
         </TabsList>
 
         <TabsContent value="posts" className="mt-0 px-4 space-y-3 pb-24 pt-3">
-          {/* FB-style Composer */}
           {isMember && userId && (
             <CircleComposer
               circleId={circle.id}
@@ -205,8 +234,13 @@ export const InsideCirclePage = ({ circle, userId, onBack }: InsideCirclePagePro
         </TabsContent>
 
         <TabsContent value="members" className="mt-0 px-4 space-y-1.5 pb-24 pt-3">
+          <p className="text-xs text-muted-foreground mb-2">{formatCount(memberCount)} members</p>
           {members?.map((m: any) => (
-            <div key={m.id} className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-muted/40 transition-colors">
+            <div
+              key={m.id}
+              className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-muted/40 transition-colors cursor-pointer"
+              onClick={() => navigate(`/profile/${m.user_id}`)}
+            >
               <Avatar className="h-10 w-10">
                 <AvatarImage src={m.profiles?.avatar_url} />
                 <AvatarFallback className="text-xs">{m.profiles?.username?.charAt(0)?.toUpperCase()}</AvatarFallback>
@@ -217,7 +251,8 @@ export const InsideCirclePage = ({ circle, userId, onBack }: InsideCirclePagePro
               </div>
               {m.role === "admin" && <Badge variant="secondary" className="text-[10px]">Admin</Badge>}
               {isAdmin && m.user_id !== userId && (
-                <Button size="sm" variant="ghost" className="text-xs text-destructive h-7" onClick={async () => {
+                <Button size="sm" variant="ghost" className="text-xs text-destructive h-7" onClick={async (e) => {
+                  e.stopPropagation();
                   await supabase.from("community_group_members").delete().eq("id", m.id);
                   queryClient.invalidateQueries({ queryKey: ["circle-members", circle.id] });
                 }}>Remove</Button>
