@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { MoreVertical, Heart, MessageCircle, Share2, Trash2 } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -6,6 +6,8 @@ import { formatDistanceToNow } from "date-fns";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useNavigate } from "react-router-dom";
 import { CircleCommentsDialog } from "./CircleCommentsDialog";
+import { supabase } from "@/integrations/supabase/client";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 interface CircleFeedPostProps {
   post: any;
@@ -19,11 +21,45 @@ interface CircleFeedPostProps {
 
 export const CircleFeedPost = ({ post, circle, userId, isAdmin, onDelete, posterProfile, onOpenCircle }: CircleFeedPostProps) => {
   const canDelete = isAdmin || post.user_id === userId;
-  const [liked, setLiked] = useState(false);
-  const [likeCount, setLikeCount] = useState(post.likes_count || 0);
   const [imgLoaded, setImgLoaded] = useState(false);
   const [showComments, setShowComments] = useState(false);
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+
+  // Check if current user liked this post
+  const { data: userLike } = useQuery({
+    queryKey: ["circle-post-like", post.id, userId],
+    queryFn: async () => {
+      if (!userId) return null;
+      const { data } = await supabase
+        .from("circle_post_likes" as any)
+        .select("id")
+        .eq("post_id", post.id)
+        .eq("user_id", userId)
+        .maybeSingle();
+      return data;
+    },
+    enabled: !!userId,
+  });
+
+  const liked = !!userLike;
+  const [optimisticLiked, setOptimisticLiked] = useState<boolean | null>(null);
+  const [optimisticCount, setOptimisticCount] = useState<number | null>(null);
+
+  const isLiked = optimisticLiked !== null ? optimisticLiked : liked;
+  const likeCount = optimisticCount !== null ? optimisticCount : (post.likes_count || 0);
+
+  // Comments count from DB
+  const { data: commentsCount } = useQuery({
+    queryKey: ["circle-post-comments-count", post.id],
+    queryFn: async () => {
+      const { count } = await supabase
+        .from("circle_post_comments" as any)
+        .select("*", { count: "exact", head: true })
+        .eq("post_id", post.id);
+      return count || 0;
+    },
+  });
 
   const timeAgo = post.created_at
     ? formatDistanceToNow(new Date(post.created_at), { addSuffix: true })
@@ -31,10 +67,41 @@ export const CircleFeedPost = ({ post, circle, userId, isAdmin, onDelete, poster
 
   const posterName = posterProfile?.display_name || posterProfile?.username || "Member";
 
-  const handleLike = () => {
-    setLiked(!liked);
-    setLikeCount((c: number) => liked ? c - 1 : c + 1);
+  const handleLike = async () => {
+    if (!userId) return;
+    const currentlyLiked = isLiked;
+    const currentCount = likeCount;
+
+    // Optimistic update
+    setOptimisticLiked(!currentlyLiked);
+    setOptimisticCount(currentlyLiked ? currentCount - 1 : currentCount + 1);
+
+    try {
+      if (currentlyLiked) {
+        await supabase
+          .from("circle_post_likes" as any)
+          .delete()
+          .eq("post_id", post.id)
+          .eq("user_id", userId);
+      } else {
+        await supabase
+          .from("circle_post_likes" as any)
+          .insert({ post_id: post.id, user_id: userId });
+      }
+      queryClient.invalidateQueries({ queryKey: ["circle-post-like", post.id, userId] });
+      queryClient.invalidateQueries({ queryKey: ["circle-posts", circle.id] });
+    } catch {
+      // Revert on error
+      setOptimisticLiked(currentlyLiked);
+      setOptimisticCount(currentCount);
+    }
   };
+
+  // Reset optimistic state when server data updates
+  useEffect(() => {
+    setOptimisticLiked(null);
+    setOptimisticCount(null);
+  }, [userLike, post.likes_count]);
 
   const handleProfileClick = () => {
     if (post.user_id) navigate(`/profile/${post.user_id}`);
@@ -95,7 +162,6 @@ export const CircleFeedPost = ({ post, circle, userId, isAdmin, onDelete, poster
         {/* Media */}
         {post.media_url && (
           <div className="px-4 pb-2 relative">
-            {!imgLoaded && <Skeleton className="w-full rounded-2xl aspect-video" />}
             {post.media_type === "video" ? (
               <video
                 src={post.media_url}
@@ -104,22 +170,25 @@ export const CircleFeedPost = ({ post, circle, userId, isAdmin, onDelete, poster
                 preload="metadata"
               />
             ) : (
-              <img
-                src={post.media_url}
-                className={`w-full rounded-2xl object-cover max-h-96 ${imgLoaded ? "" : "hidden"}`}
-                alt=""
-                loading="lazy"
-                onLoad={() => setImgLoaded(true)}
-              />
+              <>
+                {!imgLoaded && <Skeleton className="w-full rounded-2xl aspect-video" />}
+                <img
+                  src={post.media_url}
+                  className={`w-full rounded-2xl object-cover max-h-96 ${imgLoaded ? "" : "hidden"}`}
+                  alt=""
+                  loading="lazy"
+                  onLoad={() => setImgLoaded(true)}
+                />
+              </>
             )}
           </div>
         )}
 
         {/* Stats row */}
-        {(likeCount > 0 || (post.comments_count || 0) > 0) && (
+        {(likeCount > 0 || (commentsCount || 0) > 0) && (
           <div className="flex items-center justify-between px-4 py-1.5 text-[11px] text-muted-foreground">
             <span>{likeCount > 0 ? `${likeCount} ${likeCount === 1 ? "like" : "likes"}` : ""}</span>
-            <span>{(post.comments_count || 0) > 0 ? `${post.comments_count} comments` : ""}</span>
+            <span>{(commentsCount || 0) > 0 ? `${commentsCount} comments` : ""}</span>
           </div>
         )}
 
@@ -131,10 +200,10 @@ export const CircleFeedPost = ({ post, circle, userId, isAdmin, onDelete, poster
           <button
             onClick={handleLike}
             className={`flex items-center gap-1.5 py-2.5 px-4 rounded-lg hover:bg-muted/60 transition-all min-h-[44px] text-xs font-medium ${
-              liked ? "text-[#FF5A5F]" : "text-muted-foreground"
+              isLiked ? "text-[#FF5A5F]" : "text-muted-foreground"
             }`}
           >
-            <Heart className={`h-4 w-4 ${liked ? "fill-current" : ""}`} /> Like
+            <Heart className={`h-4 w-4 ${isLiked ? "fill-current" : ""}`} /> Like
           </button>
           <button
             onClick={() => setShowComments(true)}
