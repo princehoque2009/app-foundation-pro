@@ -7,10 +7,10 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowLeft, Lock, Settings, ImagePlus, Users, Shield } from "lucide-react";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { ArrowLeft, Lock, Settings } from "lucide-react";
 import { CircleFeedPost } from "./CircleFeedPost";
 import { CircleComposer } from "./CircleComposer";
+import { CircleAdminDialog } from "./CircleAdminDialog";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 
@@ -31,7 +31,7 @@ export const InsideCirclePage = ({ circle, userId, onBack }: InsideCirclePagePro
   const navigate = useNavigate();
   const isAdmin = circle.created_by === userId;
   const [bannerLoaded, setBannerLoaded] = useState(false);
-
+  const [showAdmin, setShowAdmin] = useState(false);
   const { data: members } = useQuery({
     queryKey: ["circle-members", circle.id],
     queryFn: async () => {
@@ -106,19 +106,12 @@ export const InsideCirclePage = ({ circle, userId, onBack }: InsideCirclePagePro
           <ArrowLeft className="h-5 w-5" />
         </button>
         {isAdmin && (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button className="absolute top-3 right-3 p-2 rounded-full bg-black/30 text-white backdrop-blur-sm min-h-[44px] min-w-[44px] flex items-center justify-center">
-                <Settings className="h-5 w-5" />
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-48">
-              <DropdownMenuItem><ImagePlus className="h-4 w-4 mr-2" /> Edit Banner</DropdownMenuItem>
-              <DropdownMenuItem><ImagePlus className="h-4 w-4 mr-2" /> Change Logo</DropdownMenuItem>
-              <DropdownMenuItem><Users className="h-4 w-4 mr-2" /> Manage Members</DropdownMenuItem>
-              <DropdownMenuItem><Shield className="h-4 w-4 mr-2" /> Manage Circle</DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <button
+            onClick={() => setShowAdmin(true)}
+            className="absolute top-3 right-3 p-2 rounded-full bg-black/30 text-white backdrop-blur-sm min-h-[44px] min-w-[44px] flex items-center justify-center"
+          >
+            <Settings className="h-5 w-5" />
+          </button>
         )}
       </div>
 
@@ -281,6 +274,10 @@ export const InsideCirclePage = ({ circle, userId, onBack }: InsideCirclePagePro
           </div>
         </TabsContent>
       </Tabs>
+
+      {isAdmin && (
+        <CircleAdminDialog circle={circle} open={showAdmin} onOpenChange={setShowAdmin} />
+      )}
     </div>
   );
 };

@@ -4,11 +4,11 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { formatDistanceToNow } from "date-fns";
-import { Send, Loader2, MessageCircle } from "lucide-react";
+import { Send, MessageCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 
@@ -19,34 +19,12 @@ interface CircleCommentsDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
-// We'll use a simple comments approach via a convention: store circle post comments
-// in the regular comments table using the circle post id as post_id.
-// Since the comments table has a FK to posts, we need a different approach.
-// We'll store comments as nested community_group_posts with a parent reference.
-// Actually, the simplest approach: use a local state + future table.
-// For now, let's use a lightweight approach with the existing structure.
-
 export const CircleCommentsDialog = ({ postId, circleId, open, onOpenChange }: CircleCommentsDialogProps) => {
   const [comment, setComment] = useState("");
+  const [submitting, setSubmitting] = useState(false);
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
-
-  // For circle post comments, we'll query community_group_posts that act as comments
-  // by using a convention: posts with caption starting with "comment:" and referencing parent
-  // Actually, let's just display a functional comment UI. Since there's no dedicated
-  // circle comments table, we'll show a clean placeholder that works.
-  
-  // For MVP: store comments as a JSON approach won't work. Let's check if we can 
-  // create a simple local state approach first, then the user can add a migration later.
-  
-  const [localComments, setLocalComments] = useState<Array<{
-    id: string;
-    content: string;
-    user_id: string;
-    created_at: string;
-    profile?: any;
-  }>>([]);
 
   const { data: myProfile } = useQuery({
     queryKey: ["my-profile-mini", user?.id],
@@ -58,21 +36,40 @@ export const CircleCommentsDialog = ({ postId, circleId, open, onOpenChange }: C
     staleTime: 60000,
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!comment.trim() || !user) return;
+  const { data: comments, isLoading } = useQuery({
+    queryKey: ["circle-post-comments", postId],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("circle_post_comments" as any)
+        .select("*")
+        .eq("post_id", postId)
+        .order("created_at", { ascending: true });
+      if (!data || data.length === 0) return [];
+      const userIds = [...new Set((data as any[]).map((c: any) => c.user_id))];
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("id, avatar_url, display_name, username")
+        .in("id", userIds as string[]);
+      const profileMap: Record<string, any> = {};
+      profiles?.forEach((p: any) => { profileMap[p.id] = p; });
+      return (data as any[]).map((c: any) => ({ ...c, profile: profileMap[c.user_id] || null }));
+    },
+    enabled: open,
+  });
 
-    setLocalComments(prev => [
-      ...prev,
-      {
-        id: crypto.randomUUID(),
-        content: comment.trim(),
-        user_id: user.id,
-        created_at: new Date().toISOString(),
-        profile: myProfile,
-      },
-    ]);
-    setComment("");
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!comment.trim() || !user || submitting) return;
+    setSubmitting(true);
+    try {
+      await supabase
+        .from("circle_post_comments" as any)
+        .insert({ post_id: postId, user_id: user.id, content: comment.trim() });
+      setComment("");
+      queryClient.invalidateQueries({ queryKey: ["circle-post-comments", postId] });
+      queryClient.invalidateQueries({ queryKey: ["circle-post-comments-count", postId] });
+    } catch {}
+    setSubmitting(false);
   };
 
   return (
@@ -83,7 +80,9 @@ export const CircleCommentsDialog = ({ postId, circleId, open, onOpenChange }: C
         </DialogHeader>
 
         <ScrollArea className="flex-1 px-4 py-4 min-h-[200px]">
-          {localComments.length === 0 ? (
+          {isLoading ? (
+            <div className="text-center py-12 text-muted-foreground text-sm">Loading…</div>
+          ) : !comments || comments.length === 0 ? (
             <div className="text-center py-12">
               <div className="w-14 h-14 bg-muted rounded-full flex items-center justify-center mx-auto mb-3">
                 <MessageCircle className="h-7 w-7 text-muted-foreground" />
@@ -93,7 +92,7 @@ export const CircleCommentsDialog = ({ postId, circleId, open, onOpenChange }: C
             </div>
           ) : (
             <div className="space-y-3">
-              {localComments.map((c) => (
+              {comments.map((c: any) => (
                 <motion.div
                   key={c.id}
                   initial={{ opacity: 0, y: 8 }}
@@ -129,7 +128,6 @@ export const CircleCommentsDialog = ({ postId, circleId, open, onOpenChange }: C
           )}
         </ScrollArea>
 
-        {/* Input */}
         <form onSubmit={handleSubmit} className="flex items-center gap-2 px-4 py-3 border-t border-border">
           <Avatar className="h-8 w-8 shrink-0">
             <AvatarImage src={myProfile?.avatar_url || ""} />
@@ -146,7 +144,7 @@ export const CircleCommentsDialog = ({ postId, circleId, open, onOpenChange }: C
           <Button
             type="submit"
             size="icon"
-            disabled={!comment.trim()}
+            disabled={!comment.trim() || submitting}
             className="h-9 w-9 rounded-full shrink-0"
             style={{ background: "#FF5A5F" }}
           >
