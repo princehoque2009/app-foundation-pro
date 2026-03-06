@@ -53,12 +53,16 @@ export const CircleComposer = ({ circleId, circleName, userId, onPostCreated }: 
       let media_type = null;
       if (mediaFile) {
         const ext = mediaFile.name.split(".").pop();
-        const path = `circles/${circleId}/${Date.now()}.${ext}`;
-        const { error } = await supabase.storage.from("post-media").upload(path, mediaFile);
-        if (!error) {
-          media_url = supabase.storage.from("post-media").getPublicUrl(path).data.publicUrl;
-          media_type = mediaFile.type.startsWith("video") ? "video" : "image";
+        const path = `circles/${circleId}/${userId}/${Date.now()}.${ext}`;
+        const { error: uploadError } = await supabase.storage.from("post-media").upload(path, mediaFile, { cacheControl: "3600", upsert: false });
+        if (uploadError) {
+          console.error("Upload error:", uploadError);
+          toast({ title: "Media upload failed", description: uploadError.message, variant: "destructive" });
+          setPosting(false);
+          return;
         }
+        media_url = supabase.storage.from("post-media").getPublicUrl(path).data.publicUrl;
+        media_type = mediaFile.type.startsWith("video") ? "video" : "image";
       }
 
       const caption = feeling ? `${text.trim()} — ${feeling}` : text.trim();
