@@ -26,9 +26,21 @@ const formatCount = (n: number) => {
   return n.toString();
 };
 
-export const InsideCirclePage = ({ circle, userId, onBack }: InsideCirclePageProps) => {
+export const InsideCirclePage = ({ circle: initialCircle, userId, onBack }: InsideCirclePageProps) => {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+
+  // Fetch live circle data so branding updates reflect immediately
+  const { data: liveCircle } = useQuery({
+    queryKey: ["circle-detail", initialCircle.id],
+    queryFn: async () => {
+      const { data } = await supabase.from("community_groups").select("*").eq("id", initialCircle.id).single();
+      return data || initialCircle;
+    },
+    initialData: initialCircle,
+  });
+  const circle = liveCircle || initialCircle;
+
   const isAdmin = circle.created_by === userId;
   const [bannerLoaded, setBannerLoaded] = useState(false);
   const [showAdmin, setShowAdmin] = useState(false);

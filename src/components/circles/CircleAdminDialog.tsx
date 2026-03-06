@@ -69,6 +69,7 @@ export const CircleAdminDialog = ({ circle, open, onOpenChange }: CircleAdminDia
       const updateField = type === "logo" ? { logo_url: url } : { banner_url: url };
       await supabase.from("community_groups").update(updateField).eq("id", circle.id);
       queryClient.invalidateQueries({ queryKey: ["circles"] });
+      queryClient.invalidateQueries({ queryKey: ["circle-detail", circle.id] });
       queryClient.invalidateQueries({ queryKey: ["circle-members", circle.id] });
       toast({ title: `${type === "logo" ? "Logo" : "Banner"} updated!` });
     } catch {
