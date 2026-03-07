@@ -33,7 +33,7 @@ export const CircleComposer = ({ circleId, circleName, userId, onPostCreated }: 
       const { data } = await supabase.from("profiles").select("avatar_url, display_name, username").eq("id", userId).single();
       return data;
     },
-    staleTime: 60000,
+    staleTime: 60000
   });
 
   const handleMediaSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -72,7 +72,7 @@ export const CircleComposer = ({ circleId, circleName, userId, onPostCreated }: 
         user_id: userId,
         caption: caption || null,
         media_url,
-        media_type,
+        media_type
       });
 
       setText("");
@@ -101,98 +101,98 @@ export const CircleComposer = ({ circleId, circleName, userId, onPostCreated }: 
         </Avatar>
         <button
           onClick={() => setExpanded(true)}
-          className="flex-1 h-10 px-4 rounded-full bg-muted/60 text-sm text-muted-foreground text-left hover:bg-muted transition-colors"
-        >
+          className="flex-1 h-10 px-4 rounded-full bg-muted/60 text-sm text-muted-foreground text-left hover:bg-muted transition-colors">
+          
           Write something to this Circle…
         </button>
       </div>
 
       {/* Expanded composer */}
       <AnimatePresence>
-        {expanded && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="overflow-hidden"
-          >
+        {expanded &&
+        <motion.div
+          initial={{ height: 0, opacity: 0 }}
+          animate={{ height: "auto", opacity: 1 }}
+          exit={{ height: 0, opacity: 0 }}
+          transition={{ duration: 0.2 }}
+          className="overflow-hidden">
+          
             <div className="px-3 pb-2">
               <p className="text-[11px] text-muted-foreground mb-1.5">
                 Post to <span className="font-semibold text-foreground">{circleName}</span>
                 {feeling && <span className="ml-1">· {feeling}</span>}
               </p>
               <Textarea
-                placeholder="What's on your mind?"
-                value={text}
-                onChange={(e) => setText(e.target.value)}
-                rows={3}
-                className="resize-none border-0 bg-transparent focus-visible:ring-0 p-0 text-sm min-h-[60px]"
-                autoFocus
-              />
+              placeholder="What's on your mind?"
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              rows={3}
+              className="resize-none border-0 bg-transparent focus-visible:ring-0 p-0 text-sm min-h-[60px]"
+              autoFocus />
+            
             </div>
 
             {/* Media preview */}
-            {mediaPreview && (
-              <div className="px-3 pb-2 relative">
+            {mediaPreview &&
+          <div className="px-3 pb-2 relative">
                 <img src={mediaPreview} className="w-full rounded-xl object-cover max-h-48" alt="" />
                 <button
-                  onClick={() => { setMediaFile(null); setMediaPreview(null); }}
-                  className="absolute top-2 right-5 p-1 rounded-full bg-black/50 text-white"
-                >
+              onClick={() => {setMediaFile(null);setMediaPreview(null);}}
+              className="absolute top-2 right-5 p-1 rounded-full bg-black/50 text-white">
+              
                   <X className="h-4 w-4" />
                 </button>
               </div>
-            )}
+          }
 
             {/* Feelings picker */}
             <AnimatePresence>
-              {showFeelings && (
-                <motion.div
-                  initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: "auto", opacity: 1 }}
-                  exit={{ height: 0, opacity: 0 }}
-                  className="px-3 pb-2 overflow-hidden"
-                >
+              {showFeelings &&
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              className="px-3 pb-2 overflow-hidden">
+              
                   <div className="flex flex-wrap gap-1.5">
-                    {FEELINGS.map((f) => (
-                      <button
-                        key={f}
-                        onClick={() => { setFeeling(f); setShowFeelings(false); }}
-                        className={`px-2.5 py-1 rounded-full text-xs transition-colors ${
-                          feeling === f ? "bg-primary/10 text-primary" : "bg-muted/60 text-muted-foreground hover:bg-muted"
-                        }`}
-                      >
+                    {FEELINGS.map((f) =>
+                <button
+                  key={f}
+                  onClick={() => {setFeeling(f);setShowFeelings(false);}}
+                  className={`px-2.5 py-1 rounded-full text-xs transition-colors ${
+                  feeling === f ? "bg-primary/10 text-primary" : "bg-muted/60 text-muted-foreground hover:bg-muted"}`
+                  }>
+                  
                         {f}
                       </button>
-                    ))}
+                )}
                   </div>
                 </motion.div>
-              )}
+            }
             </AnimatePresence>
 
             {/* Post button row */}
             <div className="flex items-center justify-between px-3 pb-2">
               <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => { setExpanded(false); setText(""); setMediaFile(null); setMediaPreview(null); setFeeling(""); setShowFeelings(false); }}
-                className="text-xs text-muted-foreground"
-              >
+              size="sm"
+              variant="ghost"
+              onClick={() => {setExpanded(false);setText("");setMediaFile(null);setMediaPreview(null);setFeeling("");setShowFeelings(false);}}
+              className="text-xs text-muted-foreground">
+              
                 Cancel
               </Button>
               <Button
-                size="sm"
-                onClick={handlePost}
-                disabled={posting || (!text.trim() && !mediaFile)}
-                className="rounded-full text-xs h-8 px-5 text-white"
-                style={{ background: "#FF5A5F" }}
-              >
+              size="sm"
+              onClick={handlePost}
+              disabled={posting || !text.trim() && !mediaFile}
+              className="rounded-full text-xs h-8 px-5 text-white"
+              style={{ background: "#FF5A5F" }}>
+              
                 {posting ? <Loader2 className="h-3 w-3 animate-spin" /> : "Post"}
               </Button>
             </div>
           </motion.div>
-        )}
+        }
       </AnimatePresence>
 
       {/* Divider */}
@@ -202,28 +202,28 @@ export const CircleComposer = ({ circleId, circleName, userId, onPostCreated }: 
       <div className="flex items-center justify-around py-2">
         <button
           onClick={() => fileRef.current?.click()}
-          className="flex items-center gap-1.5 py-2 px-3 rounded-lg hover:bg-muted/60 transition-colors min-h-[44px]"
-        >
-          <Image className="h-4.5 w-4.5 text-emerald-500" />
+          className="flex items-center gap-1.5 py-2 px-3 rounded-lg hover:bg-muted/60 transition-colors min-h-[44px]">
+          
+          <Image className="h-4.5 w-4.5 text-emerald-500 w-[18px] h-[18px]" />
           <span className="text-xs text-muted-foreground font-medium">Photo/Video</span>
         </button>
         <button
-          onClick={() => { if (!expanded) setExpanded(true); toast({ title: "Location", description: "Coming soon!" }); }}
-          className="flex items-center gap-1.5 py-2 px-3 rounded-lg hover:bg-muted/60 transition-colors min-h-[44px]"
-        >
-          <MapPin className="h-4.5 w-4.5 text-red-500" />
+          onClick={() => {if (!expanded) setExpanded(true);toast({ title: "Location", description: "Coming soon!" });}}
+          className="flex items-center gap-1.5 py-2 px-3 rounded-lg hover:bg-muted/60 transition-colors min-h-[44px]">
+          
+          <MapPin className="h-4.5 w-4.5 text-red-500 w-[18px] h-[18px]" />
           <span className="text-xs text-muted-foreground font-medium">Location</span>
         </button>
         <button
-          onClick={() => { if (!expanded) setExpanded(true); setShowFeelings(!showFeelings); }}
-          className="flex items-center gap-1.5 py-2 px-3 rounded-lg hover:bg-muted/60 transition-colors min-h-[44px]"
-        >
-          <Smile className="h-4.5 w-4.5 text-amber-500" />
+          onClick={() => {if (!expanded) setExpanded(true);setShowFeelings(!showFeelings);}}
+          className="flex items-center gap-1.5 py-2 px-3 rounded-lg hover:bg-muted/60 transition-colors min-h-[44px]">
+          
+          <Smile className="h-4.5 w-4.5 text-amber-500 h-[18px] w-[18px]" />
           <span className="text-xs text-muted-foreground font-medium">Feeling</span>
         </button>
       </div>
 
       <input ref={fileRef} type="file" accept="image/*,video/*" className="hidden" onChange={handleMediaSelect} />
-    </div>
-  );
+    </div>);
+
 };
