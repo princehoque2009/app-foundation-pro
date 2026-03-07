@@ -37,7 +37,7 @@ export const InsideCirclePage = ({ circle: initialCircle, userId, onBack }: Insi
       const { data } = await supabase.from("community_groups").select("*").eq("id", initialCircle.id).single();
       return data || initialCircle;
     },
-    initialData: initialCircle,
+    initialData: initialCircle
   });
   const circle = liveCircle || initialCircle;
 
@@ -47,32 +47,32 @@ export const InsideCirclePage = ({ circle: initialCircle, userId, onBack }: Insi
   const { data: members } = useQuery({
     queryKey: ["circle-members", circle.id],
     queryFn: async () => {
-      const { data: memberRows } = await supabase
-        .from("community_group_members")
-        .select("*")
-        .eq("group_id", circle.id);
+      const { data: memberRows } = await supabase.
+      from("community_group_members").
+      select("*").
+      eq("group_id", circle.id);
       if (!memberRows || memberRows.length === 0) return [];
       const userIds = memberRows.map((m: any) => m.user_id);
-      const { data: profiles } = await supabase
-        .from("profiles")
-        .select("id, avatar_url, display_name, username")
-        .in("id", userIds);
+      const { data: profiles } = await supabase.
+      from("profiles").
+      select("id, avatar_url, display_name, username").
+      in("id", userIds);
       const profileMap: Record<string, any> = {};
-      profiles?.forEach((p: any) => { profileMap[p.id] = p; });
+      profiles?.forEach((p: any) => {profileMap[p.id] = p;});
       return memberRows.map((m: any) => ({ ...m, profiles: profileMap[m.user_id] || null }));
-    },
+    }
   });
 
   const { data: posts, isLoading: postsLoading } = useQuery({
     queryKey: ["circle-posts", circle.id],
     queryFn: async () => {
-      const { data } = await supabase
-        .from("community_group_posts")
-        .select("*")
-        .eq("group_id", circle.id)
-        .order("created_at", { ascending: false }) as any;
+      const { data } = (await supabase.
+      from("community_group_posts").
+      select("*").
+      eq("group_id", circle.id).
+      order("created_at", { ascending: false })) as any;
       return data || [];
-    },
+    }
   });
 
   const posterIds = [...new Set((posts || []).map((p: any) => p.user_id))];
@@ -82,10 +82,10 @@ export const InsideCirclePage = ({ circle: initialCircle, userId, onBack }: Insi
       if (posterIds.length === 0) return {};
       const { data } = await supabase.from("profiles").select("id, avatar_url, display_name, username").in("id", posterIds as string[]);
       const map: Record<string, any> = {};
-      data?.forEach((p: any) => { map[p.id] = p; });
+      data?.forEach((p: any) => {map[p.id] = p;});
       return map;
     },
-    enabled: posterIds.length > 0,
+    enabled: posterIds.length > 0
   });
 
   const handleDeletePost = async (postId: string) => {
@@ -100,31 +100,31 @@ export const InsideCirclePage = ({ circle: initialCircle, userId, onBack }: Insi
   return (
     <div className="min-h-screen bg-background">
       {/* Banner */}
-      <div className="relative">
-        {circle.banner_url ? (
-          <>
+      <div className="relative rounded-md">
+        {circle.banner_url ?
+        <>
             {!bannerLoaded && <div className="h-44 bg-gradient-to-br from-primary/15 to-accent/15 animate-pulse" />}
             <img
-              src={circle.banner_url}
-              alt=""
-              className={`w-full h-44 object-cover ${bannerLoaded ? "" : "hidden"}`}
-              onLoad={() => setBannerLoaded(true)}
-            />
-          </>
-        ) : (
-          <div className="h-44 bg-gradient-to-br from-primary/20 via-accent/10 to-primary/5" />
-        )}
+            src={circle.banner_url}
+            alt=""
+            className={`w-full h-44 object-cover ${bannerLoaded ? "" : "hidden"}`}
+            onLoad={() => setBannerLoaded(true)} />
+          
+          </> :
+
+        <div className="h-44 bg-gradient-to-br from-primary/20 via-accent/10 to-primary/5" />
+        }
         <button onClick={onBack} className="absolute top-3 left-3 p-2 rounded-full bg-black/30 text-white backdrop-blur-sm min-h-[44px] min-w-[44px] flex items-center justify-center">
           <ArrowLeft className="h-5 w-5" />
         </button>
-        {isAdmin && (
-          <button
-            onClick={() => setShowAdmin(true)}
-            className="absolute top-3 right-3 p-2 rounded-full bg-black/30 text-white backdrop-blur-sm min-h-[44px] min-w-[44px] flex items-center justify-center"
-          >
+        {isAdmin &&
+        <button
+          onClick={() => setShowAdmin(true)}
+          className="absolute top-3 right-3 p-2 rounded-full bg-black/30 text-white backdrop-blur-sm min-h-[44px] min-w-[44px] flex items-center justify-center">
+          
             <Settings className="h-5 w-5" />
           </button>
-        )}
+        }
       </div>
 
       {/* Profile section */}
@@ -145,56 +145,56 @@ export const InsideCirclePage = ({ circle: initialCircle, userId, onBack }: Insi
           </div>
         </div>
 
-        {circle.description && (
-          <p className="text-xs text-muted-foreground mt-2 line-clamp-2">{circle.description}</p>
-        )}
+        {circle.description &&
+        <p className="text-xs text-muted-foreground mt-2 line-clamp-2">{circle.description}</p>
+        }
 
         {/* Members preview row */}
-        {memberAvatars.length > 0 && (
-          <div className="flex items-center gap-2 mt-3">
+        {memberAvatars.length > 0 &&
+        <div className="flex items-center gap-2 mt-3">
             <div className="flex -space-x-2">
-              {memberAvatars.map((m: any) => (
-                <Avatar key={m.id} className="h-7 w-7 border-2 border-background cursor-pointer" onClick={() => navigate(`/profile/${m.user_id}`)}>
+              {memberAvatars.map((m: any) =>
+            <Avatar key={m.id} className="h-7 w-7 border-2 border-background cursor-pointer" onClick={() => navigate(`/profile/${m.user_id}`)}>
                   <AvatarImage src={m.profiles?.avatar_url} />
                   <AvatarFallback className="text-[9px] bg-muted">{m.profiles?.username?.charAt(0)?.toUpperCase()}</AvatarFallback>
                 </Avatar>
-              ))}
-            </div>
-            {memberCount > 5 && (
-              <span className="text-[11px] text-muted-foreground">+{memberCount - 5} members</span>
             )}
+            </div>
+            {memberCount > 5 &&
+          <span className="text-[11px] text-muted-foreground">+{memberCount - 5} members</span>
+          }
           </div>
-        )}
+        }
       </div>
 
       {/* Tabs */}
       <Tabs defaultValue="posts" className="mt-4">
         <TabsList className="w-full grid grid-cols-4 h-10 rounded-none bg-transparent border-b border-border/50 px-4 sticky top-0 z-20 bg-background">
-          {["posts", "media", "members", "about"].map((tab) => (
-            <TabsTrigger
-              key={tab}
-              value={tab}
-              className="text-xs capitalize rounded-none border-b-2 border-transparent data-[state=active]:border-[#FF5A5F] data-[state=active]:text-[#FF5A5F] data-[state=active]:shadow-none"
-            >
+          {["posts", "media", "members", "about"].map((tab) =>
+          <TabsTrigger
+            key={tab}
+            value={tab}
+            className="text-xs capitalize rounded-none border-b-2 border-transparent data-[state=active]:border-[#FF5A5F] data-[state=active]:text-[#FF5A5F] data-[state=active]:shadow-none">
+            
               {tab}
             </TabsTrigger>
-          ))}
+          )}
         </TabsList>
 
         <TabsContent value="posts" className="mt-0 px-4 space-y-3 pb-24 pt-3">
-          {isMember && userId && (
-            <CircleComposer
-              circleId={circle.id}
-              circleName={circle.name}
-              userId={userId}
-              onPostCreated={() => queryClient.invalidateQueries({ queryKey: ["circle-posts", circle.id] })}
-            />
-          )}
+          {isMember && userId &&
+          <CircleComposer
+            circleId={circle.id}
+            circleName={circle.name}
+            userId={userId}
+            onPostCreated={() => queryClient.invalidateQueries({ queryKey: ["circle-posts", circle.id] })} />
 
-          {postsLoading ? (
-            <div className="space-y-3">
-              {[1, 2, 3].map(i => (
-                <div key={i} className="bg-card rounded-2xl p-4 border border-border/40 space-y-3">
+          }
+
+          {postsLoading ?
+          <div className="space-y-3">
+              {[1, 2, 3].map((i) =>
+            <div key={i} className="bg-card rounded-2xl p-4 border border-border/40 space-y-3">
                   <div className="flex items-center gap-2">
                     <Skeleton className="h-9 w-9 rounded-full" />
                     <div className="space-y-1.5">
@@ -205,55 +205,55 @@ export const InsideCirclePage = ({ circle: initialCircle, userId, onBack }: Insi
                   <Skeleton className="h-4 w-full" />
                   <Skeleton className="h-4 w-3/4" />
                 </div>
-              ))}
-            </div>
-          ) : posts?.length === 0 ? (
-            <div className="text-center py-12">
+            )}
+            </div> :
+          posts?.length === 0 ?
+          <div className="text-center py-12">
               <p className="text-muted-foreground text-sm">No posts yet. Be the first to post!</p>
-            </div>
-          ) : (
-            posts?.map((post: any) => (
-              <motion.div
-                key={post.id}
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.2 }}
-              >
+            </div> :
+
+          posts?.map((post: any) =>
+          <motion.div
+            key={post.id}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.2 }}>
+            
                 <CircleFeedPost
-                  post={post}
-                  circle={circle}
-                  userId={userId}
-                  isAdmin={isAdmin}
-                  onDelete={handleDeletePost}
-                  posterProfile={posterProfiles?.[post.user_id]}
-                />
+              post={post}
+              circle={circle}
+              userId={userId}
+              isAdmin={isAdmin}
+              onDelete={handleDeletePost}
+              posterProfile={posterProfiles?.[post.user_id]} />
+            
               </motion.div>
-            ))
-          )}
+          )
+          }
         </TabsContent>
 
         <TabsContent value="media" className="mt-0 px-4 pb-24 pt-3">
-          {posts?.filter((p: any) => p.media_url).length === 0 ? (
-            <p className="text-center text-sm text-muted-foreground py-12">No media yet</p>
-          ) : (
-            <div className="grid grid-cols-3 gap-1 rounded-xl overflow-hidden">
-              {posts?.filter((p: any) => p.media_url).map((p: any) => (
-                <div key={p.id} className="aspect-square bg-muted">
+          {posts?.filter((p: any) => p.media_url).length === 0 ?
+          <p className="text-center text-sm text-muted-foreground py-12">No media yet</p> :
+
+          <div className="grid grid-cols-3 gap-1 rounded-xl overflow-hidden">
+              {posts?.filter((p: any) => p.media_url).map((p: any) =>
+            <div key={p.id} className="aspect-square bg-muted">
                   <img src={p.media_url} className="w-full h-full object-cover" alt="" loading="lazy" />
                 </div>
-              ))}
+            )}
             </div>
-          )}
+          }
         </TabsContent>
 
         <TabsContent value="members" className="mt-0 px-4 space-y-1.5 pb-24 pt-3">
           <p className="text-xs text-muted-foreground mb-2">{formatCount(memberCount)} members</p>
-          {members?.map((m: any) => (
-            <div
-              key={m.id}
-              className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-muted/40 transition-colors cursor-pointer"
-              onClick={() => navigate(`/profile/${m.user_id}`)}
-            >
+          {members?.map((m: any) =>
+          <div
+            key={m.id}
+            className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-muted/40 transition-colors cursor-pointer"
+            onClick={() => navigate(`/profile/${m.user_id}`)}>
+            
               <Avatar className="h-10 w-10">
                 <AvatarImage src={m.profiles?.avatar_url} />
                 <AvatarFallback className="text-xs">{m.profiles?.username?.charAt(0)?.toUpperCase()}</AvatarFallback>
@@ -263,15 +263,15 @@ export const InsideCirclePage = ({ circle: initialCircle, userId, onBack }: Insi
                 <p className="text-[11px] text-muted-foreground">@{m.profiles?.username}</p>
               </div>
               {m.role === "admin" && <Badge variant="secondary" className="text-[10px]">Admin</Badge>}
-              {isAdmin && m.user_id !== userId && (
-                <Button size="sm" variant="ghost" className="text-xs text-destructive h-7" onClick={async (e) => {
-                  e.stopPropagation();
-                  await supabase.from("community_group_members").delete().eq("id", m.id);
-                  queryClient.invalidateQueries({ queryKey: ["circle-members", circle.id] });
-                }}>Remove</Button>
-              )}
+              {isAdmin && m.user_id !== userId &&
+            <Button size="sm" variant="ghost" className="text-xs text-destructive h-7" onClick={async (e) => {
+              e.stopPropagation();
+              await supabase.from("community_group_members").delete().eq("id", m.id);
+              queryClient.invalidateQueries({ queryKey: ["circle-members", circle.id] });
+            }}>Remove</Button>
+            }
             </div>
-          ))}
+          )}
         </TabsContent>
 
         <TabsContent value="about" className="mt-0 px-4 pb-24 pt-3 space-y-3">
@@ -287,9 +287,9 @@ export const InsideCirclePage = ({ circle: initialCircle, userId, onBack }: Insi
         </TabsContent>
       </Tabs>
 
-      {isAdmin && (
-        <CircleAdminDialog circle={circle} open={showAdmin} onOpenChange={setShowAdmin} />
-      )}
-    </div>
-  );
+      {isAdmin &&
+      <CircleAdminDialog circle={circle} open={showAdmin} onOpenChange={setShowAdmin} />
+      }
+    </div>);
+
 };
