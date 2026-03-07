@@ -100,7 +100,7 @@ export const InsideCirclePage = ({ circle: initialCircle, userId, onBack }: Insi
   return (
     <div className="min-h-screen bg-background">
       {/* Banner */}
-      <div className="relative border-4 opacity-100 mx-[5px] my-[5px] px-0 border-none rounded-2xl">
+      <div className="relative opacity-100 mx-[5px] my-[5px] px-0 border-none rounded-xl border-2 border-primary">
         {circle.banner_url ?
         <>
             {!bannerLoaded && <div className="h-44 bg-gradient-to-br from-primary/15 to-accent/15 animate-pulse" />}
