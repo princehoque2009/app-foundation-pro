@@ -137,7 +137,7 @@ export const InsideCirclePage = ({ circle: initialCircle, userId, onBack }: Insi
             </AvatarFallback>
           </Avatar>
           <div className="pb-1 flex-1 min-w-0">
-            <h1 className="text-lg font-bold text-foreground flex items-center gap-1.5 truncate">
+            <h1 className="text-lg font-bold text-foreground flex items-center gap-1.5 truncate text-left mx-0 my-0 px-0">
               {circle.name}
               {circle.privacy === "private" && <Lock className="h-3.5 w-3.5 text-muted-foreground shrink-0" />}
             </h1>
