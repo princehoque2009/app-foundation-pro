@@ -2,9 +2,11 @@ import { MainLayout } from "@/components/layout/MainLayout";
 import { NotificationsList } from "@/components/notifications/NotificationsList";
 import { ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
 const Notifications = () => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   return (
     <MainLayout showBottomNav={false}>
