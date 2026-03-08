@@ -134,11 +134,28 @@ export const PostMenu = ({ postId, postUserId, isPinned = false, mediaUrl, media
     });
   };
 
-  const handleDownload = () => {
-    toast({
-      title: "Coming soon",
-      description: "Download feature will be available soon.",
-    });
+  const handleDownload = async () => {
+    if (!mediaUrl) {
+      toast({ title: "No media", description: "This post has no downloadable media." });
+      return;
+    }
+    try {
+      toast({ title: "Downloading…", description: "Your file will be ready shortly." });
+      const response = await fetch(mediaUrl);
+      const blob = await response.blob();
+      const ext = mediaType === "video" ? "mp4" : "jpg";
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `prangon-${postId.slice(0, 8)}.${ext}`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      toast({ title: "Downloaded!", description: "Media saved successfully." });
+    } catch {
+      toast({ title: "Error", description: "Failed to download media.", variant: "destructive" });
+    }
   };
 
   const handleHide = () => {
