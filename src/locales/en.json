@@ -44,7 +44,19 @@
     "comment": "Comment",
     "reply": "Reply",
     "send": "Send",
-    "post": "Post"
+    "post": "Post",
+    "people": "People",
+    "posts": "Posts",
+    "clearAll": "Clear all",
+    "recent": "Recent",
+    "trending": "Trending",
+    "copyLink": "Copy Link",
+    "feedback": "Feedback",
+    "about": "About",
+    "signedOut": "Signed out",
+    "signedOutDesc": "You have been signed out successfully.",
+    "linkCopied": "Link copied!",
+    "linkCopiedDesc": "Profile link copied to clipboard."
   },
   "home": {
     "title": "Home",
@@ -79,7 +91,10 @@
     "noCircles": "No circles yet",
     "createFirst": "Create the first community circle!",
     "notJoined": "You haven't joined any circles yet",
-    "noCategory": "No circles in this category"
+    "noCategory": "No circles in this category",
+    "fromYourCircles": "From Your Circles",
+    "trendingCircles": "Trending Circles",
+    "newestCircles": "Newest Circles"
   },
   "profile": {
     "title": "Profile",
@@ -99,7 +114,14 @@
     "newMessage": "New Message",
     "typeMessage": "Type a message...",
     "noConversations": "No conversations yet",
-    "searchConversations": "Search conversations..."
+    "searchConversations": "Search conversations...",
+    "createNewGroup": "Create New Group",
+    "startGroupChat": "Start a group chat",
+    "noFriends": "No friends yet",
+    "addFriendsToChat": "Add friends to start chatting",
+    "yourMessages": "Your Messages",
+    "selectFriend": "Select a friend from the list to start chatting, or create a new group",
+    "createGroupChat": "Create Group Chat"
   },
   "settings": {
     "title": "Settings",
@@ -160,9 +182,10 @@
   },
   "search": {
     "title": "Search",
-    "placeholder": "Search people, posts...",
+    "placeholder": "Search users, posts, hashtags...",
     "trending": "Trending",
-    "recentSearches": "Recent Searches"
+    "recentSearches": "Recent Searches",
+    "noResults": "No results found for"
   },
   "friends": {
     "title": "Friends",
@@ -171,5 +194,52 @@
     "myFriends": "My Friends",
     "searchFriends": "Search Friends",
     "noFriends": "No friends yet"
+  },
+  "menu": {
+    "title": "Menu",
+    "groups": "Groups",
+    "groupsDesc": "Your group chats",
+    "notificationsDesc": "Manage your alerts",
+    "messagesDesc": "Your conversations",
+    "myProfile": "My Profile",
+    "myProfileDesc": "View and edit profile",
+    "reelsDesc": "Watch short videos",
+    "friendsDesc": "Manage connections",
+    "liveDesc": "Go live or watch",
+    "wallet": "Wallet",
+    "walletDesc": "Prangs & transactions",
+    "manageEffects": "Manage Effects",
+    "manageEffectsDesc": "Toggle purchased features",
+    "quickAccess": "Quick Access",
+    "activityLog": "Activity Log",
+    "memories": "Memories",
+    "starred": "Starred",
+    "gaming": "Gaming",
+    "settingsPrivacy": "Settings & Privacy",
+    "helpSupport": "Help & Support",
+    "accessibility": "Accessibility",
+    "adminPanel": "Admin Panel",
+    "supportPanel": "Support Panel",
+    "moderatorPanel": "Moderator Panel",
+    "advisorPanel": "Advisor Panel",
+    "darkMode": "Dark Mode",
+    "communityStandards": "Community Standards",
+    "cookiesPolicy": "Cookies Policy",
+    "manageInfo": "Manage Your Information",
+    "aboutPrangon": "About Prangon",
+    "legal": "Legal",
+    "signOut": "Sign Out",
+    "share": "Share",
+    "copy": "Copy",
+    "version": "Version"
+  },
+  "wallet": {
+    "title": "Wallet"
+  },
+  "live": {
+    "title": "Live"
+  },
+  "reels": {
+    "title": "Reels"
   }
 }

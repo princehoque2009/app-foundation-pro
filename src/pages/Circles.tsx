@@ -82,7 +82,7 @@ const Circles = () => {
     queryKey: ["feed-poster-profiles", feedPosterIds.join(",")],
     queryFn: async () => {
       if (feedPosterIds.length === 0) return {};
-      const { data } = await supabase.from("profiles").select("id, avatar_url, display_name, username").in("id", feedPosterIds as string[]);
+      const { data } = await supabase.from("profiles").select("id, avatar_url, display_name, username, is_verified").in("id", feedPosterIds as string[]);
       const map: Record<string, any> = {};
       data?.forEach((p: any) => { map[p.id] = p; });
       return map;

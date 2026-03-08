@@ -6,6 +6,8 @@ import { formatDistanceToNow } from "date-fns";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useNavigate } from "react-router-dom";
 import { CircleCommentsDialog } from "./CircleCommentsDialog";
+import { CircleRoleBadge } from "./CircleRoleBadge";
+import { VerifiedBadge } from "@/components/ui/VerifiedBadge";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
@@ -15,7 +17,7 @@ interface CircleFeedPostProps {
   userId?: string;
   isAdmin: boolean;
   onDelete: (postId: string) => void;
-  posterProfile?: { avatar_url?: string; display_name?: string; username?: string } | null;
+  posterProfile?: { avatar_url?: string; display_name?: string; username?: string; is_verified?: boolean } | null;
   onOpenCircle?: (circle: any) => void;
   onPin?: () => void;
 }
@@ -26,6 +28,25 @@ export const CircleFeedPost = ({ post, circle, userId, isAdmin, onDelete, poster
   const [showComments, setShowComments] = useState(false);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+
+  // Get circle role for this poster
+  const { data: posterCircleRole } = useQuery({
+    queryKey: ["circle-member-role", circle.id, post.user_id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("community_group_members")
+        .select("role")
+        .eq("group_id", circle.id)
+        .eq("user_id", post.user_id)
+        .maybeSingle();
+      return data?.role || "member";
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+
+  // Check if poster is circle creator (admin)
+  const isCircleAdmin = circle.created_by === post.user_id;
+  const displayCircleRole = isCircleAdmin ? "admin" : posterCircleRole === "moderator" ? "moderator" : null;
 
   // Check if current user liked this post
   const { data: userLike } = useQuery({
@@ -73,7 +94,6 @@ export const CircleFeedPost = ({ post, circle, userId, isAdmin, onDelete, poster
     const currentlyLiked = isLiked;
     const currentCount = likeCount;
 
-    // Optimistic update
     setOptimisticLiked(!currentlyLiked);
     setOptimisticCount(currentlyLiked ? currentCount - 1 : currentCount + 1);
 
@@ -92,13 +112,11 @@ export const CircleFeedPost = ({ post, circle, userId, isAdmin, onDelete, poster
       queryClient.invalidateQueries({ queryKey: ["circle-post-like", post.id, userId] });
       queryClient.invalidateQueries({ queryKey: ["circle-posts", circle.id] });
     } catch {
-      // Revert on error
       setOptimisticLiked(currentlyLiked);
       setOptimisticCount(currentCount);
     }
   };
 
-  // Reset optimistic state when server data updates
   useEffect(() => {
     setOptimisticLiked(null);
     setOptimisticCount(null);
@@ -128,6 +146,8 @@ export const CircleFeedPost = ({ post, circle, userId, isAdmin, onDelete, poster
               <button onClick={handleProfileClick} className="text-sm font-semibold text-foreground hover:underline truncate">
                 {posterName}
               </button>
+              {posterProfile?.is_verified && <VerifiedBadge size="sm" />}
+              {displayCircleRole && <CircleRoleBadge role={displayCircleRole} />}
             </div>
             <p className="text-[11px] text-muted-foreground">
               posted in{" "}
