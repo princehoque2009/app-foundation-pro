@@ -65,7 +65,7 @@ export const InsideCirclePage = ({ circle: initialCircle, userId, onBack }: Insi
       const userIds = memberRows.map((m: any) => m.user_id);
       const { data: profiles } = await supabase
         .from("profiles")
-        .select("id, avatar_url, display_name, username")
+        .select("id, avatar_url, display_name, username, is_verified")
         .in("id", userIds);
       const profileMap: Record<string, any> = {};
       profiles?.forEach((p: any) => { profileMap[p.id] = p; });
