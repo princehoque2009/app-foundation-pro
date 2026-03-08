@@ -32,7 +32,7 @@ const Home = () => {
             </div>
           ) : !posts || posts.length === 0 ? (
             <div className="text-center py-12">
-              <p className="text-muted-foreground">No posts yet. Be the first to share!</p>
+              <p className="text-muted-foreground">{t("home.noPosts")}</p>
             </div>
           ) : (
             posts.map((post: any, index: number) => (
