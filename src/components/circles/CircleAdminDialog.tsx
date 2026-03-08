@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import { MoreVertical, Shield, UserMinus, ChevronDown, Upload, Loader2, Save } from "lucide-react";
+import { MoreVertical, Shield, UserMinus, ChevronDown, Upload, Loader2, Save, Globe, LockKeyhole } from "lucide-react";
 import { ImageCropDialog } from "./ImageCropDialog";
 
 interface CircleAdminDialogProps {
@@ -181,8 +181,8 @@ export const CircleAdminDialog = ({ circle, open, onOpenChange }: CircleAdminDia
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="public">🌍 Public — Anyone can see posts</SelectItem>
-                      <SelectItem value="private">🔒 Private — Only members can see posts</SelectItem>
+                      <SelectItem value="public"><span className="inline-flex items-center gap-1.5"><Globe className="h-3.5 w-3.5" /> Public — Anyone can see posts</span></SelectItem>
+                      <SelectItem value="private"><span className="inline-flex items-center gap-1.5"><LockKeyhole className="h-3.5 w-3.5" /> Private — Only members can see posts</span></SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
