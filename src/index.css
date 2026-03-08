@@ -188,11 +188,34 @@
     font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
   }
 
-  /* Smooth scrolling */
+  /* 120Hz / high refresh rate optimizations */
   html {
     scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* GPU-accelerate all animated/transitioning elements */
+  .animate-slide-up,
+  .animate-like,
+  .shimmer,
+  [class*="animate-"],
+  [class*="transition-"] {
+    will-change: transform, opacity;
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
+    transform: translateZ(0);
+  }
+
+  /* Ensure smooth scrolling containers use compositor */
+  .overflow-y-auto,
+  .overflow-y-scroll,
+  .overflow-x-auto,
+  .overflow-x-scroll {
+    will-change: scroll-position;
+    -webkit-overflow-scrolling: touch;
   }
 
   /* Hide scrollbar but keep functionality */
