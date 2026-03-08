@@ -44,6 +44,7 @@ export const InsideCirclePage = ({ circle: initialCircle, userId, onBack }: Insi
   const isAdmin = circle.created_by === userId;
   const [bannerLoaded, setBannerLoaded] = useState(false);
   const [showAdmin, setShowAdmin] = useState(false);
+  const [viewingImage, setViewingImage] = useState<string | null>(null);
 
   const { data: members } = useQuery({
     queryKey: ["circle-members", circle.id],
