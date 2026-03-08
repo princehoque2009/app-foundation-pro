@@ -145,7 +145,11 @@ export const InsideCirclePage = ({ circle: initialCircle, userId, onBack }: Insi
         <div className="bg-card rounded-2xl border border-border/40 shadow-lg p-4">
           <div className="flex items-start gap-3">
             {/* Logo overlapping */}
-            <Avatar className="h-18 w-18 border-4 border-card shadow-md -mt-10 shrink-0" style={{ width: 72, height: 72 }}>
+            <Avatar
+              className="h-18 w-18 border-4 border-card shadow-md -mt-10 shrink-0 cursor-pointer"
+              style={{ width: 72, height: 72 }}
+              onClick={() => circle.logo_url && setViewingImage(circle.logo_url)}
+            >
               <AvatarImage src={circle.logo_url} />
               <AvatarFallback className="bg-primary text-primary-foreground text-2xl font-bold">
                 {circle.name?.charAt(0)}
