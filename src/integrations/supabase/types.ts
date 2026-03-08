@@ -1571,6 +1571,7 @@ export type Database = {
           created_at: string | null
           email_notifications: boolean | null
           id: string
+          language: string | null
           notifications_enabled: boolean | null
           theme: string | null
           two_factor_enabled: boolean | null
@@ -1581,6 +1582,7 @@ export type Database = {
           created_at?: string | null
           email_notifications?: boolean | null
           id?: string
+          language?: string | null
           notifications_enabled?: boolean | null
           theme?: string | null
           two_factor_enabled?: boolean | null
@@ -1591,6 +1593,7 @@ export type Database = {
           created_at?: string | null
           email_notifications?: boolean | null
           id?: string
+          language?: string | null
           notifications_enabled?: boolean | null
           theme?: string | null
           two_factor_enabled?: boolean | null
