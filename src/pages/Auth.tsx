@@ -463,7 +463,7 @@ const Auth = () => {
                         <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground/50" />
                         <Input
                           type={showPassword ? "text" : "password"}
-                          placeholder="At least 6 characters"
+                          placeholder="Min 8 chars, upper, lower, number, symbol"
                           value={password}
                           onChange={(e) => setPassword(e.target.value)}
                           className="h-12 pl-12 pr-12 rounded-xl bg-muted/30 border-border/50"
