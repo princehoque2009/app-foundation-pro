@@ -23,7 +23,7 @@ interface PostMenuProps {
   onShare?: () => void;
 }
 
-export const PostMenu = ({ postId, postUserId, isPinned = false, onEdit, onDelete, onShare }: PostMenuProps) => {
+export const PostMenu = ({ postId, postUserId, isPinned = false, mediaUrl, mediaType, onEdit, onDelete, onShare }: PostMenuProps) => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const isOwner = user?.id === postUserId;
