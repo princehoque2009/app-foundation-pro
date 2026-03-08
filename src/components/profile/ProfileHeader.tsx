@@ -125,7 +125,10 @@ export const ProfileHeader = ({
                 effects.hasPremiumFrame && !effects.hasNeonFrame && "ring-4 ring-amber-500 shadow-[0_0_15px_rgba(245,158,11,0.4)]",
                 effects.hasSpotlight && "shadow-[0_0_30px_rgba(249,115,22,0.6)]"
               )}>
-                <Avatar className="h-24 w-24 sm:h-28 sm:w-28 border-2 border-background">
+                <Avatar 
+                  className="h-24 w-24 sm:h-28 sm:w-28 border-2 border-background cursor-pointer"
+                  onClick={() => profile?.avatar_url && setViewingImage(profile.avatar_url)}
+                >
                   <AvatarImage 
                     src={profile?.avatar_url || ""} 
                     alt={profile?.display_name || profile?.username}
