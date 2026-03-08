@@ -12,12 +12,14 @@ interface CoverPhotoUploaderProps {
   userId: string;
   currentCoverUrl?: string | null;
   isOwner: boolean;
+  onImageClick?: (url: string) => void;
 }
 
 export const CoverPhotoUploader = ({
   userId,
   currentCoverUrl,
   isOwner,
+  onImageClick,
 }: CoverPhotoUploaderProps) => {
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -92,8 +94,9 @@ export const CoverPhotoUploader = ({
               <img
                 src={displayUrl}
                 alt="Cover"
-                className="w-full h-full object-cover"
+                className="w-full h-full object-cover cursor-pointer"
                 onLoad={() => setIsImageLoaded(true)}
+                onClick={() => displayUrl && onImageClick?.(displayUrl)}
               />
             </motion.div>
           ) : (
