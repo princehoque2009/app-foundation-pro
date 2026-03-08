@@ -26,7 +26,12 @@ const calculateAge = (dob: Date): number => {
 };
 
 const emailSchema = z.string().email("Invalid email address");
-const passwordSchema = z.string().min(6, "Password must be at least 6 characters");
+const passwordSchema = z.string()
+  .min(8, "Password must be at least 8 characters")
+  .regex(/[A-Z]/, "Must contain at least one uppercase letter")
+  .regex(/[a-z]/, "Must contain at least one lowercase letter")
+  .regex(/[0-9]/, "Must contain at least one number")
+  .regex(/[^A-Za-z0-9]/, "Must contain at least one special character");
 const usernameSchema = z.string()
   .min(3, "Username must be at least 3 characters")
   .max(30, "Username must be less than 30 characters")
@@ -458,7 +463,7 @@ const Auth = () => {
                         <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground/50" />
                         <Input
                           type={showPassword ? "text" : "password"}
-                          placeholder="At least 6 characters"
+                          placeholder="Min 8 chars, upper, lower, number, symbol"
                           value={password}
                           onChange={(e) => setPassword(e.target.value)}
                           className="h-12 pl-12 pr-12 rounded-xl bg-muted/30 border-border/50"

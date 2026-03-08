@@ -10,6 +10,7 @@ import { AppSettingsProvider } from "@/contexts/AppSettingsContext";
 import { RolesProvider } from "@/contexts/RolesContext";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { SplashScreen } from "@/components/SplashScreen";
+import { useSessionTimeout } from "@/hooks/useSessionTimeout";
 import { OnboardingSlides } from "@/components/onboarding/OnboardingSlides";
 import Home from "./pages/Home";
 import Reels from "./pages/Reels";
@@ -53,6 +54,8 @@ const queryClient = new QueryClient({
   },
 });
 
+const SessionManager = () => { useSessionTimeout(); return null; };
+
 const App = () => {
   const [showSplash, setShowSplash] = useState(true);
   const [showOnboarding, setShowOnboarding] = useState(false);
@@ -92,6 +95,7 @@ const App = () => {
           )}
           <BrowserRouter>
             <AuthProvider>
+              <SessionManager />
               <AppSettingsProvider>
                 <RolesProvider>
                   <Routes>
