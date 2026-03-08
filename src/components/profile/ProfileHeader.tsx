@@ -18,6 +18,7 @@ import { CoverPhotoUploader } from "./CoverPhotoUploader";
 import { AvatarUploader } from "./AvatarUploader";
 import { FollowersFollowingDialog } from "./FollowersFollowingDialog";
 import { cn } from "@/lib/utils";
+import { ImageViewer } from "@/components/ui/ImageViewer";
 import { motion } from "framer-motion";
 import { toast } from "@/hooks/use-toast";
 import { useActiveEffects } from "@/hooks/useActiveEffects";
