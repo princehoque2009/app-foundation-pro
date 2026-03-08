@@ -98,14 +98,12 @@ export const ProfileHeader = ({
     <>
       <div className="relative">
         {/* Hero Layer - Cover Photo with Overlay */}
-        <div 
-          className="relative h-36 sm:h-48 overflow-hidden mx-3 mt-2 rounded-xl cursor-pointer"
-          onClick={() => profile?.cover_photo_url && setViewingImage(profile.cover_photo_url)}
-        >
+        <div className="relative h-36 sm:h-48 overflow-hidden mx-3 mt-2 rounded-xl">
           <CoverPhotoUploader
             userId={userId}
             currentCoverUrl={profile?.cover_photo_url}
             isOwner={isOwner}
+            onImageClick={(url) => setViewingImage(url)}
           />
           {/* Gradient overlay for contrast */}
           <div className="absolute inset-0 bg-gradient-to-t from-background/60 via-transparent to-transparent pointer-events-none" />

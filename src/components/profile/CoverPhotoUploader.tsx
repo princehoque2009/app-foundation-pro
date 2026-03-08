@@ -94,8 +94,9 @@ export const CoverPhotoUploader = ({
               <img
                 src={displayUrl}
                 alt="Cover"
-                className="w-full h-full object-cover"
+                className="w-full h-full object-cover cursor-pointer"
                 onLoad={() => setIsImageLoaded(true)}
+                onClick={() => displayUrl && onImageClick?.(displayUrl)}
               />
             </motion.div>
           ) : (
