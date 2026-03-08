@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ArrowLeft, Lock, Settings, Globe, Users, Search, Pin, TrendingUp, Clock, Heart, MessageCircle, Filter } from "lucide-react";
+import { CircleOptionsMenu } from "./CircleOptionsMenu";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { CircleFeedPost } from "./CircleFeedPost";
 import { CircleComposer } from "./CircleComposer";
@@ -183,14 +184,17 @@ export const InsideCirclePage = ({ circle: initialCircle, userId, onBack }: Insi
         >
           <ArrowLeft className="h-5 w-5" />
         </button>
-        {isAdmin && (
-          <button
-            onClick={() => setShowAdmin(true)}
-            className="absolute top-3 right-3 p-2.5 rounded-full bg-black/40 text-white backdrop-blur-sm min-h-[44px] min-w-[44px] flex items-center justify-center z-10"
-          >
-            <Settings className="h-5 w-5" />
-          </button>
-        )}
+        {/* Three-dots menu (for all users) */}
+        <div className="absolute top-3 right-3 z-10">
+          <CircleOptionsMenu
+            circle={circle}
+            userId={userId}
+            isAdmin={isAdmin}
+            isMember={!!isMember}
+            onOpenAdmin={() => setShowAdmin(true)}
+            onBack={onBack}
+          />
+        </div>
       </div>
 
       {/* Circle Info Card */}

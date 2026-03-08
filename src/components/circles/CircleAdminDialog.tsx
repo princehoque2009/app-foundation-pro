@@ -74,14 +74,36 @@ export const CircleAdminDialog = ({ circle, open, onOpenChange }: CircleAdminDia
     setSaving(false);
   };
 
-  const handleRoleChange = async (memberId: string, newRole: string) => {
+  const handleRoleChange = async (memberId: string, memberUserId: string, newRole: string) => {
     await supabase.from("community_group_members").update({ role: newRole }).eq("id", memberId);
+    // Notify the member
+    if (memberUserId) {
+      await supabase.rpc("create_notification", {
+        p_user_id: memberUserId,
+        p_from_user_id: circle.created_by,
+        p_type: "circle_role",
+        p_title: "Role updated",
+        p_message: `Your role in "${circle.name}" was changed to ${newRole}`,
+        p_action_url: `/circles`,
+      });
+    }
     queryClient.invalidateQueries({ queryKey: ["circle-members", circle.id] });
     toast({ title: `Role updated to ${newRole}` });
   };
 
-  const handleRemoveMember = async (memberId: string) => {
+  const handleRemoveMember = async (memberId: string, memberUserId: string) => {
     await supabase.from("community_group_members").delete().eq("id", memberId);
+    // Notify the removed member
+    if (memberUserId) {
+      await supabase.rpc("create_notification", {
+        p_user_id: memberUserId,
+        p_from_user_id: circle.created_by,
+        p_type: "circle_remove",
+        p_title: "Removed from circle",
+        p_message: `You were removed from "${circle.name}"`,
+        p_action_url: `/circles`,
+      });
+    }
     queryClient.invalidateQueries({ queryKey: ["circle-members", circle.id] });
     toast({ title: "Member removed" });
   };
@@ -198,16 +220,16 @@ export const CircleAdminDialog = ({ circle, open, onOpenChange }: CircleAdminDia
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end" className="w-44">
                             {m.role !== "moderator" && (
-                              <DropdownMenuItem onClick={() => handleRoleChange(m.id, "moderator")}>
+                              <DropdownMenuItem onClick={() => handleRoleChange(m.id, m.user_id, "moderator")}>
                                 <Shield className="h-3.5 w-3.5 mr-2" /> Promote to Mod
                               </DropdownMenuItem>
                             )}
                             {m.role === "moderator" && (
-                              <DropdownMenuItem onClick={() => handleRoleChange(m.id, "member")}>
+                              <DropdownMenuItem onClick={() => handleRoleChange(m.id, m.user_id, "member")}>
                                 <ChevronDown className="h-3.5 w-3.5 mr-2" /> Demote to Member
                               </DropdownMenuItem>
                             )}
-                            <DropdownMenuItem onClick={() => handleRemoveMember(m.id)} className="text-destructive">
+                            <DropdownMenuItem onClick={() => handleRemoveMember(m.id, m.user_id)} className="text-destructive">
                               <UserMinus className="h-3.5 w-3.5 mr-2" /> Remove
                             </DropdownMenuItem>
                           </DropdownMenuContent>
