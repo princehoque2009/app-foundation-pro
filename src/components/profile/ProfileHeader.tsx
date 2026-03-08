@@ -96,7 +96,7 @@ export const ProfileHeader = ({
     <>
       <div className="relative">
         {/* Hero Layer - Cover Photo with Overlay */}
-        <div className="relative h-36 sm:h-48 overflow-hidden" style={{ borderRadius: "0 0 28px 28px" }}>
+        <div className="relative h-36 sm:h-48 overflow-hidden mx-3 mt-2 rounded-xl">
           <CoverPhotoUploader
             userId={userId}
             currentCoverUrl={profile?.cover_photo_url}
