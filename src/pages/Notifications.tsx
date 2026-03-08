@@ -19,7 +19,7 @@ const Notifications = () => {
           >
             <ArrowLeft className="h-5 w-5" />
           </button>
-          <h1 className="text-xl font-bold">Notifications</h1>
+          <h1 className="text-xl font-bold">{t("notifications.title")}</h1>
         </div>
         <NotificationsList />
       </div>
