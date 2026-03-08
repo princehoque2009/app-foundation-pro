@@ -327,30 +327,81 @@ export const PostCard = ({ id, author, content, image, video, mediaItems, likes,
             </div>
           )}
 
+          {/* Reaction Summary Row */}
+          {reactionData && reactionData.totalCount > 0 && (
+            <button
+              onClick={() => setShowReactionBreakdown(true)}
+              className="flex items-center gap-1.5 px-4 pb-1 hover:opacity-80 transition-opacity"
+            >
+              <div className="flex -space-x-0.5">
+                {Object.entries(reactionData.counts)
+                  .sort((a, b) => b[1] - a[1])
+                  .slice(0, 3)
+                  .map(([key]) => (
+                    <span key={key} className="text-sm">{getEmojiForReaction(key)}</span>
+                  ))}
+              </div>
+              <span className="text-xs text-muted-foreground font-medium">
+                {reactionData.totalCount} {reactionData.totalCount === 1 ? "reaction" : "reactions"}
+              </span>
+            </button>
+          )}
+
           {/* Post Actions */}
           <div className="p-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-0.5">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="gap-1.5 h-10 px-3 rounded-full hover:bg-primary/10 transition-all"
-                  onClick={handleLike}
-                  disabled={toggleLike.isPending}
-                >
-                  <Heart
-                    className={cn(
-                      "h-6 w-6 transition-all",
-                      isLiked && "fill-primary text-primary animate-like"
-                    )}
-                  />
-                  <span className={cn(
-                    "text-sm font-semibold tabular-nums",
-                    isLiked && "text-primary"
-                  )}>
-                    {likes}
-                  </span>
-                </Button>
+                {/* Reaction button with long-press picker */}
+                <Popover open={showReactionPicker} onOpenChange={setShowReactionPicker}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className={cn(
+                        "gap-1.5 h-10 px-3 rounded-full hover:bg-primary/10 transition-all",
+                        myReaction && "text-primary"
+                      )}
+                      onClick={handleQuickReact}
+                      onMouseDown={handleLongPressStart}
+                      onMouseUp={handleLongPressEnd}
+                      onMouseLeave={handleLongPressEnd}
+                      onTouchStart={handleLongPressStart}
+                      onTouchEnd={handleLongPressEnd}
+                      disabled={toggleReaction.isPending}
+                    >
+                      {myReaction ? (
+                        <span className="text-xl leading-none">{getEmojiForReaction(myReaction)}</span>
+                      ) : (
+                        <Heart className="h-6 w-6" />
+                      )}
+                      <span className={cn(
+                        "text-sm font-semibold tabular-nums",
+                        myReaction && "text-primary"
+                      )}>
+                        {reactionData?.totalCount || likes}
+                      </span>
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-1.5" side="top" align="start">
+                    <div className="flex gap-0.5">
+                      {REACTION_TYPES.map(r => (
+                        <button
+                          key={r.key}
+                          onClick={() => handleReact(r.key)}
+                          className={cn(
+                            "text-2xl p-2 rounded-xl hover:bg-muted transition-all hover:scale-125",
+                            "focus:outline-none active:scale-95",
+                            myReaction === r.key && "bg-primary/10 scale-110"
+                          )}
+                          title={r.label}
+                        >
+                          {r.emoji}
+                        </button>
+                      ))}
+                    </div>
+                  </PopoverContent>
+                </Popover>
+
                 <Button 
                   variant="ghost" 
                   size="sm" 
@@ -423,6 +474,14 @@ export const PostCard = ({ id, author, content, image, video, mediaItems, likes,
         onOpenChange={setShowGiftDialog}
         recipientId={author.userId || userProfile?.id || ""}
         recipientName={author.name}
+      />
+
+      <ReactionBreakdownDialog
+        postId={id}
+        open={showReactionBreakdown}
+        onOpenChange={setShowReactionBreakdown}
+        counts={reactionData?.counts || {}}
+        totalCount={reactionData?.totalCount || 0}
       />
     </>
   );
