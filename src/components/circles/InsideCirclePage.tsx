@@ -110,9 +110,10 @@ export const InsideCirclePage = ({ circle: initialCircle, userId, onBack }: Insi
               <img
                 src={circle.banner_url}
                 alt=""
-                className={`w-full h-48 object-cover ${bannerLoaded ? "" : "hidden"}`}
+                className={`w-full h-48 object-cover cursor-pointer ${bannerLoaded ? "" : "hidden"}`}
                 loading="eager"
                 onLoad={() => setBannerLoaded(true)}
+                onClick={() => setViewingImage(circle.banner_url)}
               />
             </>
           ) : (
