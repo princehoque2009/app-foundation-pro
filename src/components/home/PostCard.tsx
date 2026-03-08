@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Heart, MessageCircle, Share2, Bookmark, UserCircle, Gift } from "lucide-react";
 import { useState, useRef, useCallback } from "react";
-import { usePostReactions, useToggleReaction, REACTION_TYPES, getEmojiForReaction, ReactionKey } from "@/hooks/usePostReactions";
+import { usePostReactions, useToggleReaction, REACTION_TYPES, getEmojiForReaction, type ReactionKey } from "@/hooks/usePostReactions";
 import { formatDistanceToNow } from "date-fns";
 import { CommentsDialog } from "./CommentsDialog";
 import { ReactionBreakdownDialog } from "./ReactionBreakdownDialog";
