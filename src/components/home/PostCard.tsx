@@ -82,19 +82,46 @@ export const PostCard = ({ id, author, content, image, video, mediaItems, likes,
     },
   });
 
-  const handleLike = () => {
-    if (!isLiked) {
+  const myReaction = reactionData?.myReaction || null;
+
+  const handleReact = (reaction: ReactionKey) => {
+    if (!myReaction) {
       setShowHeartAnimation(true);
       setTimeout(() => setShowHeartAnimation(false), 1000);
     }
-    toggleLike.mutate(isLiked);
+    toggleReaction.mutate({ reaction, currentReaction: myReaction });
+    setShowReactionPicker(false);
+  };
+
+  const handleQuickReact = () => {
+    if (myReaction) {
+      // Remove reaction
+      toggleReaction.mutate({ reaction: null, currentReaction: myReaction });
+    } else {
+      setShowHeartAnimation(true);
+      setTimeout(() => setShowHeartAnimation(false), 1000);
+      toggleReaction.mutate({ reaction: "like", currentReaction: null });
+    }
   };
 
   const handleDoubleTap = () => {
-    if (!isLiked) {
-      handleLike();
+    if (!myReaction) {
+      handleReact("like");
     }
   };
+
+  const handleLongPressStart = useCallback(() => {
+    longPressTimer.current = setTimeout(() => {
+      setShowReactionPicker(true);
+    }, 400);
+  }, []);
+
+  const handleLongPressEnd = useCallback(() => {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
+  }, []);
 
   const handleProfileClick = () => {
     if (userProfile?.id) {
