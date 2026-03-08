@@ -168,6 +168,7 @@ export const CircleFeedPost = ({ post, circle, userId, isAdmin, onDelete, poster
                 className="w-full rounded-2xl object-cover max-h-96"
                 controls
                 preload="metadata"
+                playsInline
               />
             ) : (
               <>
@@ -176,7 +177,9 @@ export const CircleFeedPost = ({ post, circle, userId, isAdmin, onDelete, poster
                   src={post.media_url}
                   className={`w-full rounded-2xl object-cover max-h-96 ${imgLoaded ? "" : "hidden"}`}
                   alt=""
-                  loading="lazy"
+                  loading="eager"
+                  decoding="async"
+                  fetchPriority="high"
                   onLoad={() => setImgLoaded(true)}
                 />
               </>
