@@ -301,6 +301,13 @@ export const ProfileHeader = ({
         followersCount={profile?.followers_count || 0}
         followingCount={profile?.following_count || 0}
       />
+
+      {/* Full Image Viewer */}
+      <ImageViewer
+        src={viewingImage || ""}
+        open={!!viewingImage}
+        onOpenChange={(open) => !open && setViewingImage(null)}
+      />
     </>
   );
 };
