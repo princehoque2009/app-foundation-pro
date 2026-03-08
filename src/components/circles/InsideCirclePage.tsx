@@ -90,7 +90,7 @@ export const InsideCirclePage = ({ circle: initialCircle, userId, onBack }: Insi
     queryKey: ["circle-poster-profiles", circle.id, posterIds.join(",")],
     queryFn: async () => {
       if (posterIds.length === 0) return {};
-      const { data } = await supabase.from("profiles").select("id, avatar_url, display_name, username").in("id", posterIds as string[]);
+      const { data } = await supabase.from("profiles").select("id, avatar_url, display_name, username, is_verified").in("id", posterIds as string[]);
       const map: Record<string, any> = {};
       data?.forEach((p: any) => { map[p.id] = p; });
       return map;

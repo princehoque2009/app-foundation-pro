@@ -11,6 +11,7 @@ import { formatDistanceToNow } from "date-fns";
 import { Send, MessageCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
+import { VerifiedBadge } from "@/components/ui/VerifiedBadge";
 
 interface CircleCommentsDialogProps {
   postId: string;
@@ -48,7 +49,7 @@ export const CircleCommentsDialog = ({ postId, circleId, open, onOpenChange }: C
       const userIds = [...new Set((data as any[]).map((c: any) => c.user_id))];
       const { data: profiles } = await supabase
         .from("profiles")
-        .select("id, avatar_url, display_name, username")
+        .select("id, avatar_url, display_name, username, is_verified")
         .in("id", userIds as string[]);
       const profileMap: Record<string, any> = {};
       profiles?.forEach((p: any) => { profileMap[p.id] = p; });
@@ -110,12 +111,15 @@ export const CircleCommentsDialog = ({ postId, circleId, open, onOpenChange }: C
                   </Avatar>
                   <div className="flex-1 min-w-0">
                     <div className="bg-muted/40 rounded-2xl px-3 py-2 inline-block max-w-full">
-                      <button
-                        onClick={() => navigate(`/profile/${c.user_id}`)}
-                        className="text-xs font-semibold hover:underline"
-                      >
-                        {c.profile?.display_name || c.profile?.username || "User"}
-                      </button>
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={() => navigate(`/profile/${c.user_id}`)}
+                          className="text-xs font-semibold hover:underline"
+                        >
+                          {c.profile?.display_name || c.profile?.username || "User"}
+                        </button>
+                        {c.profile?.is_verified && <VerifiedBadge size="sm" />}
+                      </div>
                       <p className="text-sm break-words">{c.content}</p>
                     </div>
                     <p className="text-[10px] text-muted-foreground mt-1 ml-1">
