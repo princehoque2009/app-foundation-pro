@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -18,6 +18,7 @@ import { CoverPhotoUploader } from "./CoverPhotoUploader";
 import { AvatarUploader } from "./AvatarUploader";
 import { FollowersFollowingDialog } from "./FollowersFollowingDialog";
 import { cn } from "@/lib/utils";
+import { ImageViewer } from "@/components/ui/ImageViewer";
 import { motion } from "framer-motion";
 import { toast } from "@/hooks/use-toast";
 import { useActiveEffects } from "@/hooks/useActiveEffects";
@@ -47,6 +48,7 @@ export const ProfileHeader = ({
   const [isAvatarUploaderOpen, setIsAvatarUploaderOpen] = useState(false);
   const [isFollowersDialogOpen, setIsFollowersDialogOpen] = useState(false);
   const [followersDialogTab, setFollowersDialogTab] = useState<"followers" | "following">("followers");
+  const [viewingImage, setViewingImage] = useState<string | null>(null);
   const { effects } = useActiveEffects(userId);
 
   const openFollowersDialog = (tab: "followers" | "following") => {
@@ -96,7 +98,10 @@ export const ProfileHeader = ({
     <>
       <div className="relative">
         {/* Hero Layer - Cover Photo with Overlay */}
-        <div className="relative h-36 sm:h-48 overflow-hidden mx-3 mt-2 rounded-xl">
+        <div 
+          className="relative h-36 sm:h-48 overflow-hidden mx-3 mt-2 rounded-xl cursor-pointer"
+          onClick={() => profile?.cover_photo_url && setViewingImage(profile.cover_photo_url)}
+        >
           <CoverPhotoUploader
             userId={userId}
             currentCoverUrl={profile?.cover_photo_url}
@@ -123,7 +128,10 @@ export const ProfileHeader = ({
                 effects.hasPremiumFrame && !effects.hasNeonFrame && "ring-4 ring-amber-500 shadow-[0_0_15px_rgba(245,158,11,0.4)]",
                 effects.hasSpotlight && "shadow-[0_0_30px_rgba(249,115,22,0.6)]"
               )}>
-                <Avatar className="h-24 w-24 sm:h-28 sm:w-28 border-2 border-background">
+                <Avatar 
+                  className="h-24 w-24 sm:h-28 sm:w-28 border-2 border-background cursor-pointer"
+                  onClick={() => profile?.avatar_url && setViewingImage(profile.avatar_url)}
+                >
                   <AvatarImage 
                     src={profile?.avatar_url || ""} 
                     alt={profile?.display_name || profile?.username}
@@ -292,6 +300,13 @@ export const ProfileHeader = ({
         initialTab={followersDialogTab}
         followersCount={profile?.followers_count || 0}
         followingCount={profile?.following_count || 0}
+      />
+
+      {/* Full Image Viewer */}
+      <ImageViewer
+        src={viewingImage || ""}
+        open={!!viewingImage}
+        onOpenChange={(open) => !open && setViewingImage(null)}
       />
     </>
   );
