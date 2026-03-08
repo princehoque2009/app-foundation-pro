@@ -74,8 +74,19 @@ export const CircleAdminDialog = ({ circle, open, onOpenChange }: CircleAdminDia
     setSaving(false);
   };
 
-  const handleRoleChange = async (memberId: string, newRole: string) => {
+  const handleRoleChange = async (memberId: string, memberUserId: string, newRole: string) => {
     await supabase.from("community_group_members").update({ role: newRole }).eq("id", memberId);
+    // Notify the member
+    if (memberUserId) {
+      await supabase.rpc("create_notification", {
+        p_user_id: memberUserId,
+        p_from_user_id: circle.created_by,
+        p_type: "circle_role",
+        p_title: "Role updated",
+        p_message: `Your role in "${circle.name}" was changed to ${newRole}`,
+        p_action_url: `/circles`,
+      });
+    }
     queryClient.invalidateQueries({ queryKey: ["circle-members", circle.id] });
     toast({ title: `Role updated to ${newRole}` });
   };
