@@ -48,6 +48,7 @@ export const ProfileHeader = ({
   const [isAvatarUploaderOpen, setIsAvatarUploaderOpen] = useState(false);
   const [isFollowersDialogOpen, setIsFollowersDialogOpen] = useState(false);
   const [followersDialogTab, setFollowersDialogTab] = useState<"followers" | "following">("followers");
+  const [viewingImage, setViewingImage] = useState<string | null>(null);
   const { effects } = useActiveEffects(userId);
 
   const openFollowersDialog = (tab: "followers" | "following") => {
