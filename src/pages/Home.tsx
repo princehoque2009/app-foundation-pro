@@ -6,11 +6,13 @@ import { usePosts } from "@/hooks/usePosts";
 import { PostSkeleton, StorySkeleton } from "@/components/ui/Shimmer";
 import { SmartFeedAd } from "@/components/ads/SmartFeedAd";
 import { Fragment } from "react";
+import { useTranslation } from "react-i18next";
 
 const AD_INTERVAL = 7;
 
 const Home = () => {
   const { data: posts, isLoading } = usePosts(false);
+  const { t } = useTranslation();
 
   return (
     <MainLayout>
@@ -30,7 +32,7 @@ const Home = () => {
             </div>
           ) : !posts || posts.length === 0 ? (
             <div className="text-center py-12">
-              <p className="text-muted-foreground">No posts yet. Be the first to share!</p>
+              <p className="text-muted-foreground">{t("home.noPosts")}</p>
             </div>
           ) : (
             posts.map((post: any, index: number) => (

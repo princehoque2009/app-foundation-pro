@@ -2,9 +2,11 @@ import { MainLayout } from "@/components/layout/MainLayout";
 import { NotificationsList } from "@/components/notifications/NotificationsList";
 import { ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
 const Notifications = () => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   return (
     <MainLayout showBottomNav={false}>
@@ -17,7 +19,7 @@ const Notifications = () => {
           >
             <ArrowLeft className="h-5 w-5" />
           </button>
-          <h1 className="text-xl font-bold">Notifications</h1>
+          <h1 className="text-xl font-bold">{t("notifications.title")}</h1>
         </div>
         <NotificationsList />
       </div>

@@ -3,14 +3,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-
-const navItems = [
-  { icon: Home, label: "Home", path: "/" },
-  { icon: Clapperboard, label: "Reels", path: "/reels" },
-  // center FAB placeholder
-  { icon: CircleDot, label: "Circles", path: "/circles" },
-  { icon: CircleUserRound, label: "Me", path: "/profile" },
-];
+import { useTranslation } from "react-i18next";
 
 const ACTIVE = "#FF5A5F";
 const INACTIVE = "#B0B0B0";
@@ -19,6 +12,14 @@ export const BottomNav = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const [showCreate, setShowCreate] = useState(false);
+  const { t } = useTranslation();
+
+  const navItems = [
+    { icon: Home, label: t("nav.home"), path: "/" },
+    { icon: Clapperboard, label: t("nav.reels"), path: "/reels" },
+    { icon: CircleDot, label: t("nav.circles"), path: "/circles" },
+    { icon: CircleUserRound, label: t("nav.profile"), path: "/profile" },
+  ];
 
   return (
     <>
@@ -41,7 +42,6 @@ export const BottomNav = () => {
             <div className="grid grid-cols-5 h-[66px] items-center">
               {navItems.map(({ icon: Icon, label, path }, index) => {
                 const isActive = location.pathname === path;
-                // Insert center spacer at index 2
                 const col = index >= 2 ? index + 1 : index;
 
                 return (
@@ -88,12 +88,12 @@ export const BottomNav = () => {
       <Dialog open={showCreate} onOpenChange={setShowCreate}>
         <DialogContent className="max-w-[320px] rounded-2xl">
           <DialogHeader>
-            <DialogTitle className="text-center text-lg">Create</DialogTitle>
+            <DialogTitle className="text-center text-lg">{t("nav.create")}</DialogTitle>
           </DialogHeader>
           <div className="flex flex-col gap-1 pt-2">
             {[
-              { label: "New Post", desc: "Share a photo or text", path: "/create" },
-              { label: "New Reel", desc: "Record a short video", path: "/create" },
+              { label: t("create.title"), desc: t("create.addPhoto"), path: "/create" },
+              { label: t("nav.reels"), desc: t("create.addVideo"), path: "/create" },
             ].map((item) => (
               <button
                 key={item.label}
