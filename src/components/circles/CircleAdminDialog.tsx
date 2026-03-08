@@ -91,8 +91,19 @@ export const CircleAdminDialog = ({ circle, open, onOpenChange }: CircleAdminDia
     toast({ title: `Role updated to ${newRole}` });
   };
 
-  const handleRemoveMember = async (memberId: string) => {
+  const handleRemoveMember = async (memberId: string, memberUserId: string) => {
     await supabase.from("community_group_members").delete().eq("id", memberId);
+    // Notify the removed member
+    if (memberUserId) {
+      await supabase.rpc("create_notification", {
+        p_user_id: memberUserId,
+        p_from_user_id: circle.created_by,
+        p_type: "circle_remove",
+        p_title: "Removed from circle",
+        p_message: `You were removed from "${circle.name}"`,
+        p_action_url: `/circles`,
+      });
+    }
     queryClient.invalidateQueries({ queryKey: ["circle-members", circle.id] });
     toast({ title: "Member removed" });
   };

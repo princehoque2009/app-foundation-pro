@@ -30,6 +30,17 @@ export const CircleOptionsMenu = ({ circle, userId, isAdmin, isMember, onOpenAdm
     if (!userId) return;
     setSubmitting(true);
     await supabase.from("community_group_members").delete().eq("group_id", circle.id).eq("user_id", userId);
+    // Notify admin
+    if (circle.created_by && circle.created_by !== userId) {
+      await supabase.rpc("create_notification", {
+        p_user_id: circle.created_by,
+        p_from_user_id: userId,
+        p_type: "circle_leave",
+        p_title: "Member left",
+        p_message: `A member left your circle "${circle.name}"`,
+        p_action_url: `/circles`,
+      });
+    }
     queryClient.invalidateQueries({ queryKey: ["circle-members", circle.id] });
     queryClient.invalidateQueries({ queryKey: ["circles"] });
     toast({ title: "You left this circle" });
