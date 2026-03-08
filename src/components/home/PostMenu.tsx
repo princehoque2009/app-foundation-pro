@@ -16,6 +16,8 @@ interface PostMenuProps {
   postId: string;
   postUserId: string;
   isPinned?: boolean;
+  mediaUrl?: string;
+  mediaType?: string;
   onEdit?: () => void;
   onDelete?: () => void;
   onShare?: () => void;
