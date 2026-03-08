@@ -10,6 +10,7 @@ import { AppSettingsProvider } from "@/contexts/AppSettingsContext";
 import { RolesProvider } from "@/contexts/RolesContext";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { SplashScreen } from "@/components/SplashScreen";
+import { useSessionTimeout } from "@/hooks/useSessionTimeout";
 import { OnboardingSlides } from "@/components/onboarding/OnboardingSlides";
 import Home from "./pages/Home";
 import Reels from "./pages/Reels";
