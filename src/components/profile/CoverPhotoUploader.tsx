@@ -19,6 +19,7 @@ export const CoverPhotoUploader = ({
   userId,
   currentCoverUrl,
   isOwner,
+  onImageClick,
 }: CoverPhotoUploaderProps) => {
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
