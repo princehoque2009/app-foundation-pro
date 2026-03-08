@@ -51,6 +51,9 @@ export const PostCard = ({ id, author, content, image, video, mediaItems, likes,
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showHeartAnimation, setShowHeartAnimation] = useState(false);
   const [showGiftDialog, setShowGiftDialog] = useState(false);
+  const [showReactionBreakdown, setShowReactionBreakdown] = useState(false);
+  const [showReactionPicker, setShowReactionPicker] = useState(false);
+  const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { user } = useAuth();
@@ -60,12 +63,10 @@ export const PostCard = ({ id, author, content, image, video, mediaItems, likes,
   const { effects: authorEffects } = useActiveEffects(author.userId);
   const [isImageLoaded, setIsImageLoaded] = useState(false);
   
-  const { data: likeData } = usePostLikes(id);
-  const toggleLike = useToggleLike(id);
+  const { data: reactionData } = usePostReactions(id);
+  const toggleReaction = useToggleReaction(id);
   const { savePost, unsavePost } = useSavedPosts();
   const { data: isSaved } = useIsPostSaved(id);
-  
-  const isLiked = likeData?.isLiked || false;
 
   const { data: userProfile } = useQuery({
     queryKey: ["user-by-username", author.username],
