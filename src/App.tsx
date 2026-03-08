@@ -42,6 +42,7 @@ import ManageInfo from "./pages/ManageInfo";
 import Lab from "./pages/Lab";
 import SuspendedAccount from "./pages/SuspendedAccount";
 import Wallet from "./pages/Wallet";
+import PostView from "./pages/PostView";
 
 const queryClient = new QueryClient({
   defaultOptions: {
