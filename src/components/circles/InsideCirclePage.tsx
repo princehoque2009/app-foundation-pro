@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ArrowLeft, Lock, Settings, Globe, Users, Search, Pin, TrendingUp, Clock, Heart, MessageCircle, Filter } from "lucide-react";
+import { CircleOptionsMenu } from "./CircleOptionsMenu";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { CircleFeedPost } from "./CircleFeedPost";
 import { CircleComposer } from "./CircleComposer";
