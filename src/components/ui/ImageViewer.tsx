@@ -87,7 +87,7 @@ export const ImageViewer = ({ src, alt, open, onOpenChange }: ImageViewerProps) 
           className="absolute top-4 left-4 z-50 p-3 rounded-full bg-black/60 text-white hover:bg-black/80 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center backdrop-blur-sm"
           aria-label="Go back"
         >
-          <X className="h-6 w-6" />
+          <ArrowLeft className="h-6 w-6" />
         </button>
 
         {/* Image container */}
