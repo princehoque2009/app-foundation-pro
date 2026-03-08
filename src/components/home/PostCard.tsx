@@ -2,10 +2,11 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Heart, MessageCircle, Share2, Bookmark, UserCircle, Gift } from "lucide-react";
-import { useState } from "react";
-import { useToggleLike, usePostLikes } from "@/hooks/usePostInteractions";
+import { useState, useRef, useCallback } from "react";
+import { usePostReactions, useToggleReaction, REACTION_TYPES, getEmojiForReaction, ReactionKey } from "@/hooks/usePostReactions";
 import { formatDistanceToNow } from "date-fns";
 import { CommentsDialog } from "./CommentsDialog";
+import { ReactionBreakdownDialog } from "./ReactionBreakdownDialog";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -25,6 +26,7 @@ import { GiftPrangsPostDialog } from "@/components/wallet/GiftPrangsPostDialog";
 import { useActiveEffects } from "@/hooks/useActiveEffects";
 import { PrangonVideoPlayer } from "@/components/video/PrangonVideoPlayer";
 import { RenderMentions } from "@/components/ui/RenderMentions";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 interface PostCardProps {
   id: string;
