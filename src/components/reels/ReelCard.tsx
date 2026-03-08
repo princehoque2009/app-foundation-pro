@@ -110,6 +110,8 @@ export const ReelCard = memo(({
             <PostMenu 
               postId={id} 
               postUserId={author.username} 
+              mediaUrl={videoUrl}
+              mediaType="video"
               onEdit={handleEdit}
               onDelete={handleDelete}
             />
