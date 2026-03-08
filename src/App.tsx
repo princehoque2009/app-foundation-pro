@@ -54,6 +54,8 @@ const queryClient = new QueryClient({
   },
 });
 
+const SessionManager = () => { useSessionTimeout(); return null; };
+
 const App = () => {
   const [showSplash, setShowSplash] = useState(true);
   const [showOnboarding, setShowOnboarding] = useState(false);
