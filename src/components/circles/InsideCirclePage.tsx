@@ -354,6 +354,12 @@ export const InsideCirclePage = ({ circle: initialCircle, userId, onBack }: Insi
       {isAdmin && (
         <CircleAdminDialog circle={circle} open={showAdmin} onOpenChange={setShowAdmin} />
       )}
+
+      <ImageViewer
+        src={viewingImage || ""}
+        open={!!viewingImage}
+        onOpenChange={(open) => !open && setViewingImage(null)}
+      />
     </div>
   );
 };
