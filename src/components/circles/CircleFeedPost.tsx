@@ -145,6 +145,11 @@ export const CircleFeedPost = ({ post, circle, userId, isAdmin, onDelete, poster
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
+                {onPin && (
+                  <DropdownMenuItem onClick={onPin}>
+                    <Pin className="h-4 w-4 mr-2" /> {post.is_pinned ? "Unpin" : "Pin"}
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuItem onClick={() => onDelete(post.id)} className="text-destructive">
                   <Trash2 className="h-4 w-4 mr-2" /> Delete
                 </DropdownMenuItem>
