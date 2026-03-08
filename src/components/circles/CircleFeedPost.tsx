@@ -17,9 +17,10 @@ interface CircleFeedPostProps {
   onDelete: (postId: string) => void;
   posterProfile?: { avatar_url?: string; display_name?: string; username?: string } | null;
   onOpenCircle?: (circle: any) => void;
+  onPin?: () => void;
 }
 
-export const CircleFeedPost = ({ post, circle, userId, isAdmin, onDelete, posterProfile, onOpenCircle }: CircleFeedPostProps) => {
+export const CircleFeedPost = ({ post, circle, userId, isAdmin, onDelete, posterProfile, onOpenCircle, onPin }: CircleFeedPostProps) => {
   const canDelete = isAdmin || post.user_id === userId;
   const [imgLoaded, setImgLoaded] = useState(false);
   const [showComments, setShowComments] = useState(false);
