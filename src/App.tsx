@@ -93,6 +93,7 @@ const App = () => {
           )}
           <BrowserRouter>
             <AuthProvider>
+              <SessionManager />
               <AppSettingsProvider>
                 <RolesProvider>
                   <Routes>
