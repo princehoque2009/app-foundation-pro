@@ -6,6 +6,7 @@ import { usePosts } from "@/hooks/usePosts";
 import { PostSkeleton, StorySkeleton } from "@/components/ui/Shimmer";
 import { SmartFeedAd } from "@/components/ads/SmartFeedAd";
 import { Fragment } from "react";
+import { useTranslation } from "react-i18next";
 
 const AD_INTERVAL = 7;
 
