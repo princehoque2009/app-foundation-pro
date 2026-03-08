@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { MoreVertical, Heart, MessageCircle, Share2, Trash2 } from "lucide-react";
+import { MoreVertical, Heart, MessageCircle, Share2, Trash2, Pin } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { formatDistanceToNow } from "date-fns";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -17,9 +17,10 @@ interface CircleFeedPostProps {
   onDelete: (postId: string) => void;
   posterProfile?: { avatar_url?: string; display_name?: string; username?: string } | null;
   onOpenCircle?: (circle: any) => void;
+  onPin?: () => void;
 }
 
-export const CircleFeedPost = ({ post, circle, userId, isAdmin, onDelete, posterProfile, onOpenCircle }: CircleFeedPostProps) => {
+export const CircleFeedPost = ({ post, circle, userId, isAdmin, onDelete, posterProfile, onOpenCircle, onPin }: CircleFeedPostProps) => {
   const canDelete = isAdmin || post.user_id === userId;
   const [imgLoaded, setImgLoaded] = useState(false);
   const [showComments, setShowComments] = useState(false);
@@ -144,6 +145,11 @@ export const CircleFeedPost = ({ post, circle, userId, isAdmin, onDelete, poster
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
+                {onPin && (
+                  <DropdownMenuItem onClick={onPin}>
+                    <Pin className="h-4 w-4 mr-2" /> {post.is_pinned ? "Unpin" : "Pin"}
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuItem onClick={() => onDelete(post.id)} className="text-destructive">
                   <Trash2 className="h-4 w-4 mr-2" /> Delete
                 </DropdownMenuItem>
