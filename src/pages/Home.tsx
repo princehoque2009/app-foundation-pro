@@ -12,6 +12,7 @@ const AD_INTERVAL = 7;
 
 const Home = () => {
   const { data: posts, isLoading } = usePosts(false);
+  const { t } = useTranslation();
 
   return (
     <MainLayout>
