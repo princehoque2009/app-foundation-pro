@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import { MoreVertical, Shield, UserMinus, ChevronDown, Upload, Loader2, Save } from "lucide-react";
+import { MoreVertical, Shield, UserMinus, ChevronDown, Upload, Loader2, Save, Globe, LockKeyhole } from "lucide-react";
 import { ImageCropDialog } from "./ImageCropDialog";
 
 interface CircleAdminDialogProps {
