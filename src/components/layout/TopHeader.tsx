@@ -24,7 +24,9 @@ export const TopHeader = () => {
           <img 
             src={prangonLogo} 
             alt="Prangon" 
-            className="h-8 object-contain"
+            className="h-8 object-contain pointer-events-none select-none"
+            draggable={false}
+            onContextMenu={(e) => e.preventDefault()}
           />
         </Link>
         <div className="flex items-center gap-1">
