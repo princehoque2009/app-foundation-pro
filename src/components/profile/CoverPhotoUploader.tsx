@@ -12,6 +12,7 @@ interface CoverPhotoUploaderProps {
   userId: string;
   currentCoverUrl?: string | null;
   isOwner: boolean;
+  onImageClick?: (url: string) => void;
 }
 
 export const CoverPhotoUploader = ({
