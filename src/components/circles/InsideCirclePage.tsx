@@ -11,6 +11,7 @@ import { ArrowLeft, Lock, Settings, Globe, Users } from "lucide-react";
 import { CircleFeedPost } from "./CircleFeedPost";
 import { CircleComposer } from "./CircleComposer";
 import { CircleAdminDialog } from "./CircleAdminDialog";
+import { ImageViewer } from "@/components/ui/ImageViewer";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 
