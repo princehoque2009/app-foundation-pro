@@ -182,7 +182,7 @@ export const CircleAdminDialog = ({ circle, open, onOpenChange }: CircleAdminDia
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="public"><span className="inline-flex items-center gap-1.5"><Globe className="h-3.5 w-3.5" /> Public — Anyone can see posts</span></SelectItem>
-                      <SelectItem value="private"><span className="inline-flex items-center gap-1.5"><Lock className="h-3.5 w-3.5" /> Private — Only members can see posts</span></SelectItem>
+                      <SelectItem value="private"><span className="inline-flex items-center gap-1.5"><LockKeyhole className="h-3.5 w-3.5" /> Private — Only members can see posts</span></SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
