@@ -132,6 +132,7 @@ const App = () => {
                   <Route path="/cookies-policy" element={<CookiesPolicy />} />
                   <Route path="/manage-info" element={<ManageInfo />} />
                   <Route path="/wallet" element={<ProtectedRoute><Wallet /></ProtectedRoute>} />
+                  <Route path="/post/:postId" element={<ProtectedRoute><PostView /></ProtectedRoute>} />
                   <Route path="/suspended" element={<SuspendedAccount />} />
                   <Route path="*" element={<NotFound />} />
                   </Routes>
