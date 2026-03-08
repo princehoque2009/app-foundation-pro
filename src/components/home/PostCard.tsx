@@ -238,6 +238,8 @@ export const PostCard = ({ id, author, content, image, video, mediaItems, likes,
             <PostMenu 
               postId={id} 
               postUserId={userProfile?.id || ""} 
+              mediaUrl={image || video}
+              mediaType={video ? "video" : "image"}
               onEdit={handleEdit}
               onDelete={handleDelete}
               onShare={handleShare}

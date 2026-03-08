@@ -16,12 +16,14 @@ interface PostMenuProps {
   postId: string;
   postUserId: string;
   isPinned?: boolean;
+  mediaUrl?: string;
+  mediaType?: string;
   onEdit?: () => void;
   onDelete?: () => void;
   onShare?: () => void;
 }
 
-export const PostMenu = ({ postId, postUserId, isPinned = false, onEdit, onDelete, onShare }: PostMenuProps) => {
+export const PostMenu = ({ postId, postUserId, isPinned = false, mediaUrl, mediaType, onEdit, onDelete, onShare }: PostMenuProps) => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const isOwner = user?.id === postUserId;
@@ -132,11 +134,28 @@ export const PostMenu = ({ postId, postUserId, isPinned = false, onEdit, onDelet
     });
   };
 
-  const handleDownload = () => {
-    toast({
-      title: "Coming soon",
-      description: "Download feature will be available soon.",
-    });
+  const handleDownload = async () => {
+    if (!mediaUrl) {
+      toast({ title: "No media", description: "This post has no downloadable media." });
+      return;
+    }
+    try {
+      toast({ title: "Downloading…", description: "Your file will be ready shortly." });
+      const response = await fetch(mediaUrl);
+      const blob = await response.blob();
+      const ext = mediaType === "video" ? "mp4" : "jpg";
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `prangon-${postId.slice(0, 8)}.${ext}`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      toast({ title: "Downloaded!", description: "Media saved successfully." });
+    } catch {
+      toast({ title: "Error", description: "Failed to download media.", variant: "destructive" });
+    }
   };
 
   const handleHide = () => {
