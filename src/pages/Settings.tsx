@@ -310,7 +310,7 @@ const Settings = () => {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
-            <Database className="h-5 w-5 text-cyan-500" />
+            <Database className="h-5 w-5 text-foreground" />
             {t("settings.dataSaver")}
           </CardTitle>
           <CardDescription>{t("settings.dataSaverDesc")}</CardDescription>
