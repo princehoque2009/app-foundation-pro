@@ -119,17 +119,17 @@ const Settings = () => {
   };
 
   const menuItems: MenuItem[] = [
-    { id: "account", icon: User, label: "Account", description: "Email, password, personal info", color: "text-blue-500" },
-    { id: "privacy", icon: Lock, label: "Privacy", description: "Account type, visibility controls", color: "text-emerald-500" },
-    { id: "security", icon: Shield, label: "Security", description: "Devices, login activity, 2FA", color: "text-primary" },
-    { id: "notifications", icon: Bell, label: "Notifications", description: "Push, email, activity alerts", color: "text-amber-500" },
-    { id: "appearance", icon: Palette, label: "Appearance", description: "Theme, language, sounds", color: "text-purple-500" },
-    { id: "data", icon: Database, label: "Data & Storage", description: "Cache, downloads, export", color: "text-cyan-500" },
-    { id: "safety", icon: Ban, label: "Safety", description: "Blocked users, reports", color: "text-orange-500" },
-    { id: "help", icon: HelpCircle, label: "Help & Support", description: "Contact, guidelines, FAQ", color: "text-teal-500" },
-    { id: "verification", icon: BadgeCheck, label: "Verification", description: "Request account verification", color: "text-blue-400" },
-    { id: "terms", icon: FileText, label: "Privacy & Terms", description: "Policies and legal info", color: "text-muted-foreground" },
-    { id: "account-control", icon: AlertTriangle, label: "Account Control", description: "Deactivate, delete, logout", color: "text-destructive" },
+    { id: "account", icon: User, label: "Account", description: "Email, password, personal info", color: "text-foreground" },
+    { id: "privacy", icon: Lock, label: "Privacy", description: "Account type, visibility controls", color: "text-foreground" },
+    { id: "security", icon: Shield, label: "Security", description: "Devices, login activity, 2FA", color: "text-foreground" },
+    { id: "notifications", icon: Bell, label: "Notifications", description: "Push, email, activity alerts", color: "text-foreground" },
+    { id: "appearance", icon: Palette, label: "Appearance", description: "Theme, language, sounds", color: "text-foreground" },
+    { id: "data", icon: Database, label: "Data & Storage", description: "Cache, downloads, export", color: "text-foreground" },
+    { id: "safety", icon: Ban, label: "Safety", description: "Blocked users, reports", color: "text-foreground" },
+    { id: "help", icon: HelpCircle, label: "Help & Support", description: "Contact, guidelines, FAQ", color: "text-foreground" },
+    { id: "verification", icon: BadgeCheck, label: "Verification", description: "Request account verification", color: "text-foreground" },
+    { id: "terms", icon: FileText, label: "Privacy & Terms", description: "Policies and legal info", color: "text-foreground" },
+    { id: "account-control", icon: AlertTriangle, label: "Account Control", description: "Deactivate, delete, logout", color: "text-foreground" },
   ];
 
   const renderSectionHeader = (title: string) => (
