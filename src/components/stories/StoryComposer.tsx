@@ -19,60 +19,78 @@ import {
   Users,
   Lock,
   Loader2,
+  Video,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { validateFileUpload, ALLOWED_IMAGE_TYPES, ALLOWED_VIDEO_TYPES } from "@/lib/validation";
 
 interface StoryComposerProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
+const MAX_VIDEO_DURATION = 30; // seconds
+
 export const StoryComposer = ({ open, onOpenChange }: StoryComposerProps) => {
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const galleryRef = useRef<HTMLInputElement>(null);
+  const cameraPhotoRef = useRef<HTMLInputElement>(null);
+  const cameraVideoRef = useRef<HTMLInputElement>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [textOverlay, setTextOverlay] = useState("");
   const [showTextInput, setShowTextInput] = useState(false);
   const [audience, setAudience] = useState("public");
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [videoDuration, setVideoDuration] = useState<number | null>(null);
   const { uploadStory } = useStories();
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Validate file size (50MB max)
+    // Validate
+    const isImage = file.type.startsWith("image/");
+    const isVid = file.type.startsWith("video/");
+    if (!isImage && !isVid) {
+      toast({ title: "Invalid file", description: "Please select an image or video", variant: "destructive" });
+      return;
+    }
+
     if (file.size > 50 * 1024 * 1024) {
-      toast({
-        title: "File too large",
-        description: "Please select a file under 50MB",
-        variant: "destructive",
-      });
+      toast({ title: "File too large", description: "Max file size is 50MB", variant: "destructive" });
       return;
     }
 
-    // Validate file type
-    if (!file.type.startsWith("image/") && !file.type.startsWith("video/")) {
-      toast({
-        title: "Invalid file type",
-        description: "Please select an image or video",
-        variant: "destructive",
-      });
-      return;
+    // Check video duration
+    if (isVid) {
+      const video = document.createElement("video");
+      video.preload = "metadata";
+      video.onloadedmetadata = () => {
+        URL.revokeObjectURL(video.src);
+        if (video.duration > MAX_VIDEO_DURATION) {
+          toast({
+            title: "Video too long",
+            description: `Videos must be ${MAX_VIDEO_DURATION} seconds or less. Yours is ${Math.ceil(video.duration)}s.`,
+            variant: "destructive",
+          });
+          return;
+        }
+        setVideoDuration(video.duration);
+        setSelectedFile(file);
+        setPreview(URL.createObjectURL(file));
+      };
+      video.src = URL.createObjectURL(file);
+    } else {
+      setSelectedFile(file);
+      setPreview(URL.createObjectURL(file));
     }
 
-    setSelectedFile(file);
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setPreview(reader.result as string);
-    };
-    reader.readAsDataURL(file);
+    e.target.value = "";
   };
 
   const handleUpload = async () => {
     if (!selectedFile) return;
 
-    // Simulate progress for UX
     setUploadProgress(10);
     const progressInterval = setInterval(() => {
       setUploadProgress((prev) => Math.min(prev + 10, 90));
@@ -82,7 +100,6 @@ export const StoryComposer = ({ open, onOpenChange }: StoryComposerProps) => {
       await uploadStory.mutateAsync(selectedFile);
       setUploadProgress(100);
       clearInterval(progressInterval);
-      
       setTimeout(() => {
         resetForm();
         onOpenChange(false);
@@ -100,6 +117,7 @@ export const StoryComposer = ({ open, onOpenChange }: StoryComposerProps) => {
     setShowTextInput(false);
     setAudience("public");
     setUploadProgress(0);
+    setVideoDuration(null);
   };
 
   const isUploading = uploadStory.isPending || uploadProgress > 0;
@@ -108,18 +126,15 @@ export const StoryComposer = ({ open, onOpenChange }: StoryComposerProps) => {
     <Dialog
       open={open}
       onOpenChange={(v) => {
-        if (!v && !isUploading) {
-          resetForm();
-        }
         if (!isUploading) {
+          if (!v) resetForm();
           onOpenChange(v);
         }
       }}
     >
-      <DialogContent className="max-w-md p-0 bg-black overflow-hidden">
+      <DialogContent className="max-w-md p-0 bg-black overflow-hidden [&>button]:hidden">
         <AnimatePresence mode="wait">
           {!preview ? (
-            // Upload Screen
             <motion.div
               key="upload"
               initial={{ opacity: 0 }}
@@ -141,49 +156,50 @@ export const StoryComposer = ({ open, onOpenChange }: StoryComposerProps) => {
 
               <div className="flex-1 flex flex-col items-center justify-center gap-6">
                 <div
-                  onClick={() => fileInputRef.current?.click()}
+                  onClick={() => galleryRef.current?.click()}
                   className="w-full aspect-[9/16] max-h-[50vh] border-2 border-dashed border-white/30 rounded-2xl flex flex-col items-center justify-center cursor-pointer hover:border-white/50 transition-colors"
                 >
                   <div className="p-4 rounded-full bg-white/10 mb-4">
                     <Upload className="h-8 w-8 text-white" />
                   </div>
                   <p className="text-white font-medium">Upload Photo or Video</p>
-                  <p className="text-white/60 text-sm mt-1">Max 50MB</p>
+                  <p className="text-white/60 text-sm mt-1">Max 50MB • Videos up to {MAX_VIDEO_DURATION}s</p>
                 </div>
 
-                <div className="flex gap-4">
+                <div className="flex gap-3 w-full">
                   <Button
                     variant="outline"
-                    className="gap-2 bg-white/10 border-white/20 text-white hover:bg-white/20"
-                    onClick={() => fileInputRef.current?.click()}
+                    className="flex-1 gap-2 bg-white/10 border-white/20 text-white hover:bg-white/20"
+                    onClick={() => galleryRef.current?.click()}
                   >
                     <Image className="h-4 w-4" />
                     Gallery
                   </Button>
                   <Button
                     variant="outline"
-                    className="gap-2 bg-white/10 border-white/20 text-white hover:bg-white/20"
-                    onClick={() => {
-                      // TODO: Camera capture
-                      fileInputRef.current?.click();
-                    }}
+                    className="flex-1 gap-2 bg-white/10 border-white/20 text-white hover:bg-white/20"
+                    onClick={() => cameraPhotoRef.current?.click()}
                   >
                     <Camera className="h-4 w-4" />
-                    Camera
+                    Photo
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="flex-1 gap-2 bg-white/10 border-white/20 text-white hover:bg-white/20"
+                    onClick={() => cameraVideoRef.current?.click()}
+                  >
+                    <Video className="h-4 w-4" />
+                    Video
                   </Button>
                 </div>
 
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*,video/*"
-                  className="hidden"
-                  onChange={handleFileSelect}
-                />
+                {/* Hidden file inputs */}
+                <input ref={galleryRef} type="file" accept="image/*,video/*" className="hidden" onChange={handleFileSelect} />
+                <input ref={cameraPhotoRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handleFileSelect} />
+                <input ref={cameraVideoRef} type="file" accept="video/*" capture="environment" className="hidden" onChange={handleFileSelect} />
               </div>
             </motion.div>
           ) : (
-            // Preview & Edit Screen
             <motion.div
               key="preview"
               initial={{ opacity: 0 }}
@@ -191,11 +207,11 @@ export const StoryComposer = ({ open, onOpenChange }: StoryComposerProps) => {
               exit={{ opacity: 0 }}
               className="relative min-h-[80vh] flex flex-col"
             >
-              {/* Close Button */}
+              {/* Close */}
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={() => setPreview(null)}
+                onClick={() => { setPreview(null); setSelectedFile(null); }}
                 className="absolute top-4 left-4 z-20 text-white hover:bg-white/10"
                 disabled={isUploading}
               >
@@ -205,20 +221,11 @@ export const StoryComposer = ({ open, onOpenChange }: StoryComposerProps) => {
               {/* Preview */}
               <div className="flex-1 relative flex items-center justify-center bg-black">
                 {selectedFile?.type.startsWith("image/") ? (
-                  <img
-                    src={preview}
-                    alt="Preview"
-                    className="max-w-full max-h-[70vh] object-contain"
-                  />
+                  <img src={preview} alt="Preview" className="max-w-full max-h-[70vh] object-contain" />
                 ) : (
-                  <video
-                    src={preview}
-                    controls
-                    className="max-w-full max-h-[70vh]"
-                  />
+                  <video src={preview!} controls playsInline className="max-w-full max-h-[70vh]" />
                 )}
 
-                {/* Text Overlay */}
                 {textOverlay && (
                   <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                     <p className="text-white text-2xl font-bold text-center px-4 py-2 bg-black/50 rounded-lg">
@@ -227,7 +234,6 @@ export const StoryComposer = ({ open, onOpenChange }: StoryComposerProps) => {
                   </div>
                 )}
 
-                {/* Upload Progress */}
                 {isUploading && (
                   <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center">
                     <Loader2 className="h-8 w-8 text-white animate-spin mb-4" />
@@ -237,7 +243,7 @@ export const StoryComposer = ({ open, onOpenChange }: StoryComposerProps) => {
                 )}
               </div>
 
-              {/* Edit Tools */}
+              {/* Edit tools */}
               {!isUploading && (
                 <div className="absolute top-4 right-4 z-20 flex flex-col gap-3">
                   <Button
@@ -261,7 +267,7 @@ export const StoryComposer = ({ open, onOpenChange }: StoryComposerProps) => {
                 </div>
               )}
 
-              {/* Text Input */}
+              {/* Text input */}
               <AnimatePresence>
                 {showTextInput && !isUploading && (
                   <motion.div
@@ -281,81 +287,34 @@ export const StoryComposer = ({ open, onOpenChange }: StoryComposerProps) => {
                 )}
               </AnimatePresence>
 
-              {/* Bottom Actions */}
+              {/* Bottom actions */}
               {!isUploading && (
                 <div className="p-4 bg-gradient-to-t from-black via-black/80 to-transparent">
-                  {/* Audience Selector */}
                   <div className="mb-4">
-                    <RadioGroup
-                      value={audience}
-                      onValueChange={setAudience}
-                      className="flex justify-center gap-2"
-                    >
-                      <div className="flex items-center">
-                        <RadioGroupItem
-                          value="public"
-                          id="public"
-                          className="hidden"
-                        />
-                        <Label
-                          htmlFor="public"
-                          className={cn(
-                            "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm cursor-pointer transition-colors",
-                            audience === "public"
-                              ? "bg-white text-black"
-                              : "bg-white/10 text-white"
-                          )}
-                        >
-                          <Globe className="h-3.5 w-3.5" />
-                          Public
-                        </Label>
-                      </div>
-                      <div className="flex items-center">
-                        <RadioGroupItem
-                          value="friends"
-                          id="friends"
-                          className="hidden"
-                        />
-                        <Label
-                          htmlFor="friends"
-                          className={cn(
-                            "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm cursor-pointer transition-colors",
-                            audience === "friends"
-                              ? "bg-white text-black"
-                              : "bg-white/10 text-white"
-                          )}
-                        >
-                          <Users className="h-3.5 w-3.5" />
-                          Friends
-                        </Label>
-                      </div>
-                      <div className="flex items-center">
-                        <RadioGroupItem
-                          value="close_friends"
-                          id="close_friends"
-                          className="hidden"
-                        />
-                        <Label
-                          htmlFor="close_friends"
-                          className={cn(
-                            "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm cursor-pointer transition-colors",
-                            audience === "close_friends"
-                              ? "bg-white text-black"
-                              : "bg-white/10 text-white"
-                          )}
-                        >
-                          <Lock className="h-3.5 w-3.5" />
-                          Close Friends
-                        </Label>
-                      </div>
+                    <RadioGroup value={audience} onValueChange={setAudience} className="flex justify-center gap-2">
+                      {[
+                        { value: "public", label: "Public", icon: Globe },
+                        { value: "friends", label: "Friends", icon: Users },
+                        { value: "close_friends", label: "Close Friends", icon: Lock },
+                      ].map(({ value, label, icon: Icon }) => (
+                        <div key={value} className="flex items-center">
+                          <RadioGroupItem value={value} id={`story-${value}`} className="hidden" />
+                          <Label
+                            htmlFor={`story-${value}`}
+                            className={cn(
+                              "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm cursor-pointer transition-colors",
+                              audience === value ? "bg-white text-black" : "bg-white/10 text-white"
+                            )}
+                          >
+                            <Icon className="h-3.5 w-3.5" />
+                            {label}
+                          </Label>
+                        </div>
+                      ))}
                     </RadioGroup>
                   </div>
 
-                  <Button
-                    onClick={handleUpload}
-                    className="w-full rounded-full"
-                    size="lg"
-                  >
+                  <Button onClick={handleUpload} className="w-full rounded-full" size="lg">
                     Share Story
                   </Button>
                 </div>
