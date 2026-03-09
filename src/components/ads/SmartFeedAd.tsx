@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { ExternalLink, Sparkles } from "lucide-react";
@@ -11,6 +11,8 @@ interface SmartFeedAdProps {
 }
 
 export const SmartFeedAd = ({ className, placement = "home_feed" }: SmartFeedAdProps) => {
+  const queryClient = useQueryClient();
+
   const { data: ad, isLoading } = useQuery({
     queryKey: ["active-feed-ad", placement],
     queryFn: async () => {
@@ -30,8 +32,27 @@ export const SmartFeedAd = ({ className, placement = "home_feed" }: SmartFeedAdP
 
       return data[Math.floor(Math.random() * data.length)];
     },
-    staleTime: 5 * 60 * 1000,
+    staleTime: 30 * 1000, // 30 seconds for real-time feel
   });
+
+  // Real-time subscription for ad updates
+  useEffect(() => {
+    const channel = supabase
+      .channel("advertisements-realtime")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "advertisements" },
+        () => {
+          // Invalidate all ad queries to refresh instantly
+          queryClient.invalidateQueries({ queryKey: ["active-feed-ad"] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [queryClient]);
 
   // Track impression
   const impressionMutation = useMutation({
