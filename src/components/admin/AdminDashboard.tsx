@@ -2,14 +2,16 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Users, FileText, Flag, BadgeCheck, MessageSquare, TrendingUp, Activity, Zap } from "lucide-react";
+import {
+  Users, FileText, Flag, BadgeCheck, MessageSquare, TrendingUp, Activity,
+  Eye, CircleDot, Image, Megaphone, Wallet,
+} from "lucide-react";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
-import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell, AreaChart, Area } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, PieChart, Pie, Cell, AreaChart, Area } from "recharts";
 import { AdminActivityFeed } from "./AdminActivityFeed";
 import { AdminOnlineUsers } from "./AdminOnlineUsers";
 
 export const AdminDashboard = () => {
-  // Fetch dashboard stats
   const { data: stats } = useQuery({
     queryKey: ["admin-dashboard-stats"],
     queryFn: async () => {
@@ -20,6 +22,9 @@ export const AdminDashboard = () => {
         { count: pendingVerifications },
         { count: supportTickets },
         { count: newUsersToday },
+        { count: totalCircles },
+        { count: totalStories },
+        { count: activeAds },
       ] = await Promise.all([
         supabase.from("profiles").select("*", { count: "exact", head: true }),
         supabase.from("posts").select("*", { count: "exact", head: true }),
@@ -27,6 +32,9 @@ export const AdminDashboard = () => {
         supabase.from("verification_requests").select("*", { count: "exact", head: true }).eq("status", "pending"),
         supabase.from("support_tickets").select("*", { count: "exact", head: true }).eq("status", "open"),
         supabase.from("profiles").select("*", { count: "exact", head: true }).gte("created_at", new Date(new Date().setHours(0, 0, 0, 0)).toISOString()),
+        supabase.from("community_groups").select("*", { count: "exact", head: true }),
+        supabase.from("stories").select("*", { count: "exact", head: true }),
+        supabase.from("advertisements").select("*", { count: "exact", head: true }).eq("is_active", true),
       ]);
 
       return {
@@ -36,6 +44,9 @@ export const AdminDashboard = () => {
         pendingVerifications: pendingVerifications || 0,
         supportTickets: supportTickets || 0,
         newUsersToday: newUsersToday || 0,
+        totalCircles: totalCircles || 0,
+        totalStories: totalStories || 0,
+        activeAds: activeAds || 0,
       };
     },
   });
@@ -75,61 +86,66 @@ export const AdminDashboard = () => {
   };
 
   const statCards = [
-    { 
-      title: "Total Users", 
-      value: stats?.totalUsers || 0, 
-      icon: Users, 
-      color: "text-blue-500", 
-      bgColor: "bg-blue-500/10",
+    {
+      title: "Total Users",
+      value: stats?.totalUsers || 0,
+      icon: Users,
       change: `+${stats?.newUsersToday || 0} today`,
     },
-    { 
-      title: "Total Posts", 
-      value: stats?.totalPosts || 0, 
-      icon: FileText, 
-      color: "text-green-500", 
-      bgColor: "bg-green-500/10" 
+    {
+      title: "Total Posts",
+      value: stats?.totalPosts || 0,
+      icon: FileText,
     },
-    { 
-      title: "Pending Reports", 
-      value: stats?.pendingReports || 0, 
-      icon: Flag, 
-      color: "text-red-500", 
-      bgColor: "bg-red-500/10",
+    {
+      title: "Circles",
+      value: stats?.totalCircles || 0,
+      icon: CircleDot,
+    },
+    {
+      title: "Stories",
+      value: stats?.totalStories || 0,
+      icon: Image,
+    },
+    {
+      title: "Pending Reports",
+      value: stats?.pendingReports || 0,
+      icon: Flag,
       urgent: (stats?.pendingReports || 0) > 0,
     },
-    { 
-      title: "Verifications", 
-      value: stats?.pendingVerifications || 0, 
-      icon: BadgeCheck, 
-      color: "text-primary", 
-      bgColor: "bg-primary/10" 
+    {
+      title: "Verifications",
+      value: stats?.pendingVerifications || 0,
+      icon: BadgeCheck,
     },
-    { 
-      title: "Support Tickets", 
-      value: stats?.supportTickets || 0, 
-      icon: MessageSquare, 
-      color: "text-orange-500", 
-      bgColor: "bg-orange-500/10" 
+    {
+      title: "Support Tickets",
+      value: stats?.supportTickets || 0,
+      icon: MessageSquare,
+    },
+    {
+      title: "Active Ads",
+      value: stats?.activeAds || 0,
+      icon: Megaphone,
     },
   ];
 
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Stats Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {statCards.map((stat, i) => (
-          <Card key={i} className={`border-0 shadow-sm hover:shadow-md transition-all ${stat.urgent ? 'ring-2 ring-red-500/50' : ''}`}>
+          <Card key={i} className={`border-0 shadow-sm hover:shadow-md transition-all ${stat.urgent ? 'ring-2 ring-destructive/50' : ''}`}>
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
-                <div className={`p-2.5 rounded-xl ${stat.bgColor}`}>
-                  <stat.icon className={`h-5 w-5 ${stat.color}`} />
+                <div className="p-2.5 rounded-xl bg-muted">
+                  <stat.icon className="h-5 w-5 text-foreground" />
                 </div>
                 <div>
                   <p className="text-2xl font-bold">{stat.value}</p>
                   <p className="text-xs text-muted-foreground">{stat.title}</p>
                   {stat.change && (
-                    <p className="text-xs text-green-500 font-medium mt-0.5">{stat.change}</p>
+                    <p className="text-xs text-primary font-medium mt-0.5">{stat.change}</p>
                   )}
                 </div>
               </div>
@@ -150,7 +166,7 @@ export const AdminDashboard = () => {
         <Card className="border-0 shadow-sm">
           <CardHeader className="pb-2">
             <CardTitle className="text-lg flex items-center gap-2">
-              <TrendingUp className="h-5 w-5 text-primary" />
+              <TrendingUp className="h-5 w-5 text-foreground" />
               User Growth (This Week)
             </CardTitle>
           </CardHeader>
@@ -167,10 +183,10 @@ export const AdminDashboard = () => {
                   <XAxis dataKey="name" tick={{ fontSize: 12 }} axisLine={false} tickLine={false} />
                   <YAxis tick={{ fontSize: 12 }} axisLine={false} tickLine={false} />
                   <ChartTooltip content={<ChartTooltipContent />} />
-                  <Area 
-                    type="monotone" 
-                    dataKey="users" 
-                    stroke="hsl(var(--primary))" 
+                  <Area
+                    type="monotone"
+                    dataKey="users"
+                    stroke="hsl(var(--primary))"
                     strokeWidth={2}
                     fill="url(#userGradient)"
                   />
@@ -184,7 +200,7 @@ export const AdminDashboard = () => {
         <Card className="border-0 shadow-sm">
           <CardHeader className="pb-2">
             <CardTitle className="text-lg flex items-center gap-2">
-              <Activity className="h-5 w-5 text-chart-2" />
+              <Activity className="h-5 w-5 text-foreground" />
               Post Activity (This Week)
             </CardTitle>
           </CardHeader>
@@ -195,9 +211,9 @@ export const AdminDashboard = () => {
                   <XAxis dataKey="name" tick={{ fontSize: 12 }} axisLine={false} tickLine={false} />
                   <YAxis tick={{ fontSize: 12 }} axisLine={false} tickLine={false} />
                   <ChartTooltip content={<ChartTooltipContent />} />
-                  <Bar 
-                    dataKey="posts" 
-                    fill="hsl(var(--chart-2))" 
+                  <Bar
+                    dataKey="posts"
+                    fill="hsl(var(--chart-2))"
                     radius={[6, 6, 0, 0]}
                   />
                 </BarChart>
@@ -211,7 +227,7 @@ export const AdminDashboard = () => {
       <Card className="border-0 shadow-sm">
         <CardHeader className="pb-2">
           <CardTitle className="text-lg flex items-center gap-2">
-            <Flag className="h-5 w-5 text-red-500" />
+            <Flag className="h-5 w-5 text-foreground" />
             Reports by Category
           </CardTitle>
         </CardHeader>
