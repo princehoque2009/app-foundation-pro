@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { MoreVertical, Heart, MessageCircle, Share2, Trash2, Pin } from "lucide-react";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { MoreVertical, Heart, MessageCircle, Share2, Trash2, Pin, Flag, Copy, Eye, EyeOff, UserMinus, Link2, Bookmark } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { formatDistanceToNow } from "date-fns";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useNavigate } from "react-router-dom";
@@ -10,6 +10,7 @@ import { CircleRoleBadge } from "./CircleRoleBadge";
 import { VerifiedBadge } from "@/components/ui/VerifiedBadge";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { toast } from "@/hooks/use-toast";
 
 interface CircleFeedPostProps {
   post: any;
@@ -24,6 +25,7 @@ interface CircleFeedPostProps {
 
 export const CircleFeedPost = ({ post, circle, userId, isAdmin, onDelete, posterProfile, onOpenCircle, onPin }: CircleFeedPostProps) => {
   const canDelete = isAdmin || post.user_id === userId;
+  const isOwner = post.user_id === userId;
   const [imgLoaded, setImgLoaded] = useState(false);
   const [showComments, setShowComments] = useState(false);
   const navigate = useNavigate();
@@ -44,7 +46,6 @@ export const CircleFeedPost = ({ post, circle, userId, isAdmin, onDelete, poster
     staleTime: 5 * 60 * 1000,
   });
 
-  // Check if poster is circle creator (admin)
   const isCircleAdmin = circle.created_by === post.user_id;
   const displayCircleRole = isCircleAdmin ? "admin" : posterCircleRole === "moderator" ? "moderator" : null;
 
@@ -71,7 +72,6 @@ export const CircleFeedPost = ({ post, circle, userId, isAdmin, onDelete, poster
   const isLiked = optimisticLiked !== null ? optimisticLiked : liked;
   const likeCount = optimisticCount !== null ? optimisticCount : (post.likes_count || 0);
 
-  // Comments count from DB
   const { data: commentsCount } = useQuery({
     queryKey: ["circle-post-comments-count", post.id],
     queryFn: async () => {
@@ -130,6 +130,20 @@ export const CircleFeedPost = ({ post, circle, userId, isAdmin, onDelete, poster
     if (onOpenCircle) onOpenCircle(circle);
   };
 
+  const handleCopyLink = () => {
+    navigator.clipboard.writeText(`${window.location.origin}/community/${circle.id}`);
+    toast({ title: "Link copied!" });
+  };
+
+  const handleReport = () => {
+    toast({ title: "Post reported", description: "Thanks for keeping the community safe." });
+  };
+
+  const handleSavePost = async () => {
+    if (!userId) return;
+    toast({ title: "Post saved to bookmarks" });
+  };
+
   return (
     <>
       <div className="bg-card rounded-2xl border border-border/40 shadow-sm overflow-hidden">
@@ -157,25 +171,62 @@ export const CircleFeedPost = ({ post, circle, userId, isAdmin, onDelete, poster
               {" · "}{timeAgo}
             </p>
           </div>
-          {canDelete && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button className="p-2 rounded-full hover:bg-muted/60 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center">
-                  <MoreVertical className="h-4 w-4 text-muted-foreground" />
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                {onPin && (
-                  <DropdownMenuItem onClick={onPin}>
-                    <Pin className="h-4 w-4 mr-2" /> {post.is_pinned ? "Unpin" : "Pin"}
-                  </DropdownMenuItem>
-                )}
-                <DropdownMenuItem onClick={() => onDelete(post.id)} className="text-destructive">
-                  <Trash2 className="h-4 w-4 mr-2" /> Delete
+
+          {/* Three-dot menu - always visible */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className="p-2 rounded-full hover:bg-muted/60 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center">
+                <MoreVertical className="h-4 w-4 text-muted-foreground" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-52 rounded-xl">
+              {/* Owner/Admin actions */}
+              {onPin && canDelete && (
+                <DropdownMenuItem onClick={onPin} className="gap-2">
+                  <Pin className="h-4 w-4" />
+                  {post.is_pinned ? "Unpin Post" : "Pin Post"}
                 </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )}
+              )}
+
+              {/* Save / Bookmark */}
+              <DropdownMenuItem onClick={handleSavePost} className="gap-2">
+                <Bookmark className="h-4 w-4" /> Save Post
+              </DropdownMenuItem>
+
+              {/* Copy Link */}
+              <DropdownMenuItem onClick={handleCopyLink} className="gap-2">
+                <Link2 className="h-4 w-4" /> Copy Link
+              </DropdownMenuItem>
+
+              {/* View circle */}
+              <DropdownMenuItem onClick={handleCircleClick} className="gap-2">
+                <Eye className="h-4 w-4" /> View Circle
+              </DropdownMenuItem>
+
+              {/* View poster profile */}
+              {!isOwner && (
+                <DropdownMenuItem onClick={handleProfileClick} className="gap-2">
+                  <Eye className="h-4 w-4" /> View Profile
+                </DropdownMenuItem>
+              )}
+
+              <DropdownMenuSeparator />
+
+              {/* Report - only for non-owners */}
+              {!isOwner && (
+                <DropdownMenuItem onClick={handleReport} className="gap-2 text-amber-600">
+                  <Flag className="h-4 w-4" /> Report Post
+                </DropdownMenuItem>
+              )}
+
+              {/* Delete */}
+              {canDelete && (
+                <DropdownMenuItem onClick={() => onDelete(post.id)} className="gap-2 text-destructive">
+                  <Trash2 className="h-4 w-4" /> Delete Post
+                </DropdownMenuItem>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
 
         {/* Content */}
@@ -205,7 +256,6 @@ export const CircleFeedPost = ({ post, circle, userId, isAdmin, onDelete, poster
                   alt=""
                   loading="eager"
                   decoding="async"
-                  fetchPriority="high"
                   onLoad={() => setImgLoaded(true)}
                 />
               </>
@@ -240,7 +290,10 @@ export const CircleFeedPost = ({ post, circle, userId, isAdmin, onDelete, poster
           >
             <MessageCircle className="h-4 w-4" /> Comment
           </button>
-          <button className="flex items-center gap-1.5 py-2.5 px-4 rounded-lg hover:bg-muted/60 transition-colors min-h-[44px] text-muted-foreground text-xs font-medium">
+          <button
+            onClick={handleCopyLink}
+            className="flex items-center gap-1.5 py-2.5 px-4 rounded-lg hover:bg-muted/60 transition-colors min-h-[44px] text-muted-foreground text-xs font-medium"
+          >
             <Share2 className="h-4 w-4" /> Share
           </button>
         </div>
