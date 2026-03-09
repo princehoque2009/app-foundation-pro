@@ -89,7 +89,7 @@ export const NotificationSettings = () => {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
-            <Mail className="h-5 w-5 text-blue-500" />
+            <Mail className="h-5 w-5 text-foreground" />
             Email Notifications
           </CardTitle>
           <CardDescription>Control which emails you receive</CardDescription>

@@ -393,7 +393,7 @@ const Settings = () => {
         <Card key={i} className="cursor-pointer hover:bg-muted/30 transition-colors" onClick={item.action}>
           <CardContent className="flex items-center gap-3.5 p-4">
             <div className="w-10 h-10 rounded-xl bg-muted/60 flex items-center justify-center">
-              <item.icon className="h-5 w-5 text-teal-500" />
+              <item.icon className="h-5 w-5 text-foreground" />
             </div>
             <div className="flex-1">
               <p className="text-sm font-semibold text-foreground">{item.label}</p>
