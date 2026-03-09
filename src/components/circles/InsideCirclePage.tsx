@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowLeft, Lock, Settings, Globe, Users, Search, Pin, TrendingUp, Clock, Heart, MessageCircle, Filter } from "lucide-react";
+import { ArrowLeft, Lock, Settings, Globe, Users, Search, Pin, TrendingUp, Clock, Heart, MessageCircle, Filter, UserPlus } from "lucide-react";
 import { CircleOptionsMenu } from "./CircleOptionsMenu";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { CircleFeedPost } from "./CircleFeedPost";
