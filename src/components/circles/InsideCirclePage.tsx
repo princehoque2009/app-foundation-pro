@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, Fragment } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { InviteMembersDialog } from "./InviteMembersDialog";
 import { supabase } from "@/integrations/supabase/client";
