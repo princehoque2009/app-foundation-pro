@@ -132,7 +132,7 @@ export const useStories = () => {
       if (!user) throw new Error("User not authenticated");
 
       const fileExt = file.name.split(".").pop();
-      const fileName = `${user.id}-${Date.now()}.${fileExt}`;
+      const fileName = `${user.id}/${Date.now()}.${fileExt}`;
 
       const { error: uploadError } = await supabase.storage
         .from("stories")
