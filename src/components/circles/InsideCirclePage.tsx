@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { InviteMembersDialog } from "./InviteMembersDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -8,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowLeft, Lock, Settings, Globe, Users, Search, Pin, TrendingUp, Clock, Heart, MessageCircle, Filter } from "lucide-react";
+import { ArrowLeft, Lock, Settings, Globe, Users, Search, Pin, TrendingUp, Clock, Heart, MessageCircle, Filter, UserPlus } from "lucide-react";
 import { CircleOptionsMenu } from "./CircleOptionsMenu";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { CircleFeedPost } from "./CircleFeedPost";
@@ -53,6 +54,7 @@ export const InsideCirclePage = ({ circle: initialCircle, userId, onBack }: Insi
   const [viewingImage, setViewingImage] = useState<string | null>(null);
   const [memberSearch, setMemberSearch] = useState("");
   const [sortMode, setSortMode] = useState<SortMode>("newest");
+  const [showInvite, setShowInvite] = useState(false);
 
   const { data: members } = useQuery({
     queryKey: ["circle-members", circle.id],
@@ -275,6 +277,18 @@ export const InsideCirclePage = ({ circle: initialCircle, userId, onBack }: Insi
                   }}
                 >
                   Join Circle
+                </Button>
+              )}
+
+              {/* Invite button for admins of private circles */}
+              {isAdmin && circle.privacy === "private" && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className={`rounded-full text-xs h-8 px-3 gap-1.5 ${!isMember ? "" : "ml-auto"}`}
+                  onClick={() => setShowInvite(true)}
+                >
+                  <UserPlus className="h-3.5 w-3.5" /> Invite
                 </Button>
               )}
             </div>
@@ -503,6 +517,17 @@ export const InsideCirclePage = ({ circle: initialCircle, userId, onBack }: Insi
         open={!!viewingImage}
         onOpenChange={(open) => !open && setViewingImage(null)}
       />
+
+      {isAdmin && userId && (
+        <InviteMembersDialog
+          open={showInvite}
+          onOpenChange={setShowInvite}
+          circleId={circle.id}
+          circleName={circle.name}
+          userId={userId}
+          existingMemberIds={(members || []).map((m: any) => m.user_id)}
+        />
+      )}
     </div>
   );
 };

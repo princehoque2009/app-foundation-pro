@@ -1,10 +1,10 @@
 import { MainLayout } from "@/components/layout/MainLayout";
 import { useState, useMemo, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import { CircleDot, Plus, Search, X, TrendingUp, Sparkles, Clock, Users } from "lucide-react";
+import { CircleDot, Plus, Search, X, TrendingUp, Sparkles, Clock, Users, Mail, Check, XCircle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
@@ -14,6 +14,9 @@ import { CircleFeedPost } from "@/components/circles/CircleFeedPost";
 import { CreateCircleDialog } from "@/components/circles/CreateCircleDialog";
 import { InsideCirclePage } from "@/components/circles/InsideCirclePage";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 
 const FILTER_TABS = ["For You", "Your Circles", "Trending", "New"];
 const CATEGORIES = ["All", "Technology", "Education", "Gaming", "Business", "Science", "Lifestyle", "Sports", "Music", "Art", "Health", "Travel", "General"];
@@ -89,6 +92,67 @@ const Circles = () => {
     },
     enabled: feedPosterIds.length > 0,
   });
+
+  // Fetch pending circle invitations
+  const { data: pendingInvitations } = useQuery({
+    queryKey: ["circle-invitations", user?.id],
+    enabled: !!user?.id,
+    queryFn: async () => {
+      const { data: invites } = await supabase
+        .from("circle_invitations" as any)
+        .select("*")
+        .eq("invited_user_id", user!.id)
+        .eq("status", "pending")
+        .order("created_at", { ascending: false });
+
+      if (!invites || invites.length === 0) return [];
+
+      // Get circle details
+      const circleIds = [...new Set(invites.map((i: any) => i.circle_id))];
+      const { data: circles } = await supabase
+        .from("community_groups")
+        .select("id, name, logo_url, banner_url, privacy, category, members_count")
+        .in("id", circleIds as string[]);
+
+      // Get inviter profiles
+      const inviterIds = [...new Set(invites.map((i: any) => i.invited_by))];
+      const { data: inviters } = await supabase
+        .from("profiles")
+        .select("id, username, display_name, avatar_url")
+        .in("id", inviterIds as string[]);
+
+      const circleMap: Record<string, any> = {};
+      circles?.forEach((c: any) => { circleMap[c.id] = c; });
+      const inviterMap: Record<string, any> = {};
+      inviters?.forEach((p: any) => { inviterMap[p.id] = p; });
+
+      return invites.map((inv: any) => ({
+        ...inv,
+        circle: circleMap[inv.circle_id],
+        inviter: inviterMap[inv.invited_by],
+      }));
+    },
+  });
+
+  const respondToInvitation = async (invitationId: string, circleId: string, accept: boolean) => {
+    if (accept) {
+      // Join the circle
+      await supabase.from("community_group_members").insert({
+        group_id: circleId,
+        user_id: user?.id!,
+        role: "member",
+      });
+    }
+    // Update invitation status
+    await supabase
+      .from("circle_invitations" as any)
+      .update({ status: accept ? "accepted" : "declined", responded_at: new Date().toISOString() })
+      .eq("id", invitationId);
+
+    queryClient.invalidateQueries({ queryKey: ["circle-invitations"] });
+    queryClient.invalidateQueries({ queryKey: ["circles"] });
+    toast({ title: accept ? "Joined circle!" : "Invitation declined" });
+  };
 
   const filteredCircles = useMemo(() => {
     if (!allCircles) return [];
@@ -270,6 +334,56 @@ const Circles = () => {
           </motion.div>
         ) : (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }}>
+            {/* Pending Invitations */}
+            {pendingInvitations && pendingInvitations.length > 0 && (
+              <section className="mb-5 px-4">
+                <div className="flex items-center gap-1.5 mb-2">
+                  <Mail className="h-4 w-4 text-primary" />
+                  <h2 className="text-sm font-bold text-foreground">Circle Invitations</h2>
+                  <span className="ml-1 px-1.5 py-0.5 rounded-full bg-primary/10 text-primary text-[10px] font-bold">
+                    {pendingInvitations.length}
+                  </span>
+                </div>
+                <div className="space-y-2">
+                  {pendingInvitations.map((inv: any) => (
+                    <Card key={inv.id} className="p-3.5 border-border/50">
+                      <div className="flex items-center gap-3">
+                        <Avatar className="h-11 w-11 shrink-0">
+                          <AvatarImage src={inv.circle?.logo_url} />
+                          <AvatarFallback className="bg-primary/10 text-primary text-sm font-bold">
+                            {inv.circle?.name?.charAt(0) || "?"}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-semibold text-foreground truncate">{inv.circle?.name || "Circle"}</p>
+                          <p className="text-[11px] text-muted-foreground">
+                            Invited by {inv.inviter?.display_name || inv.inviter?.username || "someone"}
+                          </p>
+                        </div>
+                        <div className="flex gap-1.5 shrink-0">
+                          <Button
+                            size="sm"
+                            className="rounded-full h-8 px-3 text-xs"
+                            onClick={() => respondToInvitation(inv.id, inv.circle_id, true)}
+                          >
+                            <Check className="h-3.5 w-3.5 mr-1" /> Accept
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="rounded-full h-8 px-2.5 text-xs"
+                            onClick={() => respondToInvitation(inv.id, inv.circle_id, false)}
+                          >
+                            <XCircle className="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
+                      </div>
+                    </Card>
+                  ))}
+                </div>
+              </section>
+            )}
+
             {/* Your Circles - Horizontal scroll */}
             {yourCircles.length > 0 && activeFilter === "For You" && (
               <section className="mb-5">
