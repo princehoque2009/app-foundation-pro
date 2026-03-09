@@ -265,7 +265,7 @@ const Settings = () => {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
-            <Volume2 className="h-5 w-5 text-teal-500" />
+            <Volume2 className="h-5 w-5 text-foreground" />
             {t("settings.soundHaptics")}
           </CardTitle>
         </CardHeader>
