@@ -517,6 +517,17 @@ export const InsideCirclePage = ({ circle: initialCircle, userId, onBack }: Insi
         open={!!viewingImage}
         onOpenChange={(open) => !open && setViewingImage(null)}
       />
+
+      {isAdmin && userId && (
+        <InviteMembersDialog
+          open={showInvite}
+          onOpenChange={setShowInvite}
+          circleId={circle.id}
+          circleName={circle.name}
+          userId={userId}
+          existingMemberIds={(members || []).map((m: any) => m.user_id)}
+        />
+      )}
     </div>
   );
 };
