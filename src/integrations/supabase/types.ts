@@ -323,6 +323,44 @@ export type Database = {
         }
         Relationships: []
       }
+      circle_invitations: {
+        Row: {
+          circle_id: string
+          created_at: string
+          id: string
+          invited_by: string
+          invited_user_id: string
+          responded_at: string | null
+          status: string
+        }
+        Insert: {
+          circle_id: string
+          created_at?: string
+          id?: string
+          invited_by: string
+          invited_user_id: string
+          responded_at?: string | null
+          status?: string
+        }
+        Update: {
+          circle_id?: string
+          created_at?: string
+          id?: string
+          invited_by?: string
+          invited_user_id?: string
+          responded_at?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "circle_invitations_circle_id_fkey"
+            columns: ["circle_id"]
+            isOneToOne: false
+            referencedRelation: "community_groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       circle_post_comments: {
         Row: {
           content: string
