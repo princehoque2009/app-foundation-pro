@@ -2,11 +2,10 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/hooks/use-toast";
-import { Bell, Mail } from "lucide-react";
+import { Bell, Mail, Heart, MessageCircle, UserPlus, Users, AtSign, Eye } from "lucide-react";
 
 export const NotificationSettings = () => {
   const { user } = useAuth();
@@ -20,7 +19,6 @@ export const NotificationSettings = () => {
         .select("*")
         .eq("user_id", user?.id)
         .maybeSingle();
-      
       if (error) throw error;
       return data;
     },
@@ -50,24 +48,29 @@ export const NotificationSettings = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["settings", user?.id] });
-      toast({
-        title: "Settings updated",
-        description: "Your notification preferences have been updated.",
-      });
+      toast({ title: "Settings updated", description: "Notification preferences saved." });
     },
   });
 
+  const toggleItems = [
+    { icon: Heart, label: "Likes", desc: "When someone likes your post", color: "text-pink-500" },
+    { icon: MessageCircle, label: "Comments", desc: "When someone comments on your post", color: "text-blue-500" },
+    { icon: AtSign, label: "Mentions", desc: "When someone mentions you", color: "text-amber-500" },
+    { icon: UserPlus, label: "Friend Requests", desc: "New friend requests and accepts", color: "text-emerald-500" },
+    { icon: Eye, label: "Story Activity", desc: "Views and reactions to your stories", color: "text-purple-500" },
+    { icon: Users, label: "Circle Activity", desc: "Posts and joins in your circles", color: "text-indigo-500" },
+  ];
+
   return (
     <div className="space-y-6">
+      {/* Main toggles */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Bell className="h-5 w-5" />
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Bell className="h-5 w-5 text-amber-500" />
             Push Notifications
           </CardTitle>
-          <CardDescription>
-            Manage your push notification preferences
-          </CardDescription>
+          <CardDescription>Control push notifications on this device</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex items-center justify-between">
@@ -75,7 +78,7 @@ export const NotificationSettings = () => {
             <Switch
               id="push"
               checked={settings?.notifications_enabled ?? true}
-              onCheckedChange={(checked) => 
+              onCheckedChange={(checked) =>
                 updateSettingMutation.mutate({ notifications_enabled: checked })
               }
             />
@@ -85,13 +88,11 @@ export const NotificationSettings = () => {
 
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Mail className="h-5 w-5" />
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Mail className="h-5 w-5 text-blue-500" />
             Email Notifications
           </CardTitle>
-          <CardDescription>
-            Control which emails you receive
-          </CardDescription>
+          <CardDescription>Control which emails you receive</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex items-center justify-between">
@@ -99,7 +100,7 @@ export const NotificationSettings = () => {
             <Switch
               id="email"
               checked={settings?.email_notifications ?? true}
-              onCheckedChange={(checked) => 
+              onCheckedChange={(checked) =>
                 updateSettingMutation.mutate({ email_notifications: checked })
               }
             />
@@ -107,6 +108,27 @@ export const NotificationSettings = () => {
         </CardContent>
       </Card>
 
+      {/* Activity-based toggles (visual only for now) */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Activity Notifications</CardTitle>
+          <CardDescription>Choose what activities you want to be notified about</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {toggleItems.map((item, i) => (
+            <div key={i} className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <item.icon className={`h-4 w-4 ${item.color}`} />
+                <div>
+                  <p className="text-sm font-medium">{item.label}</p>
+                  <p className="text-xs text-muted-foreground">{item.desc}</p>
+                </div>
+              </div>
+              <Switch defaultChecked />
+            </div>
+          ))}
+        </CardContent>
+      </Card>
     </div>
   );
 };
