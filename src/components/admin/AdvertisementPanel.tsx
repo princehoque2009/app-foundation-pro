@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -33,7 +33,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { toast } from "@/hooks/use-toast";
-import { formatDistanceToNow } from "date-fns";
 import {
   Plus,
   Pencil,
@@ -41,16 +40,17 @@ import {
   Eye,
   MousePointerClick,
   TrendingUp,
-  Globe,
   Image,
   Video,
   LayoutDashboard,
-  Pause,
-  Play,
   ExternalLink,
   BarChart3,
-  Calendar,
   Target,
+  Home,
+  Circle,
+  BookOpen,
+  User,
+  Film,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
@@ -79,15 +79,23 @@ interface Advertisement {
 }
 
 const adTypeConfig: Record<AdType, { label: string; icon: typeof Image; color: string }> = {
-  feed: { label: "Feed Ad", icon: LayoutDashboard, color: "bg-blue-500/10 text-blue-500" },
-  banner: { label: "Banner", icon: Image, color: "bg-amber-500/10 text-amber-500" },
-  story: { label: "Story Ad", icon: Video, color: "bg-purple-500/10 text-purple-500" },
-  video: { label: "Video Ad", icon: Video, color: "bg-emerald-500/10 text-emerald-500" },
-  carousel: { label: "Carousel", icon: LayoutDashboard, color: "bg-pink-500/10 text-pink-500" },
-  interstitial: { label: "Interstitial", icon: LayoutDashboard, color: "bg-red-500/10 text-red-500" },
-  rewarded: { label: "Rewarded", icon: Target, color: "bg-yellow-500/10 text-yellow-500" },
-  native: { label: "Native", icon: LayoutDashboard, color: "bg-cyan-500/10 text-cyan-500" },
+  feed: { label: "Feed Ad", icon: LayoutDashboard, color: "bg-muted text-foreground" },
+  banner: { label: "Banner", icon: Image, color: "bg-muted text-foreground" },
+  story: { label: "Story Ad", icon: Video, color: "bg-muted text-foreground" },
+  video: { label: "Video Ad", icon: Video, color: "bg-muted text-foreground" },
+  carousel: { label: "Carousel", icon: LayoutDashboard, color: "bg-muted text-foreground" },
+  interstitial: { label: "Interstitial", icon: LayoutDashboard, color: "bg-muted text-foreground" },
+  rewarded: { label: "Rewarded", icon: Target, color: "bg-muted text-foreground" },
+  native: { label: "Native", icon: LayoutDashboard, color: "bg-muted text-foreground" },
 };
+
+const PLACEMENT_OPTIONS = [
+  { value: "home_feed", label: "Home Feed", icon: Home },
+  { value: "circles", label: "Circles", icon: Circle },
+  { value: "stories", label: "Stories", icon: Film },
+  { value: "explore", label: "Explore", icon: BookOpen },
+  { value: "profile", label: "Profile", icon: User },
+] as const;
 
 export const AdvertisementPanel = () => {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -95,7 +103,6 @@ export const AdvertisementPanel = () => {
   const queryClient = useQueryClient();
   const { user } = useAuth();
 
-  // Fetch all advertisements
   const { data: ads, isLoading } = useQuery({
     queryKey: ["advertisements"],
     queryFn: async () => {
@@ -103,17 +110,14 @@ export const AdvertisementPanel = () => {
         .from("advertisements")
         .select("*")
         .order("created_at", { ascending: false });
-
       if (error) throw error;
       return data as Advertisement[];
     },
   });
 
-  // Create/Update mutation
   const saveMutation = useMutation({
     mutationFn: async (ad: Partial<Advertisement>) => {
       if (ad.id) {
-        // Update
         const { error } = await supabase
           .from("advertisements")
           .update({
@@ -122,6 +126,7 @@ export const AdvertisementPanel = () => {
             ad_type: ad.ad_type,
             media_url: ad.media_url,
             target_url: ad.target_url,
+            target_content_types: ad.target_content_types,
             is_active: ad.is_active,
             daily_impression_limit: ad.daily_impression_limit,
             start_date: ad.start_date,
@@ -131,7 +136,6 @@ export const AdvertisementPanel = () => {
           .eq("id", ad.id);
         if (error) throw error;
       } else {
-        // Create
         const { error } = await supabase
           .from("advertisements")
           .insert({
@@ -140,6 +144,7 @@ export const AdvertisementPanel = () => {
             ad_type: ad.ad_type!,
             media_url: ad.media_url,
             target_url: ad.target_url,
+            target_content_types: ad.target_content_types || [],
             is_active: ad.is_active ?? true,
             daily_impression_limit: ad.daily_impression_limit,
             start_date: ad.start_date,
@@ -151,6 +156,7 @@ export const AdvertisementPanel = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["advertisements"] });
+      queryClient.invalidateQueries({ queryKey: ["active-feed-ad"] });
       setIsCreateOpen(false);
       setEditingAd(null);
       toast({
@@ -159,15 +165,10 @@ export const AdvertisementPanel = () => {
       });
     },
     onError: (error: Error) => {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
+      toast({ title: "Error", description: error.message, variant: "destructive" });
     },
   });
 
-  // Toggle active status
   const toggleMutation = useMutation({
     mutationFn: async ({ id, is_active }: { id: string; is_active: boolean }) => {
       const { error } = await supabase
@@ -178,16 +179,13 @@ export const AdvertisementPanel = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["advertisements"] });
+      queryClient.invalidateQueries({ queryKey: ["active-feed-ad"] });
     },
   });
 
-  // Delete mutation
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase
-        .from("advertisements")
-        .delete()
-        .eq("id", id);
+      const { error } = await supabase.from("advertisements").delete().eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -196,7 +194,6 @@ export const AdvertisementPanel = () => {
     },
   });
 
-  // Calculate stats
   const totalImpressions = ads?.reduce((sum, ad) => sum + ad.impressions, 0) || 0;
   const totalClicks = ads?.reduce((sum, ad) => sum + ad.clicks, 0) || 0;
   const avgCTR = totalImpressions > 0 ? ((totalClicks / totalImpressions) * 100).toFixed(2) : "0.00";
@@ -204,7 +201,6 @@ export const AdvertisementPanel = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold">Advertisement Panel</h2>
@@ -226,49 +222,46 @@ export const AdvertisementPanel = () => {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Total Impressions</p>
+                <p className="text-sm text-muted-foreground">Impressions</p>
                 <p className="text-2xl font-bold">{totalImpressions.toLocaleString()}</p>
               </div>
-              <div className="p-3 bg-blue-500/10 rounded-full">
-                <Eye className="h-5 w-5 text-blue-500" />
+              <div className="p-3 bg-muted rounded-full">
+                <Eye className="h-5 w-5 text-foreground" />
               </div>
             </div>
           </CardContent>
         </Card>
-
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Total Clicks</p>
+                <p className="text-sm text-muted-foreground">Clicks</p>
                 <p className="text-2xl font-bold">{totalClicks.toLocaleString()}</p>
               </div>
-              <div className="p-3 bg-emerald-500/10 rounded-full">
-                <MousePointerClick className="h-5 w-5 text-emerald-500" />
+              <div className="p-3 bg-muted rounded-full">
+                <MousePointerClick className="h-5 w-5 text-foreground" />
               </div>
             </div>
           </CardContent>
         </Card>
-
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Average CTR</p>
+                <p className="text-sm text-muted-foreground">Avg CTR</p>
                 <p className="text-2xl font-bold">{avgCTR}%</p>
               </div>
-              <div className="p-3 bg-amber-500/10 rounded-full">
-                <TrendingUp className="h-5 w-5 text-amber-500" />
+              <div className="p-3 bg-muted rounded-full">
+                <TrendingUp className="h-5 w-5 text-foreground" />
               </div>
             </div>
           </CardContent>
         </Card>
-
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
@@ -276,15 +269,15 @@ export const AdvertisementPanel = () => {
                 <p className="text-sm text-muted-foreground">Active Ads</p>
                 <p className="text-2xl font-bold">{activeAds}</p>
               </div>
-              <div className="p-3 bg-primary/10 rounded-full">
-                <BarChart3 className="h-5 w-5 text-primary" />
+              <div className="p-3 bg-muted rounded-full">
+                <BarChart3 className="h-5 w-5 text-foreground" />
               </div>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Ads Table */}
+      {/* Ads List */}
       <Card>
         <CardHeader>
           <CardTitle>All Advertisements</CardTitle>
@@ -304,114 +297,98 @@ export const AdvertisementPanel = () => {
               </Button>
             </div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Ad</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Impressions</TableHead>
-                  <TableHead>Clicks</TableHead>
-                  <TableHead>CTR</TableHead>
-                  <TableHead>Schedule</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {ads.map((ad) => {
-                  const config = adTypeConfig[ad.ad_type];
-                  const ctr = ad.impressions > 0 ? ((ad.clicks / ad.impressions) * 100).toFixed(2) : "0.00";
-                  
-                  return (
-                    <TableRow key={ad.id}>
-                      <TableCell>
-                        <div className="flex items-center gap-3">
-                          {ad.media_url ? (
-                            <img
-                              src={ad.media_url}
-                              alt={ad.title}
-                              className="w-10 h-10 rounded-lg object-cover"
-                            />
-                          ) : (
-                            <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center">
-                              <Image className="h-5 w-5 text-muted-foreground" />
-                            </div>
-                          )}
-                          <div>
-                            <p className="font-medium">{ad.title}</p>
-                            {ad.target_url && (
-                              <a
-                                href={ad.target_url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-xs text-muted-foreground hover:text-primary flex items-center gap-1"
-                              >
-                                <ExternalLink className="h-3 w-3" />
-                                Link
-                              </a>
-                            )}
-                          </div>
+            <div className="space-y-3">
+              {ads.map((ad) => {
+                const config = adTypeConfig[ad.ad_type];
+                const ctr = ad.impressions > 0 ? ((ad.clicks / ad.impressions) * 100).toFixed(2) : "0.00";
+                const placements = ad.target_content_types || [];
+
+                return (
+                  <Card key={ad.id} className="p-4">
+                    <div className="flex items-start gap-3">
+                      {/* Thumbnail */}
+                      {ad.media_url ? (
+                        <img
+                          src={ad.media_url}
+                          alt={ad.title}
+                          className="w-16 h-16 rounded-lg object-cover flex-shrink-0"
+                        />
+                      ) : (
+                        <div className="w-16 h-16 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
+                          <Image className="h-6 w-6 text-muted-foreground" />
                         </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className={config.color}>
-                          <config.icon className="h-3 w-3 mr-1" />
-                          {config.label}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <Switch
-                            checked={ad.is_active}
-                            onCheckedChange={(checked) =>
-                              toggleMutation.mutate({ id: ad.id, is_active: checked })
-                            }
-                          />
-                          <Badge variant={ad.is_active ? "default" : "secondary"}>
+                      )}
+
+                      {/* Info */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <p className="font-semibold text-sm truncate">{ad.title}</p>
+                          <Badge variant="outline" className={cn("text-xs", config.color)}>
+                            {config.label}
+                          </Badge>
+                          <Badge variant={ad.is_active ? "default" : "secondary"} className="text-xs">
                             {ad.is_active ? "Active" : "Paused"}
                           </Badge>
                         </div>
-                      </TableCell>
-                      <TableCell>{ad.impressions.toLocaleString()}</TableCell>
-                      <TableCell>{ad.clicks.toLocaleString()}</TableCell>
-                      <TableCell>{ctr}%</TableCell>
-                      <TableCell>
-                        {ad.start_date && ad.end_date ? (
-                          <span className="text-xs text-muted-foreground">
-                            {new Date(ad.start_date).toLocaleDateString()} - {new Date(ad.end_date).toLocaleDateString()}
-                          </span>
-                        ) : (
-                          <span className="text-xs text-muted-foreground">Always</span>
+
+                        {/* Placements */}
+                        {placements.length > 0 && (
+                          <div className="flex gap-1 mt-1 flex-wrap">
+                            {placements.map((p: string) => {
+                              const opt = PLACEMENT_OPTIONS.find((o) => o.value === p);
+                              return (
+                                <Badge key={p} variant="outline" className="text-[10px] px-1.5 py-0">
+                                  {opt?.label || p}
+                                </Badge>
+                              );
+                            })}
+                          </div>
                         )}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-2">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => setEditingAd(ad)}
-                          >
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="text-destructive hover:text-destructive"
-                            onClick={() => {
-                              if (confirm("Delete this advertisement?")) {
-                                deleteMutation.mutate(ad.id);
-                              }
-                            }}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
+
+                        {/* Stats row */}
+                        <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
+                          <span className="flex items-center gap-1">
+                            <Eye className="h-3 w-3" /> {ad.impressions.toLocaleString()}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <MousePointerClick className="h-3 w-3" /> {ad.clicks.toLocaleString()}
+                          </span>
+                          <span>{ctr}% CTR</span>
+                          {ad.start_date && ad.end_date && (
+                            <span>
+                              {new Date(ad.start_date).toLocaleDateString()} – {new Date(ad.end_date).toLocaleDateString()}
+                            </span>
+                          )}
                         </div>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
+                      </div>
+
+                      {/* Actions */}
+                      <div className="flex items-center gap-1 flex-shrink-0">
+                        <Switch
+                          checked={ad.is_active}
+                          onCheckedChange={(checked) =>
+                            toggleMutation.mutate({ id: ad.id, is_active: checked })
+                          }
+                        />
+                        <Button variant="ghost" size="icon" onClick={() => setEditingAd(ad)}>
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="text-destructive hover:text-destructive"
+                          onClick={() => {
+                            if (confirm("Delete this advertisement?")) deleteMutation.mutate(ad.id);
+                          }}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  </Card>
+                );
+              })}
+            </div>
           )}
         </CardContent>
       </Card>
@@ -441,16 +418,26 @@ const AdFormDialog = ({ ad, onSave, isPending }: AdFormDialogProps) => {
   const [formData, setFormData] = useState({
     title: ad?.title || "",
     description: ad?.description || "",
-    ad_type: ad?.ad_type || "feed",
+    ad_type: ad?.ad_type || ("feed" as AdType),
     media_url: ad?.media_url || "",
     target_url: ad?.target_url || "",
+    target_content_types: ad?.target_content_types || [] as string[],
     is_active: ad?.is_active ?? true,
-    daily_impression_limit: ad?.daily_impression_limit || null,
+    daily_impression_limit: ad?.daily_impression_limit || null as number | null,
     start_date: ad?.start_date?.split("T")[0] || "",
     end_date: ad?.end_date?.split("T")[0] || "",
   });
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const togglePlacement = (value: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      target_content_types: prev.target_content_types.includes(value)
+        ? prev.target_content_types.filter((v) => v !== value)
+        : [...prev.target_content_types, value],
+    }));
+  };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -482,6 +469,10 @@ const AdFormDialog = ({ ad, onSave, isPending }: AdFormDialogProps) => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (formData.target_content_types.length === 0) {
+      toast({ title: "Select at least one placement", variant: "destructive" });
+      return;
+    }
     onSave({
       id: ad?.id,
       ...formData,
@@ -561,7 +552,32 @@ const AdFormDialog = ({ ad, onSave, isPending }: AdFormDialogProps) => {
           </div>
         </div>
 
-        {/* Media Upload from Gallery */}
+        {/* Placement Selection */}
+        <div className="space-y-2">
+          <Label>Show Ad In <span className="text-destructive">*</span></Label>
+          <div className="grid grid-cols-2 gap-2">
+            {PLACEMENT_OPTIONS.map((opt) => (
+              <label
+                key={opt.value}
+                className={cn(
+                  "flex items-center gap-2.5 p-2.5 rounded-lg border cursor-pointer transition-colors",
+                  formData.target_content_types.includes(opt.value)
+                    ? "border-primary bg-primary/5"
+                    : "border-border hover:bg-muted/40"
+                )}
+              >
+                <Checkbox
+                  checked={formData.target_content_types.includes(opt.value)}
+                  onCheckedChange={() => togglePlacement(opt.value)}
+                />
+                <opt.icon className="h-4 w-4 text-foreground" />
+                <span className="text-sm font-medium">{opt.label}</span>
+              </label>
+            ))}
+          </div>
+        </div>
+
+        {/* Media Upload */}
         <div className="space-y-2">
           <Label>Media</Label>
           <div className="flex gap-2">
@@ -613,7 +629,7 @@ const AdFormDialog = ({ ad, onSave, isPending }: AdFormDialogProps) => {
           <Input
             value={formData.media_url}
             onChange={(e) => setFormData({ ...formData, media_url: e.target.value })}
-            placeholder="Or paste URL..."
+            placeholder="Or paste image URL..."
             className="mt-2"
           />
         </div>
@@ -638,7 +654,6 @@ const AdFormDialog = ({ ad, onSave, isPending }: AdFormDialogProps) => {
               onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
             />
           </div>
-
           <div className="space-y-2">
             <Label htmlFor="end_date">End Date</Label>
             <Input
@@ -659,7 +674,6 @@ const AdFormDialog = ({ ad, onSave, isPending }: AdFormDialogProps) => {
             />
             <Label htmlFor="is_active">Active</Label>
           </div>
-
           <Button type="submit" disabled={isPending}>
             {isPending ? "Saving..." : ad ? "Update Ad" : "Create Ad"}
           </Button>

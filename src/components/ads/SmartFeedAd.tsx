@@ -2,43 +2,40 @@ import { useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { ExternalLink, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface SmartFeedAdProps {
   className?: string;
+  placement?: "home_feed" | "circles" | "stories" | "explore" | "profile";
 }
 
-export const SmartFeedAd = ({ className }: SmartFeedAdProps) => {
-  // Fetch a random active ad
+export const SmartFeedAd = ({ className, placement = "home_feed" }: SmartFeedAdProps) => {
   const { data: ad, isLoading } = useQuery({
-    queryKey: ["active-feed-ad"],
+    queryKey: ["active-feed-ad", placement],
     queryFn: async () => {
       const now = new Date().toISOString();
-      
+
       const { data, error } = await supabase
         .from("advertisements")
         .select("*")
         .eq("is_active", true)
-        .eq("ad_type", "feed")
         .or(`start_date.is.null,start_date.lte.${now}`)
         .or(`end_date.is.null,end_date.gte.${now}`)
+        .contains("target_content_types", [placement])
         .limit(5);
 
       if (error) throw error;
       if (!data || data.length === 0) return null;
-      
-      // Return random ad from results
+
       return data[Math.floor(Math.random() * data.length)];
     },
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 5 * 60 * 1000,
   });
 
   // Track impression
   const impressionMutation = useMutation({
     mutationFn: async (adId: string) => {
-      // Direct update for impressions
       await supabase
         .from("advertisements")
         .update({ impressions: (ad?.impressions || 0) + 1 })
@@ -49,12 +46,11 @@ export const SmartFeedAd = ({ className }: SmartFeedAdProps) => {
   // Track click
   const clickMutation = useMutation({
     mutationFn: async (adId: string) => {
-      const { error } = await supabase
+      await supabase
         .from("advertisements")
         .update({ clicks: (ad?.clicks || 0) + 1 })
         .eq("id", adId);
-      
-      // Also log to analytics
+
       await supabase.from("ad_analytics").insert({
         ad_id: adId,
         event_type: "click",
@@ -63,12 +59,9 @@ export const SmartFeedAd = ({ className }: SmartFeedAdProps) => {
     },
   });
 
-  // Track impression when ad is displayed
   useEffect(() => {
     if (ad?.id) {
       impressionMutation.mutate(ad.id);
-      
-      // Log impression to analytics
       supabase.from("ad_analytics").insert({
         ad_id: ad.id,
         event_type: "impression",
@@ -78,17 +71,11 @@ export const SmartFeedAd = ({ className }: SmartFeedAdProps) => {
   }, [ad?.id]);
 
   const handleClick = () => {
-    if (ad?.id) {
-      clickMutation.mutate(ad.id);
-    }
-    if (ad?.target_url) {
-      window.open(ad.target_url, "_blank", "noopener,noreferrer");
-    }
+    if (ad?.id) clickMutation.mutate(ad.id);
+    if (ad?.target_url) window.open(ad.target_url, "_blank", "noopener,noreferrer");
   };
 
-  if (isLoading || !ad) {
-    return null;
-  }
+  if (isLoading || !ad) return null;
 
   return (
     <Card
@@ -99,18 +86,14 @@ export const SmartFeedAd = ({ className }: SmartFeedAdProps) => {
       )}
       onClick={handleClick}
     >
-      {/* Sponsored label */}
       <div className="flex items-center justify-between px-4 py-2 bg-muted/30">
         <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
           <Sparkles className="h-3 w-3" />
           <span>Sponsored</span>
         </div>
-        {ad.target_url && (
-          <ExternalLink className="h-3 w-3 text-muted-foreground" />
-        )}
+        {ad.target_url && <ExternalLink className="h-3 w-3 text-muted-foreground" />}
       </div>
 
-      {/* Ad Media */}
       {ad.media_url && (
         <div className="relative aspect-video bg-muted">
           <img
@@ -122,15 +105,10 @@ export const SmartFeedAd = ({ className }: SmartFeedAdProps) => {
         </div>
       )}
 
-      {/* Ad Content */}
       <div className="p-4 space-y-2">
-        <h3 className="font-semibold text-foreground line-clamp-2">
-          {ad.title}
-        </h3>
+        <h3 className="font-semibold text-foreground line-clamp-2">{ad.title}</h3>
         {ad.description && (
-          <p className="text-sm text-muted-foreground line-clamp-2">
-            {ad.description}
-          </p>
+          <p className="text-sm text-muted-foreground line-clamp-2">{ad.description}</p>
         )}
         {ad.target_url && (
           <div className="flex items-center gap-2 text-primary text-sm font-medium">
