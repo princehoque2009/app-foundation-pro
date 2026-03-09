@@ -279,6 +279,18 @@ export const InsideCirclePage = ({ circle: initialCircle, userId, onBack }: Insi
                   Join Circle
                 </Button>
               )}
+
+              {/* Invite button for admins of private circles */}
+              {isAdmin && circle.privacy === "private" && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className={`rounded-full text-xs h-8 px-3 gap-1.5 ${!isMember ? "" : "ml-auto"}`}
+                  onClick={() => setShowInvite(true)}
+                >
+                  <UserPlus className="h-3.5 w-3.5" /> Invite
+                </Button>
+              )}
             </div>
           )}
         </div>
