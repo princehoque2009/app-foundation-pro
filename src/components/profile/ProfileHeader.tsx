@@ -7,18 +7,14 @@ import {
   UserCircle, 
   Share2, 
   Edit3,
-  Camera,
   BarChart3,
   Info,
   Wallet,
 } from "lucide-react";
 import { VerifiedBadge } from "@/components/ui/VerifiedBadge";
 import { UserRolesDisplay } from "./UserRolesDisplay";
-import { CoverPhotoUploader } from "./CoverPhotoUploader";
-import { AvatarUploader } from "./AvatarUploader";
 import { FollowersFollowingDialog } from "./FollowersFollowingDialog";
 import { cn } from "@/lib/utils";
-import { ImageViewer } from "@/components/ui/ImageViewer";
 import { motion } from "framer-motion";
 import { toast } from "@/hooks/use-toast";
 import { useActiveEffects } from "@/hooks/useActiveEffects";
@@ -45,10 +41,8 @@ export const ProfileHeader = ({
   isLoading,
 }: ProfileHeaderProps) => {
   const navigate = useNavigate();
-  const [isAvatarUploaderOpen, setIsAvatarUploaderOpen] = useState(false);
   const [isFollowersDialogOpen, setIsFollowersDialogOpen] = useState(false);
   const [followersDialogTab, setFollowersDialogTab] = useState<"followers" | "following">("followers");
-  const [viewingImage, setViewingImage] = useState<string | null>(null);
   const { effects } = useActiveEffects(userId);
 
   const openFollowersDialog = (tab: "followers" | "following") => {
@@ -77,10 +71,7 @@ export const ProfileHeader = ({
   if (isLoading) {
     return (
       <div className="relative">
-        {/* Banner Skeleton */}
         <div className="h-36 sm:h-48 w-full shimmer" />
-        
-        {/* Profile Info Skeleton */}
         <div className="px-4 sm:px-6 pb-4">
           <div className="flex items-end gap-4 -mt-12 sm:-mt-16">
             <Skeleton className="h-24 w-24 sm:h-28 sm:w-28 rounded-full border-4 border-background" />
@@ -97,14 +88,21 @@ export const ProfileHeader = ({
   return (
     <>
       <div className="relative">
-        {/* Hero Layer - Cover Photo with Overlay */}
+        {/* Hero Layer - Cover Photo (view only, no editing, no fullscreen) */}
         <div className="relative h-36 sm:h-48 overflow-hidden mx-3 mt-2 rounded-xl">
-          <CoverPhotoUploader
-            userId={userId}
-            currentCoverUrl={profile?.cover_photo_url}
-            isOwner={isOwner}
-            onImageClick={(url) => setViewingImage(url)}
-          />
+          <div className="relative h-36 sm:h-48 w-full overflow-hidden bg-gradient-to-br from-muted to-muted/50">
+            {profile?.cover_photo_url ? (
+              <img
+                src={profile.cover_photo_url}
+                alt="Cover"
+                className="w-full h-full object-cover pointer-events-none select-none"
+                draggable={false}
+                onContextMenu={(e) => e.preventDefault()}
+              />
+            ) : (
+              <div className="absolute inset-0 bg-gradient-to-br from-muted to-muted/50" />
+            )}
+          </div>
           {/* Gradient overlay for contrast */}
           <div className="absolute inset-0 bg-gradient-to-t from-background/60 via-transparent to-transparent pointer-events-none" />
         </div>
@@ -112,52 +110,44 @@ export const ProfileHeader = ({
         {/* Identity Layer - Avatar + Name */}
         <div className="px-4 sm:px-6">
           <div className="flex items-end gap-4 -mt-12 sm:-mt-16 relative z-10">
-            {/* Avatar with story ring effect */}
+            {/* Avatar (no editing, no fullscreen - tap opens Edit Profile for owner) */}
             <motion.div
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               transition={{ duration: 0.3 }}
-              className="relative group"
+              className="relative"
             >
-              <div className={cn(
-                "p-[3px] rounded-full bg-card shadow-lg",
-                "ring-4 ring-background",
-                effects.hasNeonFrame && "ring-4 ring-fuchsia-500 shadow-[0_0_20px_rgba(217,70,239,0.5)]",
-                effects.hasPremiumFrame && !effects.hasNeonFrame && "ring-4 ring-amber-500 shadow-[0_0_15px_rgba(245,158,11,0.4)]",
-                effects.hasSpotlight && "shadow-[0_0_30px_rgba(249,115,22,0.6)]"
-              )}>
-                <Avatar 
-                  className="h-24 w-24 sm:h-28 sm:w-28 border-2 border-background cursor-pointer"
-                  onClick={() => profile?.avatar_url && setViewingImage(profile.avatar_url)}
-                >
+              <div
+                className={cn(
+                  "p-[3px] rounded-full bg-card shadow-lg",
+                  "ring-4 ring-background",
+                  effects.hasNeonFrame && "ring-4 ring-fuchsia-500 shadow-[0_0_20px_rgba(217,70,239,0.5)]",
+                  effects.hasPremiumFrame && !effects.hasNeonFrame && "ring-4 ring-amber-500 shadow-[0_0_15px_rgba(245,158,11,0.4)]",
+                  effects.hasSpotlight && "shadow-[0_0_30px_rgba(249,115,22,0.6)]"
+                )}
+                onClick={isOwner ? onEditClick : undefined}
+                role={isOwner ? "button" : undefined}
+                tabIndex={isOwner ? 0 : undefined}
+              >
+                <Avatar className={cn(
+                  "h-24 w-24 sm:h-28 sm:w-28 border-2 border-background",
+                  isOwner && "cursor-pointer"
+                )}>
                   <AvatarImage 
                     src={profile?.avatar_url || ""} 
                     alt={profile?.display_name || profile?.username}
-                    className="object-cover"
+                    className="object-cover pointer-events-none select-none"
+                    draggable={false}
+                    onContextMenu={(e: React.MouseEvent) => e.preventDefault()}
                   />
                   <AvatarFallback className="bg-muted text-muted-foreground">
                     <UserCircle className="h-12 w-12 sm:h-14 sm:w-14" />
                   </AvatarFallback>
                 </Avatar>
               </div>
-              
-              {/* Edit avatar button for owner */}
-              {isOwner && (
-                <button
-                  onClick={() => setIsAvatarUploaderOpen(true)}
-                  className={cn(
-                    "absolute bottom-0 right-0 p-2 rounded-full",
-                    "bg-primary text-primary-foreground shadow-lg",
-                    "opacity-0 group-hover:opacity-100 transition-opacity",
-                    "hover:bg-primary/90 active:scale-95"
-                  )}
-                >
-                  <Camera className="h-3.5 w-3.5" />
-                </button>
-              )}
             </motion.div>
 
-            {/* Action Layer - Buttons (Right aligned on same row) */}
+            {/* Action Layer - Buttons */}
             <div className="flex-1 flex justify-end items-center gap-2 pt-16 sm:pt-20">
               {isOwner ? (
                 <>
@@ -218,7 +208,6 @@ export const ProfileHeader = ({
             transition={{ delay: 0.1, duration: 0.3 }}
             className="mt-3 space-y-1"
           >
-            {/* Name + Verified + Roles */}
             <div className="flex items-center gap-2 flex-wrap">
               <h1 className={cn(
                 "text-xl sm:text-2xl font-bold leading-tight",
@@ -232,12 +221,10 @@ export const ProfileHeader = ({
               <UserRolesDisplay userId={userId} size="sm" />
             </div>
             
-            {/* Handle */}
             <p className="text-sm text-muted-foreground font-medium">
               @{profile?.username}
             </p>
 
-            {/* Bio */}
             {profile?.bio && (
               <p className="text-sm text-foreground leading-relaxed pt-2 max-w-xl">
                 {profile.bio}
@@ -252,28 +239,19 @@ export const ProfileHeader = ({
             transition={{ delay: 0.2, duration: 0.3 }}
             className="flex gap-5 mt-4 pb-4"
           >
-            <button 
-              className="group text-left"
-              onClick={() => {/* Navigate to posts */}}
-            >
+            <button className="group text-left" onClick={() => {}}>
               <span className="text-lg font-bold text-foreground group-hover:text-primary transition-colors">
                 {postsCount}
               </span>
               <span className="text-sm text-muted-foreground ml-1.5">posts</span>
             </button>
-            <button 
-              className="group text-left"
-              onClick={() => openFollowersDialog("followers")}
-            >
+            <button className="group text-left" onClick={() => openFollowersDialog("followers")}>
               <span className="text-lg font-bold text-foreground group-hover:text-primary transition-colors">
                 {profile?.followers_count || 0}
               </span>
               <span className="text-sm text-muted-foreground ml-1.5">followers</span>
             </button>
-            <button 
-              className="group text-left"
-              onClick={() => openFollowersDialog("following")}
-            >
+            <button className="group text-left" onClick={() => openFollowersDialog("following")}>
               <span className="text-lg font-bold text-foreground group-hover:text-primary transition-colors">
                 {profile?.following_count || 0}
               </span>
@@ -283,13 +261,6 @@ export const ProfileHeader = ({
         </div>
       </div>
 
-      {/* Avatar Uploader Dialog */}
-      <AvatarUploader
-        currentAvatar={profile?.avatar_url}
-        open={isAvatarUploaderOpen}
-        onOpenChange={setIsAvatarUploaderOpen}
-      />
-
       {/* Followers/Following Dialog */}
       <FollowersFollowingDialog
         open={isFollowersDialogOpen}
@@ -298,13 +269,6 @@ export const ProfileHeader = ({
         initialTab={followersDialogTab}
         followersCount={profile?.followers_count || 0}
         followingCount={profile?.following_count || 0}
-      />
-
-      {/* Full Image Viewer */}
-      <ImageViewer
-        src={viewingImage || ""}
-        open={!!viewingImage}
-        onOpenChange={(open) => !open && setViewingImage(null)}
       />
     </>
   );
