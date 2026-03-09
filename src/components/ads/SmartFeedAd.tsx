@@ -75,7 +75,38 @@ export const SmartFeedAd = ({ className, placement = "home_feed" }: SmartFeedAdP
     if (ad?.target_url) window.open(ad.target_url, "_blank", "noopener,noreferrer");
   };
 
-  if (isLoading || !ad) return null;
+  if (isLoading) {
+    return (
+      <Card className={cn("overflow-hidden border-border/50 bg-muted/30", className)}>
+        <div className="flex items-center gap-1.5 px-4 py-2 bg-muted/20">
+          <Sparkles className="h-3 w-3 text-muted-foreground/40" />
+          <span className="text-xs text-muted-foreground/40">Sponsored</span>
+        </div>
+        <div className="aspect-video bg-muted animate-pulse" />
+        <div className="p-4 space-y-2">
+          <div className="h-4 w-2/3 bg-muted animate-pulse rounded" />
+          <div className="h-3 w-1/2 bg-muted animate-pulse rounded" />
+        </div>
+      </Card>
+    );
+  }
+
+  if (!ad) {
+    return (
+      <Card className={cn("overflow-hidden border-dashed border-border/60 bg-muted/10", className)}>
+        <div className="flex items-center gap-1.5 px-4 py-2">
+          <Sparkles className="h-3 w-3 text-muted-foreground/30" />
+          <span className="text-xs text-muted-foreground/30">Sponsored</span>
+        </div>
+        <div className="aspect-video bg-muted/30 flex items-center justify-center">
+          <div className="text-center space-y-1">
+            <Sparkles className="h-8 w-8 text-muted-foreground/20 mx-auto" />
+            <p className="text-xs text-muted-foreground/30">Ad space</p>
+          </div>
+        </div>
+      </Card>
+    );
+  }
 
   return (
     <Card
