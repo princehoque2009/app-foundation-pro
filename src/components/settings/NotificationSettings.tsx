@@ -53,12 +53,12 @@ export const NotificationSettings = () => {
   });
 
   const toggleItems = [
-    { icon: Heart, label: "Likes", desc: "When someone likes your post", color: "text-pink-500" },
-    { icon: MessageCircle, label: "Comments", desc: "When someone comments on your post", color: "text-blue-500" },
-    { icon: AtSign, label: "Mentions", desc: "When someone mentions you", color: "text-amber-500" },
-    { icon: UserPlus, label: "Friend Requests", desc: "New friend requests and accepts", color: "text-emerald-500" },
-    { icon: Eye, label: "Story Activity", desc: "Views and reactions to your stories", color: "text-purple-500" },
-    { icon: Users, label: "Circle Activity", desc: "Posts and joins in your circles", color: "text-indigo-500" },
+    { icon: Heart, label: "Likes", desc: "When someone likes your post", color: "text-foreground" },
+    { icon: MessageCircle, label: "Comments", desc: "When someone comments on your post", color: "text-foreground" },
+    { icon: AtSign, label: "Mentions", desc: "When someone mentions you", color: "text-foreground" },
+    { icon: UserPlus, label: "Friend Requests", desc: "New friend requests and accepts", color: "text-foreground" },
+    { icon: Eye, label: "Story Activity", desc: "Views and reactions to your stories", color: "text-foreground" },
+    { icon: Users, label: "Circle Activity", desc: "Posts and joins in your circles", color: "text-foreground" },
   ];
 
   return (
