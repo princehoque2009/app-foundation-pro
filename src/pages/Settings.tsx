@@ -200,7 +200,7 @@ const Settings = () => {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
-            <Palette className="h-5 w-5 text-purple-500" />
+            <Palette className="h-5 w-5 text-foreground" />
             {t("settings.theme")}
           </CardTitle>
           <CardDescription>{t("settings.themeDesc")}</CardDescription>
