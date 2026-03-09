@@ -19,6 +19,9 @@ import { ImageViewer } from "@/components/ui/ImageViewer";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { formatDistanceToNow } from "date-fns";
+import { SmartFeedAd } from "@/components/ads/SmartFeedAd";
+
+const CIRCLE_AD_INTERVAL = 6;
 
 interface InsideCirclePageProps {
   circle: any;
