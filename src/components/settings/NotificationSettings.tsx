@@ -67,7 +67,7 @@ export const NotificationSettings = () => {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
-            <Bell className="h-5 w-5 text-amber-500" />
+            <Bell className="h-5 w-5 text-foreground" />
             Push Notifications
           </CardTitle>
           <CardDescription>Control push notifications on this device</CardDescription>
