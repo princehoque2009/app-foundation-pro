@@ -93,6 +93,67 @@ const Circles = () => {
     enabled: feedPosterIds.length > 0,
   });
 
+  // Fetch pending circle invitations
+  const { data: pendingInvitations } = useQuery({
+    queryKey: ["circle-invitations", user?.id],
+    enabled: !!user?.id,
+    queryFn: async () => {
+      const { data: invites } = await supabase
+        .from("circle_invitations" as any)
+        .select("*")
+        .eq("invited_user_id", user!.id)
+        .eq("status", "pending")
+        .order("created_at", { ascending: false });
+
+      if (!invites || invites.length === 0) return [];
+
+      // Get circle details
+      const circleIds = [...new Set(invites.map((i: any) => i.circle_id))];
+      const { data: circles } = await supabase
+        .from("community_groups")
+        .select("id, name, logo_url, banner_url, privacy, category, members_count")
+        .in("id", circleIds as string[]);
+
+      // Get inviter profiles
+      const inviterIds = [...new Set(invites.map((i: any) => i.invited_by))];
+      const { data: inviters } = await supabase
+        .from("profiles")
+        .select("id, username, display_name, avatar_url")
+        .in("id", inviterIds as string[]);
+
+      const circleMap: Record<string, any> = {};
+      circles?.forEach((c: any) => { circleMap[c.id] = c; });
+      const inviterMap: Record<string, any> = {};
+      inviters?.forEach((p: any) => { inviterMap[p.id] = p; });
+
+      return invites.map((inv: any) => ({
+        ...inv,
+        circle: circleMap[inv.circle_id],
+        inviter: inviterMap[inv.invited_by],
+      }));
+    },
+  });
+
+  const respondToInvitation = async (invitationId: string, circleId: string, accept: boolean) => {
+    if (accept) {
+      // Join the circle
+      await supabase.from("community_group_members").insert({
+        group_id: circleId,
+        user_id: user?.id!,
+        role: "member",
+      });
+    }
+    // Update invitation status
+    await supabase
+      .from("circle_invitations" as any)
+      .update({ status: accept ? "accepted" : "declined", responded_at: new Date().toISOString() })
+      .eq("id", invitationId);
+
+    queryClient.invalidateQueries({ queryKey: ["circle-invitations"] });
+    queryClient.invalidateQueries({ queryKey: ["circles"] });
+    toast({ title: accept ? "Joined circle!" : "Invitation declined" });
+  };
+
   const filteredCircles = useMemo(() => {
     if (!allCircles) return [];
     let list = allCircles;
