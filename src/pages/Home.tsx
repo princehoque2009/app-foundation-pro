@@ -55,7 +55,7 @@ const Home = () => {
                   timestamp={post.created_at}
                 />
                 {(index + 1) % AD_INTERVAL === 0 && index < posts.length - 1 && (
-                  <SmartFeedAd key={`ad-${index}`} className="mb-4" />
+                  <SmartFeedAd key={`ad-${index}`} placement="home_feed" className="mb-4" />
                 )}
               </Fragment>
             ))
