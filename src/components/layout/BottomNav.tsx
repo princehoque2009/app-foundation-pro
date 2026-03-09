@@ -1,8 +1,7 @@
-import { Home, Clapperboard, Plus, CircleDot, CircleUserRound } from "lucide-react";
+import { Home, Clapperboard, Plus, CircleDot, CircleUserRound, ImagePlus, Film, X } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useTranslation } from "react-i18next";
 
 const ACTIVE = "#FF5A5F";
@@ -21,6 +20,23 @@ export const BottomNav = () => {
     { icon: CircleUserRound, label: t("nav.profile"), path: "/profile" },
   ];
 
+  const createOptions = [
+    {
+      icon: ImagePlus,
+      label: t("create.title"),
+      desc: t("create.addPhoto"),
+      path: "/create",
+      gradient: "from-[#FF5A5F] to-[#FF8A5C]",
+    },
+    {
+      icon: Film,
+      label: t("nav.reels"),
+      desc: t("create.addVideo"),
+      path: "/create",
+      gradient: "from-[#7C3AED] to-[#EC4899]",
+    },
+  ];
+
   return (
     <>
       <nav className="fixed bottom-0 left-0 right-0 z-50 safe-area-bottom">
@@ -29,7 +45,9 @@ export const BottomNav = () => {
           <div className="absolute left-1/2 -translate-x-1/2 -top-6 z-10">
             <motion.button
               whileTap={{ scale: 0.9 }}
-              onClick={() => setShowCreate(true)}
+              animate={showCreate ? { rotate: 45 } : { rotate: 0 }}
+              transition={{ type: "spring", stiffness: 300, damping: 20 }}
+              onClick={() => setShowCreate(!showCreate)}
               className="flex items-center justify-center w-[52px] h-[52px] rounded-full shadow-lg shadow-[#FF5A5F]/25"
               style={{ background: ACTIVE }}
             >
@@ -84,29 +102,58 @@ export const BottomNav = () => {
         </div>
       </nav>
 
-      {/* Create Modal */}
-      <Dialog open={showCreate} onOpenChange={setShowCreate}>
-        <DialogContent className="max-w-[320px] rounded-2xl">
-          <DialogHeader>
-            <DialogTitle className="text-center text-lg">{t("nav.create")}</DialogTitle>
-          </DialogHeader>
-          <div className="flex flex-col gap-1 pt-2">
-            {[
-              { label: t("create.title"), desc: t("create.addPhoto"), path: "/create" },
-              { label: t("nav.reels"), desc: t("create.addVideo"), path: "/create" },
-            ].map((item) => (
-              <button
-                key={item.label}
-                onClick={() => { setShowCreate(false); navigate(item.path); }}
-                className="flex flex-col items-start p-3 rounded-xl hover:bg-muted/80 transition-colors text-left"
+      {/* Create Menu — Floating Cards */}
+      <AnimatePresence>
+        {showCreate && (
+          <>
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="fixed inset-0 z-[60] bg-black/40 backdrop-blur-sm"
+              onClick={() => setShowCreate(false)}
+            />
+
+            {/* Floating action cards */}
+            <div className="fixed bottom-24 left-0 right-0 z-[61] flex justify-center px-6">
+              <motion.div
+                initial={{ opacity: 0, y: 40, scale: 0.9 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: 40, scale: 0.9 }}
+                transition={{ type: "spring", stiffness: 400, damping: 28 }}
+                className="flex gap-4"
               >
-                <span className="text-sm font-semibold text-foreground">{item.label}</span>
-                <span className="text-xs text-muted-foreground">{item.desc}</span>
-              </button>
-            ))}
-          </div>
-        </DialogContent>
-      </Dialog>
+                {createOptions.map((item, i) => (
+                  <motion.button
+                    key={item.label}
+                    initial={{ opacity: 0, y: 30 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 30 }}
+                    transition={{ delay: i * 0.07, type: "spring", stiffness: 400, damping: 25 }}
+                    onClick={() => {
+                      setShowCreate(false);
+                      navigate(item.path);
+                    }}
+                    className="group flex flex-col items-center gap-3 w-[140px] p-5 rounded-2xl bg-background border border-border/50 shadow-xl hover:shadow-2xl transition-shadow"
+                  >
+                    <div
+                      className={`flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br ${item.gradient} shadow-lg`}
+                    >
+                      <item.icon className="h-6 w-6 text-white" strokeWidth={1.8} />
+                    </div>
+                    <div className="text-center">
+                      <p className="text-sm font-semibold text-foreground">{item.label}</p>
+                      <p className="text-[11px] text-muted-foreground mt-0.5">{item.desc}</p>
+                    </div>
+                  </motion.button>
+                ))}
+              </motion.div>
+            </div>
+          </>
+        )}
+      </AnimatePresence>
     </>
   );
 };
