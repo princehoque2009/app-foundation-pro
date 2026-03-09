@@ -334,6 +334,56 @@ const Circles = () => {
           </motion.div>
         ) : (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }}>
+            {/* Pending Invitations */}
+            {pendingInvitations && pendingInvitations.length > 0 && (
+              <section className="mb-5 px-4">
+                <div className="flex items-center gap-1.5 mb-2">
+                  <Mail className="h-4 w-4 text-primary" />
+                  <h2 className="text-sm font-bold text-foreground">Circle Invitations</h2>
+                  <span className="ml-1 px-1.5 py-0.5 rounded-full bg-primary/10 text-primary text-[10px] font-bold">
+                    {pendingInvitations.length}
+                  </span>
+                </div>
+                <div className="space-y-2">
+                  {pendingInvitations.map((inv: any) => (
+                    <Card key={inv.id} className="p-3.5 border-border/50">
+                      <div className="flex items-center gap-3">
+                        <Avatar className="h-11 w-11 shrink-0">
+                          <AvatarImage src={inv.circle?.logo_url} />
+                          <AvatarFallback className="bg-primary/10 text-primary text-sm font-bold">
+                            {inv.circle?.name?.charAt(0) || "?"}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-semibold text-foreground truncate">{inv.circle?.name || "Circle"}</p>
+                          <p className="text-[11px] text-muted-foreground">
+                            Invited by {inv.inviter?.display_name || inv.inviter?.username || "someone"}
+                          </p>
+                        </div>
+                        <div className="flex gap-1.5 shrink-0">
+                          <Button
+                            size="sm"
+                            className="rounded-full h-8 px-3 text-xs"
+                            onClick={() => respondToInvitation(inv.id, inv.circle_id, true)}
+                          >
+                            <Check className="h-3.5 w-3.5 mr-1" /> Accept
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="rounded-full h-8 px-2.5 text-xs"
+                            onClick={() => respondToInvitation(inv.id, inv.circle_id, false)}
+                          >
+                            <XCircle className="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
+                      </div>
+                    </Card>
+                  ))}
+                </div>
+              </section>
+            )}
+
             {/* Your Circles - Horizontal scroll */}
             {yourCircles.length > 0 && activeFilter === "For You" && (
               <section className="mb-5">
