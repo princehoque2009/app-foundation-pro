@@ -14,6 +14,9 @@ import { CircleFeedPost } from "@/components/circles/CircleFeedPost";
 import { CreateCircleDialog } from "@/components/circles/CreateCircleDialog";
 import { InsideCirclePage } from "@/components/circles/InsideCirclePage";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 
 const FILTER_TABS = ["For You", "Your Circles", "Trending", "New"];
 const CATEGORIES = ["All", "Technology", "Education", "Gaming", "Business", "Science", "Lifestyle", "Sports", "Music", "Art", "Health", "Travel", "General"];
