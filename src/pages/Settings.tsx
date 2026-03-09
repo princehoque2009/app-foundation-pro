@@ -294,7 +294,7 @@ const Settings = () => {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
-            <Download className="h-5 w-5 text-cyan-500" />
+            <Download className="h-5 w-5 text-foreground" />
             {t("settings.autoDownload")}
           </CardTitle>
           <CardDescription>{t("settings.autoDownloadDesc")}</CardDescription>
