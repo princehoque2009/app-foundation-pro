@@ -119,17 +119,17 @@ const Settings = () => {
   };
 
   const menuItems: MenuItem[] = [
-    { id: "account", icon: User, label: "Account", description: "Email, password, personal info", color: "text-blue-500" },
-    { id: "privacy", icon: Lock, label: "Privacy", description: "Account type, visibility controls", color: "text-emerald-500" },
-    { id: "security", icon: Shield, label: "Security", description: "Devices, login activity, 2FA", color: "text-primary" },
-    { id: "notifications", icon: Bell, label: "Notifications", description: "Push, email, activity alerts", color: "text-amber-500" },
-    { id: "appearance", icon: Palette, label: "Appearance", description: "Theme, language, sounds", color: "text-purple-500" },
-    { id: "data", icon: Database, label: "Data & Storage", description: "Cache, downloads, export", color: "text-cyan-500" },
-    { id: "safety", icon: Ban, label: "Safety", description: "Blocked users, reports", color: "text-orange-500" },
-    { id: "help", icon: HelpCircle, label: "Help & Support", description: "Contact, guidelines, FAQ", color: "text-teal-500" },
-    { id: "verification", icon: BadgeCheck, label: "Verification", description: "Request account verification", color: "text-blue-400" },
-    { id: "terms", icon: FileText, label: "Privacy & Terms", description: "Policies and legal info", color: "text-muted-foreground" },
-    { id: "account-control", icon: AlertTriangle, label: "Account Control", description: "Deactivate, delete, logout", color: "text-destructive" },
+    { id: "account", icon: User, label: "Account", description: "Email, password, personal info", color: "text-foreground" },
+    { id: "privacy", icon: Lock, label: "Privacy", description: "Account type, visibility controls", color: "text-foreground" },
+    { id: "security", icon: Shield, label: "Security", description: "Devices, login activity, 2FA", color: "text-foreground" },
+    { id: "notifications", icon: Bell, label: "Notifications", description: "Push, email, activity alerts", color: "text-foreground" },
+    { id: "appearance", icon: Palette, label: "Appearance", description: "Theme, language, sounds", color: "text-foreground" },
+    { id: "data", icon: Database, label: "Data & Storage", description: "Cache, downloads, export", color: "text-foreground" },
+    { id: "safety", icon: Ban, label: "Safety", description: "Blocked users, reports", color: "text-foreground" },
+    { id: "help", icon: HelpCircle, label: "Help & Support", description: "Contact, guidelines, FAQ", color: "text-foreground" },
+    { id: "verification", icon: BadgeCheck, label: "Verification", description: "Request account verification", color: "text-foreground" },
+    { id: "terms", icon: FileText, label: "Privacy & Terms", description: "Policies and legal info", color: "text-foreground" },
+    { id: "account-control", icon: AlertTriangle, label: "Account Control", description: "Deactivate, delete, logout", color: "text-foreground" },
   ];
 
   const renderSectionHeader = (title: string) => (
@@ -200,7 +200,7 @@ const Settings = () => {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
-            <Palette className="h-5 w-5 text-purple-500" />
+            <Palette className="h-5 w-5 text-foreground" />
             {t("settings.theme")}
           </CardTitle>
           <CardDescription>{t("settings.themeDesc")}</CardDescription>
@@ -232,7 +232,7 @@ const Settings = () => {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
-            <Languages className="h-5 w-5 text-blue-500" />
+            <Languages className="h-5 w-5 text-foreground" />
             {t("settings.language")}
           </CardTitle>
           <CardDescription>{t("settings.languageDesc")}</CardDescription>
@@ -265,7 +265,7 @@ const Settings = () => {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
-            <Volume2 className="h-5 w-5 text-teal-500" />
+            <Volume2 className="h-5 w-5 text-foreground" />
             {t("settings.soundHaptics")}
           </CardTitle>
         </CardHeader>
@@ -294,7 +294,7 @@ const Settings = () => {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
-            <Download className="h-5 w-5 text-cyan-500" />
+            <Download className="h-5 w-5 text-foreground" />
             {t("settings.autoDownload")}
           </CardTitle>
           <CardDescription>{t("settings.autoDownloadDesc")}</CardDescription>
@@ -310,7 +310,7 @@ const Settings = () => {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
-            <Database className="h-5 w-5 text-cyan-500" />
+            <Database className="h-5 w-5 text-foreground" />
             {t("settings.dataSaver")}
           </CardTitle>
           <CardDescription>{t("settings.dataSaverDesc")}</CardDescription>
@@ -327,7 +327,7 @@ const Settings = () => {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
-            <Smartphone className="h-5 w-5 text-cyan-500" />
+            <Smartphone className="h-5 w-5 text-foreground" />
             {t("settings.storage")}
           </CardTitle>
         </CardHeader>
@@ -345,7 +345,7 @@ const Settings = () => {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
-            <Download className="h-5 w-5 text-cyan-500" />
+            <Download className="h-5 w-5 text-foreground" />
             {t("settings.downloadData")}
           </CardTitle>
           <CardDescription>{t("settings.downloadDataDesc")}</CardDescription>
@@ -370,7 +370,7 @@ const Settings = () => {
         <Card key={i} className="cursor-pointer hover:bg-muted/30 transition-colors" onClick={item.action}>
           <CardContent className="flex items-center gap-3.5 p-4">
             <div className="w-10 h-10 rounded-xl bg-muted/60 flex items-center justify-center">
-              <item.icon className="h-5 w-5 text-orange-500" />
+              <item.icon className="h-5 w-5 text-foreground" />
             </div>
             <div className="flex-1">
               <p className="text-sm font-semibold text-foreground">{item.label}</p>
@@ -393,7 +393,7 @@ const Settings = () => {
         <Card key={i} className="cursor-pointer hover:bg-muted/30 transition-colors" onClick={item.action}>
           <CardContent className="flex items-center gap-3.5 p-4">
             <div className="w-10 h-10 rounded-xl bg-muted/60 flex items-center justify-center">
-              <item.icon className="h-5 w-5 text-teal-500" />
+              <item.icon className="h-5 w-5 text-foreground" />
             </div>
             <div className="flex-1">
               <p className="text-sm font-semibold text-foreground">{item.label}</p>
