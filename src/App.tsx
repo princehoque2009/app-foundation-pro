@@ -43,6 +43,9 @@ import Lab from "./pages/Lab";
 import SuspendedAccount from "./pages/SuspendedAccount";
 import Wallet from "./pages/Wallet";
 import PostView from "./pages/PostView";
+import ActivityLog from "./pages/ActivityLog";
+import Memories from "./pages/Memories";
+import Gaming from "./pages/Gaming";
 
 const queryClient = new QueryClient({
   defaultOptions: {
