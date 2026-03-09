@@ -401,7 +401,7 @@ export const InsideCirclePage = ({ circle: initialCircle, userId, onBack }: Insi
                   />
                 </motion.div>
                 {(index + 1) % CIRCLE_AD_INTERVAL === 0 && index < sortedPosts.length - 1 && (
-                  <SmartFeedAd key={`circle-ad-${index}`} className="my-3" />
+                  <SmartFeedAd key={`circle-ad-${index}`} placement="circles" className="my-3" />
                 )}
               </Fragment>
             ))
