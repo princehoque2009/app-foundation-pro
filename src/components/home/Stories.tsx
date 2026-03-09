@@ -1,18 +1,19 @@
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useStories } from "@/hooks/useStories";
-import { StoryUpload } from "./StoryUpload";
 import { StoryViewer } from "./StoryViewer";
 import { StoryAvatar } from "./StoryAvatar";
+import { StoryComposer } from "@/components/stories/StoryComposer";
 import { motion } from "framer-motion";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Stories = () => {
   const { user } = useAuth();
-  const { stories, isLoading } = useStories();
-  const [uploadOpen, setUploadOpen] = useState(false);
-  const [selectedStory, setSelectedStory] = useState<any>(null);
+  const { storyGroups, isLoading, viewedStoryIds } = useStories();
+  const [composerOpen, setComposerOpen] = useState(false);
+  const [viewerOpen, setViewerOpen] = useState(false);
+  const [viewerGroupIndex, setViewerGroupIndex] = useState(0);
 
   // Fetch current user's profile
   const { data: currentUserProfile } = useQuery({
@@ -30,20 +31,25 @@ export const Stories = () => {
     enabled: !!user?.id,
   });
 
-  // Group stories by user
-  const groupedStories = stories.reduce((acc: any, story: any) => {
-    const userId = story.user_id;
-    if (!acc[userId]) {
-      acc[userId] = {
-        user: story.profiles,
-        stories: [],
-      };
-    }
-    acc[userId].stories.push(story);
-    return acc;
-  }, {});
+  // Check if current user has active stories
+  const currentUserGroup = storyGroups.find(g => g.user.id === user?.id);
+  const hasOwnStory = !!currentUserGroup && currentUserGroup.stories.length > 0;
 
-  const storyGroups = Object.values(groupedStories);
+  const handleStoryTap = (groupIndex: number) => {
+    setViewerGroupIndex(groupIndex);
+    setViewerOpen(true);
+  };
+
+  const handleOwnStoryTap = () => {
+    if (hasOwnStory) {
+      const idx = storyGroups.findIndex(g => g.user.id === user?.id);
+      if (idx >= 0) {
+        handleStoryTap(idx);
+      }
+    } else {
+      setComposerOpen(true);
+    }
+  };
 
   return (
     <>
@@ -57,29 +63,35 @@ export const Stories = () => {
           <StoryAvatar
             imageUrl={currentUserProfile?.avatar_url || user?.user_metadata?.avatar_url}
             name="Your Story"
-            isAddStory
-            hasActiveStory={false}
-            onClick={() => setUploadOpen(true)}
+            isAddStory={!hasOwnStory}
+            hasActiveStory={hasOwnStory}
+            hasUnviewedStory={false}
+            onClick={handleOwnStoryTap}
           />
         </motion.div>
 
-        {/* Friends' Stories */}
-        {!isLoading && storyGroups.map((group: any, index: number) => (
-          <motion.div
-            key={group.user.id}
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.3, delay: index * 0.05 }}
-          >
-            <StoryAvatar
-              imageUrl={group.user.avatar_url}
-              name={group.user.display_name || group.user.username}
-              hasActiveStory
-              hasUnviewedStory
-              onClick={() => setSelectedStory(group.stories[0])}
-            />
-          </motion.div>
-        ))}
+        {/* Other Users' Stories */}
+        {!isLoading && storyGroups
+          .filter(g => g.user.id !== user?.id)
+          .map((group, index) => {
+            const actualIndex = storyGroups.findIndex(g => g.user.id === group.user.id);
+            return (
+              <motion.div
+                key={group.user.id}
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.3, delay: index * 0.05 }}
+              >
+                <StoryAvatar
+                  imageUrl={group.user.avatar_url || undefined}
+                  name={group.user.display_name || group.user.username}
+                  hasActiveStory
+                  hasUnviewedStory={group.hasUnviewed}
+                  onClick={() => handleStoryTap(actualIndex)}
+                />
+              </motion.div>
+            );
+          })}
 
         {/* Loading Skeleton */}
         {isLoading && [...Array(4)].map((_, i) => (
@@ -90,12 +102,18 @@ export const Stories = () => {
         ))}
       </div>
 
-      <StoryUpload open={uploadOpen} onOpenChange={setUploadOpen} />
-      <StoryViewer
-        story={selectedStory}
-        open={!!selectedStory}
-        onOpenChange={(open) => !open && setSelectedStory(null)}
-      />
+      {/* Story Composer */}
+      <StoryComposer open={composerOpen} onOpenChange={setComposerOpen} />
+
+      {/* Story Viewer */}
+      {viewerOpen && storyGroups.length > 0 && (
+        <StoryViewer
+          storyGroups={storyGroups}
+          initialGroupIndex={viewerGroupIndex}
+          open={viewerOpen}
+          onOpenChange={setViewerOpen}
+        />
+      )}
     </>
   );
 };
