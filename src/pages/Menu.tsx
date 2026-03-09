@@ -106,13 +106,13 @@ const quickAccessItems = [
     id: "activity",
     icon: History,
     label: "Activity Log",
-    path: "/notifications",
+    path: "/activity-log",
   },
   {
     id: "memories",
     icon: Clock,
     label: "Memories",
-    path: "/notifications",
+    path: "/memories",
   },
   {
     id: "starred",
@@ -124,7 +124,7 @@ const quickAccessItems = [
     id: "gaming",
     icon: Zap,
     label: "Gaming",
-    path: "/",
+    path: "/gaming",
   },
 ];
 

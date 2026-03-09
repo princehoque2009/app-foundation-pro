@@ -43,6 +43,9 @@ import Lab from "./pages/Lab";
 import SuspendedAccount from "./pages/SuspendedAccount";
 import Wallet from "./pages/Wallet";
 import PostView from "./pages/PostView";
+import ActivityLog from "./pages/ActivityLog";
+import Memories from "./pages/Memories";
+import Gaming from "./pages/Gaming";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -131,8 +134,11 @@ const App = () => {
                   <Route path="/community-standards" element={<CommunityStandards />} />
                   <Route path="/cookies-policy" element={<CookiesPolicy />} />
                   <Route path="/manage-info" element={<ManageInfo />} />
-                  <Route path="/wallet" element={<ProtectedRoute><Wallet /></ProtectedRoute>} />
-                  <Route path="/post/:postId" element={<ProtectedRoute><PostView /></ProtectedRoute>} />
+                   <Route path="/wallet" element={<ProtectedRoute><Wallet /></ProtectedRoute>} />
+                   <Route path="/post/:postId" element={<ProtectedRoute><PostView /></ProtectedRoute>} />
+                   <Route path="/activity-log" element={<ProtectedRoute><ActivityLog /></ProtectedRoute>} />
+                   <Route path="/memories" element={<ProtectedRoute><Memories /></ProtectedRoute>} />
+                   <Route path="/gaming" element={<ProtectedRoute><Gaming /></ProtectedRoute>} />
                   <Route path="/suspended" element={<SuspendedAccount />} />
                   <Route path="*" element={<NotFound />} />
                   </Routes>
