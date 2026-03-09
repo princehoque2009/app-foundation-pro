@@ -378,28 +378,32 @@ export const InsideCirclePage = ({ circle: initialCircle, userId, onBack }: Insi
               <p className="text-muted-foreground text-xs mt-1">Be the first to post!</p>
             </div>
           ) : (
-            sortedPosts.map((post: any) => (
-              <motion.div
-                key={post.id}
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.2 }}
-              >
-                {post.is_pinned && (
-                  <div className="flex items-center gap-1 text-[10px] text-primary font-medium mb-1 pl-1">
-                    <Pin className="h-3 w-3" /> Pinned Post
-                  </div>
+            sortedPosts.map((post: any, index: number) => (
+              <Fragment key={post.id}>
+                <motion.div
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  {post.is_pinned && (
+                    <div className="flex items-center gap-1 text-[10px] text-primary font-medium mb-1 pl-1">
+                      <Pin className="h-3 w-3" /> Pinned Post
+                    </div>
+                  )}
+                  <CircleFeedPost
+                    post={post}
+                    circle={circle}
+                    userId={userId}
+                    isAdmin={isAdmin}
+                    onDelete={handleDeletePost}
+                    posterProfile={posterProfiles?.[post.user_id]}
+                    onPin={isAdmin ? () => handleTogglePin(post.id, !!post.is_pinned) : undefined}
+                  />
+                </motion.div>
+                {(index + 1) % CIRCLE_AD_INTERVAL === 0 && index < sortedPosts.length - 1 && (
+                  <SmartFeedAd key={`circle-ad-${index}`} className="my-3" />
                 )}
-                <CircleFeedPost
-                  post={post}
-                  circle={circle}
-                  userId={userId}
-                  isAdmin={isAdmin}
-                  onDelete={handleDeletePost}
-                  posterProfile={posterProfiles?.[post.user_id]}
-                  onPin={isAdmin ? () => handleTogglePin(post.id, !!post.is_pinned) : undefined}
-                />
-              </motion.div>
+              </Fragment>
             ))
           )}
         </TabsContent>
