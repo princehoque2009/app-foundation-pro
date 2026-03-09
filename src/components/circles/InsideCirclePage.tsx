@@ -54,6 +54,7 @@ export const InsideCirclePage = ({ circle: initialCircle, userId, onBack }: Insi
   const [viewingImage, setViewingImage] = useState<string | null>(null);
   const [memberSearch, setMemberSearch] = useState("");
   const [sortMode, setSortMode] = useState<SortMode>("newest");
+  const [showInvite, setShowInvite] = useState(false);
 
   const { data: members } = useQuery({
     queryKey: ["circle-members", circle.id],
