@@ -232,7 +232,7 @@ const Settings = () => {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
-            <Languages className="h-5 w-5 text-blue-500" />
+            <Languages className="h-5 w-5 text-foreground" />
             {t("settings.language")}
           </CardTitle>
           <CardDescription>{t("settings.languageDesc")}</CardDescription>
