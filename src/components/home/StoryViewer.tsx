@@ -3,7 +3,7 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { X, UserCircle, Pause, Play, Trash2, Send, ChevronLeft, ChevronRight, Eye } from "lucide-react";
+import { X, UserCircle, Trash2, Send, ChevronLeft, ChevronRight, Eye, Volume2, VolumeX, MoreHorizontal } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { useAuth } from "@/contexts/AuthContext";
 import { useStories, StoryGroup } from "@/hooks/useStories";
@@ -18,7 +18,7 @@ interface StoryViewerProps {
   onOpenChange: (open: boolean) => void;
 }
 
-const STORY_DURATION = 6000; // 6 seconds for images
+const STORY_DURATION = 6000;
 const REACTIONS = ["❤️", "🔥", "👏", "😂", "😮", "😢"];
 
 export const StoryViewer = ({
@@ -36,16 +36,19 @@ export const StoryViewer = ({
   const [isPaused, setIsPaused] = useState(false);
   const [replyText, setReplyText] = useState("");
   const [showViewers, setShowViewers] = useState(false);
+  const [isMuted, setIsMuted] = useState(false);
+  const [showReactions, setShowReactions] = useState(false);
+  const [flyingReaction, setFlyingReaction] = useState<string | null>(null);
   const timerRef = useRef<number | null>(null);
   const startTimeRef = useRef(0);
   const elapsedRef = useRef(0);
+  const videoRef = useRef<HTMLVideoElement>(null);
 
   const currentGroup = storyGroups[groupIndex];
   const currentStory = currentGroup?.stories[storyIndex];
   const isOwner = user?.id === currentGroup?.user?.id;
   const isVideo = currentStory?.media_type === "video";
 
-  // Reset when opening
   useEffect(() => {
     if (open) {
       setGroupIndex(initialGroupIndex);
@@ -53,46 +56,34 @@ export const StoryViewer = ({
       setProgress(0);
       setIsPaused(false);
       setShowViewers(false);
+      setShowReactions(false);
       elapsedRef.current = 0;
     }
   }, [open, initialGroupIndex, initialStoryIndex]);
 
-  // Record view
   useEffect(() => {
     if (open && currentStory && user?.id && currentStory.user_id !== user.id) {
       recordView.mutate(currentStory.id);
     }
   }, [open, currentStory?.id]);
 
-  // Auto-advance timer
   const startTimer = useCallback(() => {
-    if (isVideo) return; // Video controls its own timing
+    if (isVideo) return;
     startTimeRef.current = Date.now();
-    
     const tick = () => {
       const now = Date.now();
       const total = elapsedRef.current + (now - startTimeRef.current);
       const pct = Math.min((total / STORY_DURATION) * 100, 100);
       setProgress(pct);
-      
-      if (pct >= 100) {
-        goNext();
-        return;
-      }
+      if (pct >= 100) { goNext(); return; }
       timerRef.current = requestAnimationFrame(tick);
     };
     timerRef.current = requestAnimationFrame(tick);
   }, [isVideo, groupIndex, storyIndex]);
 
   const stopTimer = useCallback(() => {
-    if (timerRef.current) {
-      cancelAnimationFrame(timerRef.current);
-      timerRef.current = null;
-    }
-    if (startTimeRef.current > 0) {
-      elapsedRef.current += Date.now() - startTimeRef.current;
-      startTimeRef.current = 0;
-    }
+    if (timerRef.current) { cancelAnimationFrame(timerRef.current); timerRef.current = null; }
+    if (startTimeRef.current > 0) { elapsedRef.current += Date.now() - startTimeRef.current; startTimeRef.current = 0; }
   }, []);
 
   useEffect(() => {
@@ -105,7 +96,7 @@ export const StoryViewer = ({
   const goNext = useCallback(() => {
     setProgress(0);
     elapsedRef.current = 0;
-    
+    setShowReactions(false);
     if (storyIndex < (currentGroup?.stories.length || 0) - 1) {
       setStoryIndex(s => s + 1);
     } else if (groupIndex < storyGroups.length - 1) {
@@ -119,7 +110,6 @@ export const StoryViewer = ({
   const goPrev = useCallback(() => {
     setProgress(0);
     elapsedRef.current = 0;
-    
     if (storyIndex > 0) {
       setStoryIndex(s => s - 1);
     } else if (groupIndex > 0) {
@@ -129,38 +119,21 @@ export const StoryViewer = ({
     }
   }, [storyIndex, groupIndex, storyGroups]);
 
-  // Touch/click navigation
   const handleTap = useCallback((e: React.MouseEvent | React.TouchEvent) => {
     const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
     const clientX = "touches" in e ? e.changedTouches[0].clientX : e.clientX;
     const x = clientX - rect.left;
-    const half = rect.width / 2;
-    
-    if (x < half) {
-      goPrev();
-    } else {
-      goNext();
-    }
+    if (x < rect.width / 3) goPrev();
+    else if (x > (rect.width * 2) / 3) goNext();
   }, [goPrev, goNext]);
 
-  // Long press to pause
   const longPressTimer = useRef<NodeJS.Timeout | null>(null);
-  
   const handlePointerDown = () => {
-    longPressTimer.current = setTimeout(() => {
-      setIsPaused(true);
-      stopTimer();
-    }, 200);
+    longPressTimer.current = setTimeout(() => { setIsPaused(true); stopTimer(); }, 200);
   };
-
   const handlePointerUp = () => {
-    if (longPressTimer.current) {
-      clearTimeout(longPressTimer.current);
-      longPressTimer.current = null;
-    }
-    if (isPaused) {
-      setIsPaused(false);
-    }
+    if (longPressTimer.current) { clearTimeout(longPressTimer.current); longPressTimer.current = null; }
+    if (isPaused) setIsPaused(false);
   };
 
   const handleDelete = async () => {
@@ -172,91 +145,104 @@ export const StoryViewer = ({
   const handleReaction = (reaction: string) => {
     if (!currentStory) return;
     sendReaction.mutate({ storyId: currentStory.id, reaction });
+    setFlyingReaction(reaction);
+    setTimeout(() => setFlyingReaction(null), 800);
   };
 
-  const handleVideoEnded = () => {
-    goNext();
+  const handleVideoEnded = () => goNext();
+
+  // Swipe gesture
+  const touchStartRef = useRef<{ x: number; y: number } | null>(null);
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+    handlePointerDown();
+  };
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    handlePointerUp();
+    if (!touchStartRef.current) return;
+    const dx = e.changedTouches[0].clientX - touchStartRef.current.x;
+    const dy = e.changedTouches[0].clientY - touchStartRef.current.y;
+    if (Math.abs(dy) > 100 && dy > 0 && Math.abs(dx) < 50) {
+      // Swipe down → close
+      onOpenChange(false);
+      return;
+    }
+    if (Math.abs(dx) > 60) {
+      if (dx < 0 && groupIndex < storyGroups.length - 1) { setGroupIndex(g => g + 1); setStoryIndex(0); setProgress(0); elapsedRef.current = 0; }
+      else if (dx > 0 && groupIndex > 0) { setGroupIndex(g => g - 1); setStoryIndex(0); setProgress(0); elapsedRef.current = 0; }
+      return;
+    }
+    handleTap(e);
+    touchStartRef.current = null;
   };
 
   if (!currentStory || !currentGroup) return null;
-
-  const totalStories = currentGroup.stories.length;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         className="max-w-none w-screen h-screen p-0 border-0 bg-black rounded-none [&>button]:hidden"
-        onInteractOutside={(e) => e.preventDefault()}
+        onInteractOutside={e => e.preventDefault()}
       >
         <div className="relative w-full h-full flex flex-col">
           {/* Progress bars */}
-          <div className="absolute top-0 left-0 right-0 z-30 flex gap-1 px-3 pt-3">
+          <div className="absolute top-0 left-0 right-0 z-30 flex gap-[3px] px-3 pt-2">
             {currentGroup.stories.map((_, i) => (
-              <div
-                key={i}
-                className="flex-1 h-[3px] rounded-full bg-white/30 overflow-hidden"
-              >
-                <div
-                  className="h-full bg-white rounded-full transition-none"
-                  style={{
-                    width: `${i < storyIndex ? 100 : i === storyIndex ? progress : 0}%`,
-                  }}
+              <div key={i} className="flex-1 h-[2.5px] rounded-full bg-white/25 overflow-hidden">
+                <motion.div
+                  className="h-full bg-white rounded-full"
+                  style={{ width: `${i < storyIndex ? 100 : i === storyIndex ? progress : 0}%` }}
                 />
               </div>
             ))}
           </div>
 
           {/* Header */}
-          <div className="absolute top-6 left-0 right-0 z-30 px-4 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Avatar className="h-9 w-9 border-2 border-white/40">
+          <div className="absolute top-5 left-0 right-0 z-30 px-4 flex items-center justify-between">
+            <div className="flex items-center gap-2.5">
+              <Avatar className="h-9 w-9 border-2 border-white/50">
                 <AvatarImage src={currentGroup.user.avatar_url || ""} />
-                <AvatarFallback className="bg-muted">
-                  <UserCircle className="h-5 w-5" />
-                </AvatarFallback>
+                <AvatarFallback className="bg-muted"><UserCircle className="h-5 w-5" /></AvatarFallback>
               </Avatar>
               <div className="min-w-0">
-                <p className="text-white text-sm font-semibold truncate">
+                <p className="text-white text-[13px] font-semibold truncate leading-tight">
                   {currentGroup.user.display_name || currentGroup.user.username}
                 </p>
-                <p className="text-white/60 text-[11px]">
+                <p className="text-white/50 text-[10px] leading-tight">
                   {formatDistanceToNow(new Date(currentStory.created_at), { addSuffix: true })}
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              {isPaused && (
-                <span className="text-white/80 text-xs">Paused</span>
+            <div className="flex items-center gap-1">
+              {isPaused && <span className="text-white/60 text-[10px] bg-white/10 px-2 py-0.5 rounded-full">Paused</span>}
+              {isVideo && (
+                <Button variant="ghost" size="icon" onClick={() => {
+                  setIsMuted(!isMuted);
+                  if (videoRef.current) videoRef.current.muted = !isMuted;
+                }} className="text-white hover:bg-white/10 h-8 w-8">
+                  {isMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
+                </Button>
               )}
               {isOwner && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={handleDelete}
-                  className="text-white hover:bg-white/10 h-8 w-8"
-                  disabled={deleteStory.isPending}
-                >
+                <Button variant="ghost" size="icon" onClick={handleDelete} className="text-white hover:bg-white/10 h-8 w-8" disabled={deleteStory.isPending}>
                   <Trash2 className="h-4 w-4" />
                 </Button>
               )}
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => onOpenChange(false)}
-                className="text-white hover:bg-white/10 h-8 w-8"
-              >
+              <Button variant="ghost" size="icon" onClick={() => onOpenChange(false)} className="text-white hover:bg-white/10 h-8 w-8">
                 <X className="h-5 w-5" />
               </Button>
             </div>
           </div>
 
-          {/* Story content - tap zones */}
+          {/* Story content */}
           <div
             className="flex-1 flex items-center justify-center relative touch-none select-none"
             onClick={handleTap}
             onPointerDown={handlePointerDown}
             onPointerUp={handlePointerUp}
             onPointerCancel={handlePointerUp}
+            onTouchStart={handleTouchStart}
+            onTouchEnd={handleTouchEnd}
           >
             <AnimatePresence mode="wait">
               <motion.div
@@ -278,21 +264,37 @@ export const StoryViewer = ({
                   />
                 ) : (
                   <video
+                    ref={videoRef}
                     src={currentStory.media_url}
                     autoPlay
                     playsInline
+                    muted={isMuted}
                     className="max-w-full max-h-full object-contain pointer-events-none"
                     onEnded={handleVideoEnded}
-                    muted={false}
                   />
                 )}
               </motion.div>
             </AnimatePresence>
 
-            {/* Navigation arrows (desktop) */}
+            {/* Flying reaction */}
+            <AnimatePresence>
+              {flyingReaction && (
+                <motion.span
+                  initial={{ scale: 0.5, opacity: 1, y: 0 }}
+                  animate={{ scale: 2, opacity: 0, y: -120 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.7 }}
+                  className="absolute bottom-32 left-1/2 -translate-x-1/2 text-5xl pointer-events-none z-40"
+                >
+                  {flyingReaction}
+                </motion.span>
+              )}
+            </AnimatePresence>
+
+            {/* Desktop navigation arrows */}
             {groupIndex > 0 && (
               <button
-                onClick={(e) => { e.stopPropagation(); goPrev(); }}
+                onClick={e => { e.stopPropagation(); setGroupIndex(g => g - 1); setStoryIndex(0); setProgress(0); elapsedRef.current = 0; }}
                 className="absolute left-2 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/40 text-white hover:bg-black/60 hidden sm:block"
               >
                 <ChevronLeft className="h-5 w-5" />
@@ -300,7 +302,7 @@ export const StoryViewer = ({
             )}
             {groupIndex < storyGroups.length - 1 && (
               <button
-                onClick={(e) => { e.stopPropagation(); goNext(); }}
+                onClick={e => { e.stopPropagation(); setGroupIndex(g => g + 1); setStoryIndex(0); setProgress(0); elapsedRef.current = 0; }}
                 className="absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/40 text-white hover:bg-black/60 hidden sm:block"
               >
                 <ChevronRight className="h-5 w-5" />
@@ -309,29 +311,28 @@ export const StoryViewer = ({
           </div>
 
           {/* Bottom section */}
-          <div className="absolute bottom-0 left-0 right-0 z-30 bg-gradient-to-t from-black/80 to-transparent pt-12 pb-6 px-4">
+          <div className="absolute bottom-0 left-0 right-0 z-30 bg-gradient-to-t from-black/90 via-black/50 to-transparent pt-16 pb-6 px-4">
             {isOwner ? (
-              /* Owner: view count */
               <button
                 onClick={() => setShowViewers(!showViewers)}
-                className="flex items-center gap-2 text-white/80 text-sm mb-3"
+                className="flex items-center gap-2 text-white/80 text-sm mb-2 hover:text-white transition-colors"
               >
                 <Eye className="h-4 w-4" />
                 <span>{currentStory.views_count || 0} views</span>
               </button>
             ) : (
-              /* Viewer: reactions + reply */
               <div className="space-y-3">
                 {/* Reaction emojis */}
-                <div className="flex justify-center gap-4">
-                  {REACTIONS.map((emoji) => (
-                    <button
+                <div className="flex justify-center gap-3">
+                  {REACTIONS.map(emoji => (
+                    <motion.button
                       key={emoji}
-                      onClick={(e) => { e.stopPropagation(); handleReaction(emoji); }}
-                      className="text-2xl active:scale-125 transition-transform hover:scale-110"
+                      onClick={e => { e.stopPropagation(); handleReaction(emoji); }}
+                      whileTap={{ scale: 1.4 }}
+                      className="text-2xl hover:scale-110 transition-transform"
                     >
                       {emoji}
-                    </button>
+                    </motion.button>
                   ))}
                 </div>
 
@@ -339,10 +340,10 @@ export const StoryViewer = ({
                 <div className="flex gap-2">
                   <Input
                     value={replyText}
-                    onChange={(e) => setReplyText(e.target.value)}
+                    onChange={e => setReplyText(e.target.value)}
                     placeholder="Send a reply..."
-                    className="flex-1 bg-white/10 border-white/20 text-white placeholder:text-white/50 rounded-full h-10"
-                    onClick={(e) => e.stopPropagation()}
+                    className="flex-1 bg-white/10 border-white/20 text-white placeholder:text-white/50 rounded-full h-10 text-sm"
+                    onClick={e => e.stopPropagation()}
                     onFocus={() => { setIsPaused(true); stopTimer(); }}
                     onBlur={() => setIsPaused(false)}
                   />
@@ -350,11 +351,7 @@ export const StoryViewer = ({
                     <Button
                       size="icon"
                       className="rounded-full h-10 w-10"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        // TODO: Send reply as DM
-                        setReplyText("");
-                      }}
+                      onClick={e => { e.stopPropagation(); setReplyText(""); }}
                     >
                       <Send className="h-4 w-4" />
                     </Button>
