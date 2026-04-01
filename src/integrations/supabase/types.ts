@@ -1474,9 +1474,14 @@ export type Database = {
         Row: {
           created_at: string
           expires_at: string
+          filter_name: string | null
           id: string
+          is_archived: boolean
           media_type: string
           media_url: string
+          sticker_data: Json | null
+          text_overlay: string | null
+          text_style: Json | null
           user_id: string
           views_count: number | null
           visibility: string
@@ -1484,9 +1489,14 @@ export type Database = {
         Insert: {
           created_at?: string
           expires_at?: string
+          filter_name?: string | null
           id?: string
+          is_archived?: boolean
           media_type: string
           media_url: string
+          sticker_data?: Json | null
+          text_overlay?: string | null
+          text_style?: Json | null
           user_id: string
           views_count?: number | null
           visibility: string
@@ -1494,9 +1504,14 @@ export type Database = {
         Update: {
           created_at?: string
           expires_at?: string
+          filter_name?: string | null
           id?: string
+          is_archived?: boolean
           media_type?: string
           media_url?: string
+          sticker_data?: Json | null
+          text_overlay?: string | null
+          text_style?: Json | null
           user_id?: string
           views_count?: number | null
           visibility?: string
@@ -1507,6 +1522,139 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      story_highlight_items: {
+        Row: {
+          added_at: string
+          display_order: number
+          highlight_id: string
+          id: string
+          story_id: string
+        }
+        Insert: {
+          added_at?: string
+          display_order?: number
+          highlight_id: string
+          id?: string
+          story_id: string
+        }
+        Update: {
+          added_at?: string
+          display_order?: number
+          highlight_id?: string
+          id?: string
+          story_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "story_highlight_items_highlight_id_fkey"
+            columns: ["highlight_id"]
+            isOneToOne: false
+            referencedRelation: "story_highlights"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "story_highlight_items_story_id_fkey"
+            columns: ["story_id"]
+            isOneToOne: false
+            referencedRelation: "stories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      story_highlights: {
+        Row: {
+          cover_url: string | null
+          created_at: string
+          display_order: number
+          id: string
+          name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          cover_url?: string | null
+          created_at?: string
+          display_order?: number
+          id?: string
+          name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          cover_url?: string | null
+          created_at?: string
+          display_order?: number
+          id?: string
+          name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      story_poll_votes: {
+        Row: {
+          created_at: string
+          id: string
+          option_index: number
+          sticker_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          option_index: number
+          sticker_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          option_index?: number
+          sticker_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "story_poll_votes_sticker_id_fkey"
+            columns: ["sticker_id"]
+            isOneToOne: false
+            referencedRelation: "story_stickers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      story_question_responses: {
+        Row: {
+          created_at: string
+          id: string
+          response: string
+          sticker_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          response: string
+          sticker_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          response?: string
+          sticker_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "story_question_responses_sticker_id_fkey"
+            columns: ["sticker_id"]
+            isOneToOne: false
+            referencedRelation: "story_stickers"
             referencedColumns: ["id"]
           },
         ]
@@ -1536,6 +1684,50 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "story_reactions_story_id_fkey"
+            columns: ["story_id"]
+            isOneToOne: false
+            referencedRelation: "stories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      story_stickers: {
+        Row: {
+          created_at: string
+          data: Json
+          id: string
+          position_x: number
+          position_y: number
+          rotation: number
+          scale: number
+          sticker_type: string
+          story_id: string
+        }
+        Insert: {
+          created_at?: string
+          data?: Json
+          id?: string
+          position_x?: number
+          position_y?: number
+          rotation?: number
+          scale?: number
+          sticker_type: string
+          story_id: string
+        }
+        Update: {
+          created_at?: string
+          data?: Json
+          id?: string
+          position_x?: number
+          position_y?: number
+          rotation?: number
+          scale?: number
+          sticker_type?: string
+          story_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "story_stickers_story_id_fkey"
             columns: ["story_id"]
             isOneToOne: false
             referencedRelation: "stories"
