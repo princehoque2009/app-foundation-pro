@@ -29,7 +29,7 @@ export const CoverPhotoUploader = ({
 
   const uploadMutation = useMutation({
     mutationFn: async (blob: Blob) => {
-      const fileName = `cover-${userId}-${Date.now()}.jpg`;
+      const fileName = `${userId}/cover-${Date.now()}.jpg`;
 
       const { error: uploadError } = await supabase.storage
         .from("cover-photos")
