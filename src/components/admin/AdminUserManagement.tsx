@@ -336,7 +336,7 @@ export const AdminUserManagement = () => {
                 users?.map((u: any) => (
                   <div
                     key={u.id}
-                    className="flex items-center gap-4 p-4 rounded-lg border border-border hover:bg-muted/30 transition-colors"
+                    className="flex flex-col gap-3 p-4 rounded-lg border border-border hover:bg-muted/30 transition-colors sm:flex-row sm:items-center"
                   >
                     <Avatar className="h-12 w-12">
                       <AvatarImage src={u.avatar_url} />
@@ -366,11 +366,12 @@ export const AdminUserManagement = () => {
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 w-full sm:w-auto sm:justify-end">
                       <Button
                         variant="outline"
                         size="sm"
                         onClick={() => setSelectedUser(u)}
+                        className="flex-1 sm:flex-none"
                       >
                         <Eye className="h-4 w-4 mr-1" />
                         View
@@ -463,7 +464,7 @@ export const AdminUserManagement = () => {
 
       {/* User Details Dialog */}
       <Dialog open={!!selectedUser} onOpenChange={() => setSelectedUser(null)}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-[calc(100vw-1rem)] sm:max-w-md">
           <DialogHeader>
             <DialogTitle>User Details</DialogTitle>
           </DialogHeader>
@@ -485,32 +486,32 @@ export const AdminUserManagement = () => {
 
               <Separator />
 
-              <div className="space-y-3 text-sm">
-                <div className="flex justify-between">
+                <div className="space-y-3 text-sm">
+                 <div className="flex justify-between gap-3">
                   <span className="text-muted-foreground">Role</span>
-                  <Badge>{getUserRole(selectedUser.id)}</Badge>
+                   <Badge className="max-w-[60%] truncate">{getUserRole(selectedUser.id).join(", ")}</Badge>
                 </div>
-                <div className="flex justify-between">
+                 <div className="flex justify-between gap-3">
                   <span className="text-muted-foreground">Date of Birth</span>
                   <span>{selectedUser.date_of_birth ? format(new Date(selectedUser.date_of_birth), "MMM d, yyyy") : "Not set"}</span>
                 </div>
-                <div className="flex justify-between">
+                 <div className="flex justify-between gap-3">
                   <span className="text-muted-foreground">Auth Provider</span>
                   <span className="capitalize">{selectedUser.auth_provider || "email"}</span>
                 </div>
-                <div className="flex justify-between">
+                 <div className="flex justify-between gap-3">
                   <span className="text-muted-foreground">Account Type</span>
                   <span className="capitalize">{selectedUser.account_type}</span>
                 </div>
-                <div className="flex justify-between">
+                 <div className="flex justify-between gap-3">
                   <span className="text-muted-foreground">Followers</span>
                   <span>{selectedUser.followers_count || 0}</span>
                 </div>
-                <div className="flex justify-between">
+                 <div className="flex justify-between gap-3">
                   <span className="text-muted-foreground">Following</span>
                   <span>{selectedUser.following_count || 0}</span>
                 </div>
-                <div className="flex justify-between">
+                 <div className="flex justify-between gap-3">
                   <span className="text-muted-foreground">Joined</span>
                   <span>{format(new Date(selectedUser.created_at), "MMM d, yyyy")}</span>
                 </div>

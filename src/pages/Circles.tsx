@@ -17,6 +17,7 @@ import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { SmartFeedAd } from "@/components/ads/SmartFeedAd";
 
 const FILTER_TABS = ["For You", "Your Circles", "Trending", "New"];
 const CATEGORIES = ["All", "Technology", "Education", "Gaming", "Business", "Science", "Lifestyle", "Sports", "Music", "Art", "Health", "Travel", "General"];
@@ -496,6 +497,7 @@ const Circles = () => {
             {circleFeedPosts && circleFeedPosts.length > 0 && activeFilter === "For You" && (
               <section className="px-4">
                 <h2 className="text-sm font-bold text-foreground mb-3">From Your Circles</h2>
+                <SmartFeedAd placement="circles" className="mb-3" />
                 <div className="space-y-3">
                   {circleFeedPosts.map((post: any) => {
                     const circle = yourCircles.find((c: any) => c.id === post.group_id);

@@ -25,6 +25,9 @@ export const TopHeader = () => {
             src={prangonLogo} 
             alt="Prangon" 
             className="h-8 object-contain pointer-events-none select-none"
+            width="126"
+            height="32"
+            decoding="async"
             draggable={false}
             onContextMenu={(e) => e.preventDefault()}
           />

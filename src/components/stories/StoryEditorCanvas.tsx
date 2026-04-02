@@ -121,6 +121,13 @@ export const StoryEditorCanvas = ({
   const canvasRef = useRef<HTMLDivElement>(null);
   const drawCanvasRef = useRef<HTMLCanvasElement>(null);
 
+  useEffect(() => {
+    document.body.classList.add("story-editor-open");
+    return () => {
+      document.body.classList.remove("story-editor-open");
+    };
+  }, []);
+
   // Drawing handlers
   const getRelativePos = (e: React.MouseEvent | React.TouchEvent) => {
     const rect = canvasRef.current?.getBoundingClientRect();
@@ -286,7 +293,7 @@ export const StoryEditorCanvas = ({
   ];
 
   return (
-    <div className="fixed inset-0 z-50 bg-black flex flex-col">
+    <div className="fixed inset-0 z-[90] bg-black flex flex-col overscroll-none">
       {/* Top toolbar */}
       <div className="relative z-40 flex items-center justify-between px-4 py-3 bg-gradient-to-b from-black/80 to-transparent">
         <Button variant="ghost" size="icon" onClick={onCancel} className="text-white hover:bg-white/10">
@@ -310,7 +317,7 @@ export const StoryEditorCanvas = ({
       {/* Canvas area */}
       <div
         ref={canvasRef}
-        className="flex-1 relative overflow-hidden mx-auto w-full max-w-md touch-none"
+        className="flex-1 relative overflow-hidden w-full touch-none"
         onMouseDown={activeTool === "draw" ? handleDrawStart : undefined}
         onMouseMove={activeTool === "draw" ? handleDrawMove : (dragging ? handleElementDragMove : undefined)}
         onMouseUp={activeTool === "draw" ? handleDrawEnd : handleElementDragEnd}
@@ -481,7 +488,7 @@ export const StoryEditorCanvas = ({
             initial={{ y: 100, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 100, opacity: 0 }}
-            className="absolute bottom-0 left-0 right-0 z-40 bg-black/90 backdrop-blur-xl rounded-t-3xl p-4 space-y-4"
+            className="absolute bottom-0 left-0 right-0 z-40 bg-black/90 backdrop-blur-xl rounded-t-3xl p-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] space-y-4"
           >
             {/* Text input */}
             <div className="flex gap-2">
@@ -560,7 +567,7 @@ export const StoryEditorCanvas = ({
             initial={{ y: 100, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 100, opacity: 0 }}
-            className="absolute bottom-0 left-0 right-0 z-40 bg-black/90 backdrop-blur-xl rounded-t-3xl p-4 space-y-4"
+            className="absolute bottom-0 left-0 right-0 z-40 bg-black/90 backdrop-blur-xl rounded-t-3xl p-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] space-y-4"
           >
             {/* Tab selector */}
             <div className="flex gap-2">
@@ -672,7 +679,7 @@ export const StoryEditorCanvas = ({
             initial={{ y: 100, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 100, opacity: 0 }}
-            className="absolute bottom-0 left-0 right-0 z-40 bg-black/90 backdrop-blur-xl rounded-t-3xl p-4 space-y-4"
+            className="absolute bottom-0 left-0 right-0 z-40 bg-black/90 backdrop-blur-xl rounded-t-3xl p-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] space-y-4"
           >
             {/* Brush size */}
             <div className="flex items-center gap-3">
@@ -712,7 +719,7 @@ export const StoryEditorCanvas = ({
             initial={{ y: 100, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 100, opacity: 0 }}
-            className="absolute bottom-0 left-0 right-0 z-40 bg-black/90 backdrop-blur-xl rounded-t-3xl p-4"
+            className="absolute bottom-0 left-0 right-0 z-40 bg-black/90 backdrop-blur-xl rounded-t-3xl p-4 pb-[calc(env(safe-area-inset-bottom)+1rem)]"
           >
             <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
               {FILTERS.map(filter => (

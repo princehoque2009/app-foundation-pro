@@ -16,21 +16,28 @@ export const SmartFeedAd = ({ className, placement = "home_feed" }: SmartFeedAdP
   const { data: ad, isLoading } = useQuery({
     queryKey: ["active-feed-ad", placement],
     queryFn: async () => {
-      const now = new Date().toISOString();
-
       const { data, error } = await supabase
         .from("advertisements")
         .select("*")
         .eq("is_active", true)
-        .or(`start_date.is.null,start_date.lte.${now}`)
-        .or(`end_date.is.null,end_date.gte.${now}`)
-        .contains("target_content_types", [placement])
-        .limit(5);
+        .limit(20);
 
       if (error) throw error;
-      if (!data || data.length === 0) return null;
 
-      return data[Math.floor(Math.random() * data.length)];
+      const now = Date.now();
+      const eligibleAds = (data || []).filter((item) => {
+        const startsOk = !item.start_date || new Date(item.start_date).getTime() <= now;
+        const endsOk = !item.end_date || new Date(item.end_date).getTime() >= now;
+        const matchesPlacement = Array.isArray(item.target_content_types)
+          ? item.target_content_types.includes(placement)
+          : false;
+
+        return startsOk && endsOk && matchesPlacement;
+      });
+
+      if (eligibleAds.length === 0) return null;
+
+      return eligibleAds[Math.floor(Math.random() * eligibleAds.length)];
     },
     staleTime: 30 * 1000, // 30 seconds for real-time feel
   });
@@ -57,21 +64,17 @@ export const SmartFeedAd = ({ className, placement = "home_feed" }: SmartFeedAdP
   // Track impression
   const impressionMutation = useMutation({
     mutationFn: async (adId: string) => {
-      await supabase
-        .from("advertisements")
-        .update({ impressions: (ad?.impressions || 0) + 1 })
-        .eq("id", adId);
+      await supabase.from("ad_analytics").insert({
+        ad_id: adId,
+        event_type: "impression",
+        device_type: /Mobile|Android|iPhone/i.test(navigator.userAgent) ? "mobile" : "desktop",
+      });
     },
   });
 
   // Track click
   const clickMutation = useMutation({
     mutationFn: async (adId: string) => {
-      await supabase
-        .from("advertisements")
-        .update({ clicks: (ad?.clicks || 0) + 1 })
-        .eq("id", adId);
-
       await supabase.from("ad_analytics").insert({
         ad_id: adId,
         event_type: "click",
@@ -83,11 +86,6 @@ export const SmartFeedAd = ({ className, placement = "home_feed" }: SmartFeedAdP
   useEffect(() => {
     if (ad?.id) {
       impressionMutation.mutate(ad.id);
-      supabase.from("ad_analytics").insert({
-        ad_id: ad.id,
-        event_type: "impression",
-        device_type: /Mobile|Android|iPhone/i.test(navigator.userAgent) ? "mobile" : "desktop",
-      });
     }
   }, [ad?.id]);
 

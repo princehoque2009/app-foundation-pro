@@ -9,7 +9,6 @@ import {
   Edit3,
   BarChart3,
   Info,
-  Wallet,
 } from "lucide-react";
 import { VerifiedBadge } from "@/components/ui/VerifiedBadge";
 import { UserRolesDisplay } from "./UserRolesDisplay";
@@ -186,15 +185,6 @@ export const ProfileHeader = ({
                     title="Share"
                   >
                     <Share2 className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => navigate("/wallet")}
-                    className="rounded-full h-8 w-8"
-                    title="Wallet"
-                  >
-                    <Wallet className="h-4 w-4" />
                   </Button>
                 </>
               ) : null}
