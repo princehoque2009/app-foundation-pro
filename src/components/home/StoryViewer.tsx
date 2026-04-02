@@ -20,6 +20,15 @@ interface StoryViewerProps {
 
 const STORY_DURATION = 6000;
 const REACTIONS = ["❤️", "🔥", "👏", "😂", "😮", "😢"];
+const STORY_FILTERS: Record<string, string> = {
+  warm: "brightness(1.1) saturate(1.3) sepia(0.15)",
+  cool: "brightness(1.05) saturate(0.9) hue-rotate(15deg)",
+  vintage: "sepia(0.4) contrast(1.1) brightness(0.95)",
+  dramatic: "contrast(1.4) saturate(1.2) brightness(0.9)",
+  fade: "contrast(0.85) brightness(1.1) saturate(0.8)",
+  bw: "grayscale(1) contrast(1.2)",
+  vivid: "saturate(1.6) contrast(1.1)",
+};
 
 export const StoryViewer = ({
   storyGroups,
@@ -48,6 +57,12 @@ export const StoryViewer = ({
   const currentStory = currentGroup?.stories[storyIndex];
   const isOwner = user?.id === currentGroup?.user?.id;
   const isVideo = currentStory?.media_type === "video";
+  const storyTextStyle = (currentStory?.text_style as any) || {};
+  const storyTexts = Array.isArray(storyTextStyle?.texts) ? storyTextStyle.texts : [];
+  const storyStickers = Array.isArray((currentStory?.sticker_data as any)?.stickers)
+    ? ((currentStory?.sticker_data as any)?.stickers as any[])
+    : [];
+  const filterCss = currentStory?.filter_name ? STORY_FILTERS[currentStory.filter_name] || "" : "";
 
   useEffect(() => {
     if (open) {
@@ -261,6 +276,7 @@ export const StoryViewer = ({
                     draggable={false}
                     loading="eager"
                     fetchPriority="high"
+                    style={{ filter: filterCss }}
                   />
                 ) : (
                   <video
@@ -271,7 +287,69 @@ export const StoryViewer = ({
                     muted={isMuted}
                     className="max-w-full max-h-full object-contain pointer-events-none"
                     onEnded={handleVideoEnded}
+                    style={{ filter: filterCss }}
                   />
+                )}
+
+                {(storyTexts.length > 0 || storyStickers.length > 0) && (
+                  <div className="absolute inset-0 pointer-events-none">
+                    {storyTexts.map((text: any) => (
+                      <div
+                        key={text.id}
+                        className="absolute"
+                        style={{ left: `${text.x}%`, top: `${text.y}%`, transform: "translate(-50%, -50%)" }}
+                      >
+                        <p
+                          className="px-3 py-1.5 rounded-lg text-center max-w-[80vw]"
+                          style={{
+                            color: text.color,
+                            backgroundColor: text.bgColor || "transparent",
+                            fontSize: `${text.fontSize || 24}px`,
+                            fontWeight: text.bold ? 700 : 400,
+                            fontStyle: text.italic ? "italic" : "normal",
+                          }}
+                        >
+                          {text.text}
+                        </p>
+                      </div>
+                    ))}
+
+                    {storyStickers.map((sticker: any) => (
+                      <div
+                        key={sticker.id}
+                        className="absolute"
+                        style={{
+                          left: `${sticker.x}%`,
+                          top: `${sticker.y}%`,
+                          transform: `translate(-50%, -50%) scale(${sticker.scale || 1})`,
+                        }}
+                      >
+                        {sticker.type === "emoji" && <span className="text-5xl">{sticker.data?.emoji}</span>}
+                        {sticker.type === "poll" && (
+                          <div className="bg-white/95 rounded-2xl p-3 min-w-[180px] shadow-xl">
+                            <p className="text-sm font-bold text-foreground mb-2">{sticker.data?.question}</p>
+                            {(sticker.data?.options || []).map((option: string, index: number) => (
+                              <div key={index} className="bg-muted rounded-full py-1.5 px-3 mb-1 text-sm text-center">
+                                {option}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        {sticker.type === "question" && (
+                          <div className="bg-white/95 rounded-2xl p-3 min-w-[180px] text-center shadow-xl">
+                            <p className="text-xs font-semibold text-primary mb-1">{sticker.data?.question}</p>
+                            <div className="bg-muted rounded-full py-1.5 px-3 text-sm text-muted-foreground">Reply</div>
+                          </div>
+                        )}
+                        {sticker.type === "countdown" && (
+                          <div className="bg-primary rounded-2xl p-3 min-w-[160px] text-center text-primary-foreground shadow-xl">
+                            <p className="text-xs font-semibold mb-1">{sticker.data?.label || "Countdown"}</p>
+                            <p className="text-xl font-bold">24:00:00</p>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
                 )}
               </motion.div>
             </AnimatePresence>

@@ -14,7 +14,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import {
   LayoutDashboard, Users, MessageSquare, FileText, BadgeCheck, Bell,
   Settings, Shield, Search, Menu, X, ChevronRight, Activity,
-  DollarSign, Wallet, ArrowLeft,
+  DollarSign, ArrowLeft,
 } from "lucide-react";
 
 interface AdminLayoutProps {
@@ -32,7 +32,6 @@ const sidebarItems = [
   { id: "notifications", label: "Notifications", icon: Bell },
   { id: "advertisements", label: "Ads", icon: Activity },
   { id: "revenue", label: "Revenue", icon: DollarSign },
-  { id: "wallet", label: "Wallet", icon: Wallet },
   { id: "settings", label: "Settings", icon: Settings },
   { id: "logs", label: "Logs", icon: Activity },
 ];
@@ -152,7 +151,7 @@ export const AdminLayout = ({ children, activeSection, onSectionChange }: AdminL
         </header>
 
         {/* Page Content */}
-        <div className="p-3">
+        <div className="p-2 overflow-x-hidden">
           {children}
         </div>
       </div>

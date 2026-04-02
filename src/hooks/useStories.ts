@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -12,6 +13,10 @@ export interface StoryData {
   expires_at: string;
   views_count: number | null;
   visibility: string;
+  filter_name: string | null;
+  text_overlay: string | null;
+  text_style: Record<string, any> | null;
+  sticker_data: Record<string, any> | null;
   profiles: {
     id: string;
     username: string;
@@ -19,6 +24,21 @@ export interface StoryData {
     avatar_url: string | null;
   };
 }
+
+interface StoryEditorPayload {
+  texts: Array<Record<string, any>>;
+  stickers: Array<Record<string, any>>;
+  drawings: Array<Record<string, any>>;
+  filter: string;
+}
+
+type UploadStoryInput =
+  | File
+  | {
+      file: File;
+      visibility?: string;
+      editorData?: StoryEditorPayload | null;
+    };
 
 export interface StoryGroup {
   user: StoryData["profiles"];
@@ -29,6 +49,32 @@ export interface StoryGroup {
 export const useStories = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const channel = supabase
+      .channel(`stories-live-${user.id}`)
+      .on(
+        "postgres_changes" as any,
+        { event: "*", schema: "public", table: "stories" },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["stories"] });
+        }
+      )
+      .on(
+        "postgres_changes" as any,
+        { event: "*", schema: "public", table: "story_views", filter: `viewer_id=eq.${user.id}` },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["story-views", user.id] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [queryClient, user?.id]);
 
   // Fetch all active stories
   const { data: stories, isLoading } = useQuery({
@@ -45,6 +91,7 @@ export const useStories = () => {
             avatar_url
           )
         `)
+        .eq("is_archived", false)
         .gt("expires_at", new Date().toISOString())
         .order("created_at", { ascending: false });
 
@@ -128,8 +175,14 @@ export const useStories = () => {
 
   // Upload story
   const uploadStory = useMutation({
-    mutationFn: async (file: File) => {
+    mutationFn: async (input: UploadStoryInput) => {
       if (!user) throw new Error("User not authenticated");
+
+      const payload = input instanceof File
+        ? { file: input, visibility: "public", editorData: null }
+        : input;
+
+      const file = payload.file;
 
       const fileExt = file.name.split(".").pop();
       const fileName = `${user.id}/${Date.now()}.${fileExt}`;
@@ -142,15 +195,53 @@ export const useStories = () => {
       const { data: urlData } = supabase.storage.from("stories").getPublicUrl(fileName);
       const mediaType = file.type.startsWith("image/") ? "image" : "video";
 
-      const { error: insertError } = await supabase
+      const textPayload = payload.editorData?.texts || [];
+      const stickerPayload = payload.editorData?.stickers || [];
+      const drawingPayload = payload.editorData?.drawings || [];
+      const activeFilter = payload.editorData?.filter && payload.editorData.filter !== "none"
+        ? payload.editorData.filter
+        : null;
+
+      const { data: storyRecord, error: insertError } = await supabase
         .from("stories")
         .insert({
           user_id: user.id,
           media_url: urlData.publicUrl,
           media_type: mediaType,
-          visibility: "public",
-        });
+          visibility: payload.visibility || "public",
+          filter_name: activeFilter,
+          text_overlay: textPayload.map((text) => text.text).filter(Boolean).join("\n") || null,
+          text_style: textPayload.length || drawingPayload.length
+            ? { texts: textPayload, drawings: drawingPayload }
+            : null,
+          sticker_data: stickerPayload.length ? { stickers: stickerPayload } : null,
+        })
+        .select("id")
+        .single();
+
       if (insertError) throw insertError;
+
+      const interactiveStickers = stickerPayload.filter((sticker) =>
+        ["poll", "question", "countdown"].includes(sticker.type)
+      );
+
+      if (storyRecord?.id && interactiveStickers.length > 0) {
+        try {
+          await supabase.from("story_stickers").insert(
+            interactiveStickers.map((sticker) => ({
+              story_id: storyRecord.id,
+              sticker_type: sticker.type,
+              position_x: sticker.x,
+              position_y: sticker.y,
+              rotation: 0,
+              scale: sticker.scale || 1,
+              data: sticker.data,
+            }))
+          );
+        } catch (error) {
+          console.warn("Story sticker sync failed", error);
+        }
+      }
 
       return urlData.publicUrl;
     },

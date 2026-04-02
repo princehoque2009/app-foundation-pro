@@ -101,7 +101,11 @@ export const StoryComposer = ({ open, onOpenChange }: StoryComposerProps) => {
     }, 200);
 
     try {
-      await uploadStory.mutateAsync(selectedFile);
+      await uploadStory.mutateAsync({
+        file: selectedFile,
+        visibility: audience,
+        editorData,
+      });
       setUploadProgress(100);
       clearInterval(progressInterval);
       setTimeout(() => {

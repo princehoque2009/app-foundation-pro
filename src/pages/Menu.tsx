@@ -26,7 +26,6 @@ import {
   History,
   Star,
   Zap,
-  Wallet,
   Scale,
   Cookie,
   BookOpen,
@@ -59,7 +58,6 @@ const mainMenuItems: MenuItem[] = [
   { id: "groups", icon: Users, label: "Groups", description: "Your group chats", path: "/groups" },
   { id: "reels", icon: Film, label: "Reels", description: "Watch short videos", path: "/reels" },
   { id: "live", icon: Radio, label: "Live", description: "Go live or watch", path: "/live" },
-  { id: "wallet", icon: Wallet, label: "Wallet", description: "Prangs & transactions", path: "/wallet" },
   { id: "lab", icon: FlaskConical, label: "Lab", description: "Pages & communities", path: "/lab" },
 ];
 

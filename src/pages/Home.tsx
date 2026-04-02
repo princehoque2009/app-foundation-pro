@@ -24,6 +24,7 @@ const Home = () => {
         <SuggestedAccounts />
 
         <div className="max-w-2xl mx-auto px-4 py-4">
+          <SmartFeedAd placement="home_feed" className="mb-4" />
           {isLoading ? (
             <div className="space-y-4">
               <PostSkeleton />

@@ -13,7 +13,7 @@ export const SplashScreen = ({ onComplete }: SplashScreenProps) => {
     const timer = setTimeout(() => {
       setShow(false);
       setTimeout(onComplete, 300);
-    }, 2000);
+    }, 600);
 
     return () => clearTimeout(timer);
   }, [onComplete]);
@@ -55,6 +55,10 @@ export const SplashScreen = ({ onComplete }: SplashScreenProps) => {
           src={prangonLogo}
           alt="Prangon"
           className="h-24 mx-auto mb-4 drop-shadow-2xl"
+          width="96"
+          height="96"
+          fetchPriority="high"
+          decoding="async"
           initial={{ y: -30, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.2, duration: 0.5, ease: "easeOut" }}

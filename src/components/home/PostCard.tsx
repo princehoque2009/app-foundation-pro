@@ -1,7 +1,7 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Heart, MessageCircle, Share2, Bookmark, UserCircle, Gift } from "lucide-react";
+import { Heart, MessageCircle, Share2, Bookmark, UserCircle } from "lucide-react";
 import { useState, useRef, useCallback } from "react";
 import { usePostReactions, useToggleReaction, REACTION_TYPES, getEmojiForReaction, type ReactionKey } from "@/hooks/usePostReactions";
 import { formatDistanceToNow } from "date-fns";
@@ -22,7 +22,6 @@ import { UserRoleBadges } from "@/components/ui/RoleBadge";
 import { useUserRoles } from "@/hooks/useUserRoles";
 import { MediaCarousel } from "./MediaCarousel";
 import { PostMedia } from "@/hooks/usePosts";
-import { GiftPrangsPostDialog } from "@/components/wallet/GiftPrangsPostDialog";
 import { useActiveEffects } from "@/hooks/useActiveEffects";
 import { PrangonVideoPlayer } from "@/components/video/PrangonVideoPlayer";
 import { RenderMentions } from "@/components/ui/RenderMentions";
@@ -50,7 +49,6 @@ export const PostCard = ({ id, author, content, image, video, mediaItems, likes,
   const [showComments, setShowComments] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showHeartAnimation, setShowHeartAnimation] = useState(false);
-  const [showGiftDialog, setShowGiftDialog] = useState(false);
   const [showReactionBreakdown, setShowReactionBreakdown] = useState(false);
   const [showReactionPicker, setShowReactionPicker] = useState(false);
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -427,15 +425,6 @@ export const PostCard = ({ id, author, content, image, video, mediaItems, likes,
                   variant="ghost"
                   size="sm"
                   className="h-10 px-3 rounded-full hover:bg-primary/10 transition-all"
-                  onClick={() => setShowGiftDialog(true)}
-                  title="Gift Prangs"
-                >
-                  <Gift className="h-5 w-5" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-10 px-3 rounded-full hover:bg-primary/10 transition-all"
                   onClick={() => {
                     if (isSaved) {
                       unsavePost.mutate(id);
@@ -469,13 +458,6 @@ export const PostCard = ({ id, author, content, image, video, mediaItems, likes,
         currentMediaType={video ? "video" : image ? "image" : undefined}
         open={showEditDialog}
         onOpenChange={setShowEditDialog}
-      />
-
-      <GiftPrangsPostDialog
-        open={showGiftDialog}
-        onOpenChange={setShowGiftDialog}
-        recipientId={author.userId || userProfile?.id || ""}
-        recipientName={author.name}
       />
 
       <ReactionBreakdownDialog
