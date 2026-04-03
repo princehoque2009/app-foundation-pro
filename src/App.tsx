@@ -13,6 +13,15 @@ import { SplashScreen } from "@/components/SplashScreen";
 import { useSessionTimeout } from "@/hooks/useSessionTimeout";
 import { OnboardingSlides } from "@/components/onboarding/OnboardingSlides";
 
+// Core pages loaded eagerly to prevent blank screen flashes on tab switch
+import Home from "./pages/Home";
+import Reels from "./pages/Reels";
+import Profile from "./pages/Profile";
+import Circles from "./pages/Circles";
+import Messages from "./pages/Messages";
+import Search from "./pages/Search";
+import Notifications from "./pages/Notifications";
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -26,15 +35,9 @@ const queryClient = new QueryClient({
 
 const SessionManager = () => { useSessionTimeout(); return null; };
 
-const Home = lazy(() => import("./pages/Home"));
-const Reels = lazy(() => import("./pages/Reels"));
+// Secondary pages stay lazy
 const Create = lazy(() => import("./pages/Create"));
-const Messages = lazy(() => import("./pages/Messages"));
-const Profile = lazy(() => import("./pages/Profile"));
 const UserProfile = lazy(() => import("./pages/UserProfile"));
-const Search = lazy(() => import("./pages/Search"));
-const Notifications = lazy(() => import("./pages/Notifications"));
-const Circles = lazy(() => import("./pages/Circles"));
 const Live = lazy(() => import("./pages/Live"));
 const Friends = lazy(() => import("./pages/Friends"));
 const Settings = lazy(() => import("./pages/Settings"));
@@ -69,8 +72,6 @@ const App = () => {
     if (hasSeenSplash) {
       setShowSplash(false);
     }
-    
-    // Check if user has completed onboarding
     const hasCompletedOnboarding = localStorage.getItem("hasCompletedOnboarding");
     if (!hasCompletedOnboarding) {
       setShowOnboarding(true);

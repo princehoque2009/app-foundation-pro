@@ -20,7 +20,6 @@ export const FriendRequests = () => {
         .select("*, profiles!friend_requests_from_user_id_fkey(*)")
         .eq("to_user_id", user?.id)
         .eq("status", "pending");
-      
       if (error) throw error;
       return data;
     },
@@ -35,7 +34,6 @@ export const FriendRequests = () => {
         .select("*, profiles!friend_requests_to_user_id_fkey(*)")
         .eq("from_user_id", user?.id)
         .eq("status", "pending");
-      
       if (error) throw error;
       return data;
     },
@@ -44,51 +42,39 @@ export const FriendRequests = () => {
 
   const acceptRequestMutation = useMutation({
     mutationFn: async (requestId: string) => {
-      // Simply update status to 'accepted' - trigger will handle friendship creation
       const { error } = await supabase
         .from("friend_requests")
         .update({ status: "accepted" })
         .eq("id", requestId);
-
       if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["friend-requests-received"] });
       queryClient.invalidateQueries({ queryKey: ["friendships"] });
-      toast({ title: "Friend request accepted!" });
+      toast({ title: "Follow request accepted!" });
     },
     onError: (error: any) => {
-      toast({
-        title: "Failed to accept friend request",
-        description: error.message,
-        variant: "destructive",
-      });
+      toast({ title: "Failed to accept request", description: error.message, variant: "destructive" });
     },
   });
 
   const rejectRequestMutation = useMutation({
     mutationFn: async (requestId: string) => {
-      await supabase
-        .from("friend_requests")
-        .update({ status: "rejected" })
-        .eq("id", requestId);
+      await supabase.from("friend_requests").update({ status: "rejected" }).eq("id", requestId);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["friend-requests-received"] });
-      toast({ title: "Friend request rejected" });
+      toast({ title: "Request declined" });
     },
   });
 
   const cancelRequestMutation = useMutation({
     mutationFn: async (requestId: string) => {
-      await supabase
-        .from("friend_requests")
-        .delete()
-        .eq("id", requestId);
+      await supabase.from("friend_requests").delete().eq("id", requestId);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["friend-requests-sent"] });
-      toast({ title: "Friend request cancelled" });
+      toast({ title: "Follow request cancelled" });
     },
   });
 
@@ -99,25 +85,23 @@ export const FriendRequests = () => {
           Received ({receivedRequests?.length || 0})
         </TabsTrigger>
         <TabsTrigger value="sent">
-          Sent ({sentRequests?.length || 0})
+          Requested ({sentRequests?.length || 0})
         </TabsTrigger>
       </TabsList>
 
       <TabsContent value="received" className="mt-4">
         {!receivedRequests || receivedRequests.length === 0 ? (
-          <p className="text-center text-muted-foreground py-8">No pending requests</p>
+          <p className="text-center text-muted-foreground py-8">No pending follow requests</p>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-3">
             {receivedRequests.map((request) => {
               const sender = request.profiles;
               return (
-                <Card key={request.id} className="p-4">
+                <Card key={request.id} className="p-4 rounded-2xl">
                   <div className="flex items-center gap-3">
                     <Avatar>
                       <AvatarImage src={sender.avatar_url || ""} />
-                      <AvatarFallback>
-                        <UserCircle className="h-8 w-8" />
-                      </AvatarFallback>
+                      <AvatarFallback><UserCircle className="h-8 w-8" /></AvatarFallback>
                     </Avatar>
                     <div className="flex-1">
                       <h3 className="font-semibold">{sender.display_name || sender.username}</h3>
@@ -126,22 +110,22 @@ export const FriendRequests = () => {
                     <div className="flex gap-2">
                       <Button
                         size="sm"
-                        className="bg-primary text-primary-foreground hover:bg-primary/90"
+                        className="rounded-xl"
                         onClick={() => acceptRequestMutation.mutate(request.id)}
                         disabled={acceptRequestMutation.isPending}
                       >
                         <Check className="h-4 w-4 mr-1" />
-                        Confirm
+                        Accept
                       </Button>
                       <Button
                         size="sm"
-                        className="bg-muted text-foreground hover:bg-muted/80"
                         variant="ghost"
+                        className="rounded-xl"
                         onClick={() => rejectRequestMutation.mutate(request.id)}
                         disabled={rejectRequestMutation.isPending}
                       >
                         <X className="h-4 w-4 mr-1" />
-                        Remove
+                        Decline
                       </Button>
                     </div>
                   </div>
@@ -154,19 +138,17 @@ export const FriendRequests = () => {
 
       <TabsContent value="sent" className="mt-4">
         {!sentRequests || sentRequests.length === 0 ? (
-          <p className="text-center text-muted-foreground py-8">No sent requests</p>
+          <p className="text-center text-muted-foreground py-8">No pending requests</p>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-3">
             {sentRequests.map((request) => {
               const recipient = request.profiles;
               return (
-                <Card key={request.id} className="p-4">
+                <Card key={request.id} className="p-4 rounded-2xl">
                   <div className="flex items-center gap-3">
                     <Avatar>
                       <AvatarImage src={recipient.avatar_url || ""} />
-                      <AvatarFallback>
-                        <UserCircle className="h-8 w-8" />
-                      </AvatarFallback>
+                      <AvatarFallback><UserCircle className="h-8 w-8" /></AvatarFallback>
                     </Avatar>
                     <div className="flex-1">
                       <h3 className="font-semibold">{recipient.display_name || recipient.username}</h3>
@@ -175,9 +157,10 @@ export const FriendRequests = () => {
                     <Button
                       size="sm"
                       variant="outline"
+                      className="rounded-xl"
                       onClick={() => cancelRequestMutation.mutate(request.id)}
                     >
-                      Cancel
+                      Requested
                     </Button>
                   </div>
                 </Card>

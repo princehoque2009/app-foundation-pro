@@ -54,7 +54,7 @@ interface MenuItem {
 const mainMenuItems: MenuItem[] = [
   { id: "messages", icon: MessageCircle, label: "Messages", description: "Your conversations", path: "/messages" },
   { id: "notifications", icon: Bell, label: "Notifications", description: "Manage your alerts", path: "/notifications" },
-  { id: "friends", icon: Heart, label: "Friends", description: "Manage connections", path: "/friends" },
+  { id: "followers", icon: Heart, label: "Followers", description: "People following you", path: "/friends" },
   { id: "groups", icon: Users, label: "Groups", description: "Your group chats", path: "/groups" },
   { id: "reels", icon: Film, label: "Reels", description: "Watch short videos", path: "/reels" },
   { id: "live", icon: Radio, label: "Live", description: "Go live or watch", path: "/live" },

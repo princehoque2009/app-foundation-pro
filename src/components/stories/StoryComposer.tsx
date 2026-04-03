@@ -8,7 +8,7 @@ import { useStories } from "@/hooks/useStories";
 import { toast } from "@/hooks/use-toast";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Camera, Image, Upload, X, Globe, Users, Lock, Loader2, Video,
+  Camera, Image, Upload, X, Globe, Users, Lock, Loader2, Video, Plus, Trash2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { StoryEditorCanvas, TextElement, StickerElement, DrawingPath } from "./StoryEditorCanvas";
@@ -20,126 +20,177 @@ interface StoryComposerProps {
 
 const MAX_VIDEO_DURATION = 30;
 
+interface StorySlide {
+  file: File;
+  preview: string;
+  mediaType: "image" | "video";
+  editorData: {
+    texts: TextElement[];
+    stickers: StickerElement[];
+    drawings: DrawingPath[];
+    filter: string;
+  } | null;
+}
+
 type Step = "pick" | "edit" | "preview";
 
 export const StoryComposer = ({ open, onOpenChange }: StoryComposerProps) => {
   const galleryRef = useRef<HTMLInputElement>(null);
   const cameraPhotoRef = useRef<HTMLInputElement>(null);
   const cameraVideoRef = useRef<HTMLInputElement>(null);
+  const addMoreRef = useRef<HTMLInputElement>(null);
 
   const [step, setStep] = useState<Step>("pick");
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [preview, setPreview] = useState<string | null>(null);
-  const [mediaType, setMediaType] = useState<"image" | "video">("image");
+  const [slides, setSlides] = useState<StorySlide[]>([]);
+  const [editingIndex, setEditingIndex] = useState(0);
   const [audience, setAudience] = useState("public");
   const [uploadProgress, setUploadProgress] = useState(0);
-
-  // Editor data
-  const [editorData, setEditorData] = useState<{
-    texts: TextElement[];
-    stickers: StickerElement[];
-    drawings: DrawingPath[];
-    filter: string;
-  } | null>(null);
+  const [currentUploadIndex, setCurrentUploadIndex] = useState(0);
 
   const { uploadStory } = useStories();
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const processFile = (file: File): Promise<StorySlide | null> => {
+    return new Promise((resolve) => {
+      const isImage = file.type.startsWith("image/");
+      const isVid = file.type.startsWith("video/");
+      if (!isImage && !isVid) {
+        toast({ title: "Invalid file", description: "Please select an image or video", variant: "destructive" });
+        resolve(null);
+        return;
+      }
+      if (file.size > 50 * 1024 * 1024) {
+        toast({ title: "File too large", description: "Max file size is 50MB", variant: "destructive" });
+        resolve(null);
+        return;
+      }
 
-    const isImage = file.type.startsWith("image/");
-    const isVid = file.type.startsWith("video/");
-    if (!isImage && !isVid) {
-      toast({ title: "Invalid file", description: "Please select an image or video", variant: "destructive" });
-      return;
-    }
-    if (file.size > 50 * 1024 * 1024) {
-      toast({ title: "File too large", description: "Max file size is 50MB", variant: "destructive" });
-      return;
-    }
-
-    if (isVid) {
-      const video = document.createElement("video");
-      video.preload = "metadata";
-      video.onloadedmetadata = () => {
-        URL.revokeObjectURL(video.src);
-        if (video.duration > MAX_VIDEO_DURATION) {
-          toast({
-            title: "Video too long",
-            description: `Videos must be ${MAX_VIDEO_DURATION} seconds or less.`,
-            variant: "destructive",
+      if (isVid) {
+        const video = document.createElement("video");
+        video.preload = "metadata";
+        video.onloadedmetadata = () => {
+          URL.revokeObjectURL(video.src);
+          if (video.duration > MAX_VIDEO_DURATION) {
+            toast({ title: "Video too long", description: `Videos must be ${MAX_VIDEO_DURATION}s or less.`, variant: "destructive" });
+            resolve(null);
+            return;
+          }
+          resolve({
+            file,
+            preview: URL.createObjectURL(file),
+            mediaType: "video",
+            editorData: null,
           });
-          return;
-        }
-        setSelectedFile(file);
-        setMediaType("video");
-        setPreview(URL.createObjectURL(file));
-        setStep("edit");
-      };
-      video.src = URL.createObjectURL(file);
-    } else {
-      setSelectedFile(file);
-      setMediaType("image");
-      setPreview(URL.createObjectURL(file));
+        };
+        video.src = URL.createObjectURL(file);
+      } else {
+        resolve({
+          file,
+          preview: URL.createObjectURL(file),
+          mediaType: "image",
+          editorData: null,
+        });
+      }
+    });
+  };
+
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+
+    const newSlides: StorySlide[] = [];
+    for (const file of files) {
+      const slide = await processFile(file);
+      if (slide) newSlides.push(slide);
+    }
+
+    if (newSlides.length > 0) {
+      setSlides(prev => [...prev, ...newSlides]);
+      setEditingIndex(slides.length); // edit the first new slide
       setStep("edit");
     }
     e.target.value = "";
   };
 
-  const handleEditorSave = (data: typeof editorData) => {
-    setEditorData(data);
+  const handleAddMore = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    const newSlides: StorySlide[] = [];
+    for (const file of files) {
+      const slide = await processFile(file);
+      if (slide) newSlides.push(slide);
+    }
+    if (newSlides.length > 0) {
+      setSlides(prev => [...prev, ...newSlides]);
+    }
+    e.target.value = "";
+  };
+
+  const handleEditorSave = (data: StorySlide["editorData"]) => {
+    setSlides(prev => {
+      const updated = [...prev];
+      updated[editingIndex] = { ...updated[editingIndex], editorData: data };
+      return updated;
+    });
     setStep("preview");
   };
 
-  const handleUpload = async () => {
-    if (!selectedFile) return;
+  const handleRemoveSlide = (index: number) => {
+    setSlides(prev => prev.filter((_, i) => i !== index));
+  };
 
-    setUploadProgress(10);
-    const progressInterval = setInterval(() => {
-      setUploadProgress(prev => Math.min(prev + 10, 90));
-    }, 200);
+  const handleUpload = async () => {
+    if (slides.length === 0) return;
+
+    setUploadProgress(5);
+    const total = slides.length;
 
     try {
-      await uploadStory.mutateAsync({
-        file: selectedFile,
-        visibility: audience,
-        editorData,
-      });
+      for (let i = 0; i < total; i++) {
+        setCurrentUploadIndex(i);
+        setUploadProgress(Math.round(((i) / total) * 100));
+
+        await uploadStory.mutateAsync({
+          file: slides[i].file,
+          visibility: audience,
+          editorData: slides[i].editorData,
+        });
+      }
       setUploadProgress(100);
-      clearInterval(progressInterval);
+      toast({ title: `${total} ${total === 1 ? "story" : "stories"} published!` });
       setTimeout(() => {
         resetForm();
         onOpenChange(false);
       }, 500);
     } catch {
-      clearInterval(progressInterval);
       setUploadProgress(0);
     }
   };
 
   const resetForm = () => {
-    setSelectedFile(null);
-    setPreview(null);
+    slides.forEach(s => URL.revokeObjectURL(s.preview));
+    setSlides([]);
     setStep("pick");
     setAudience("public");
     setUploadProgress(0);
-    setEditorData(null);
+    setEditingIndex(0);
+    setCurrentUploadIndex(0);
   };
 
   const isUploading = uploadStory.isPending || uploadProgress > 0;
 
-  // Full-screen editor - render outside dialog
-  if (step === "edit" && preview) {
+  // Full-screen editor
+  if (step === "edit" && slides[editingIndex]) {
     return (
       <StoryEditorCanvas
-        mediaSrc={preview}
-        mediaType={mediaType}
+        mediaSrc={slides[editingIndex].preview}
+        mediaType={slides[editingIndex].mediaType}
         onSave={handleEditorSave}
         onCancel={() => {
-          setStep("pick");
-          setPreview(null);
-          setSelectedFile(null);
+          if (slides.length === 1 && !slides[0].editorData) {
+            resetForm();
+            setStep("pick");
+          } else {
+            setStep("preview");
+          }
         }}
       />
     );
@@ -180,8 +231,8 @@ export const StoryComposer = ({ open, onOpenChange }: StoryComposerProps) => {
                   <div className="p-4 rounded-full bg-white/10 mb-4">
                     <Upload className="h-8 w-8 text-white" />
                   </div>
-                  <p className="text-white font-medium">Upload Photo or Video</p>
-                  <p className="text-white/60 text-sm mt-1">Max 50MB • Videos up to {MAX_VIDEO_DURATION}s</p>
+                  <p className="text-white font-medium">Upload Photos or Videos</p>
+                  <p className="text-white/60 text-sm mt-1">Select multiple • Max 50MB each</p>
                 </div>
 
                 <div className="flex gap-3 w-full">
@@ -196,14 +247,14 @@ export const StoryComposer = ({ open, onOpenChange }: StoryComposerProps) => {
                   </Button>
                 </div>
 
-                <input ref={galleryRef} type="file" accept="image/*,video/*" className="hidden" onChange={handleFileSelect} />
+                <input ref={galleryRef} type="file" accept="image/*,video/*" multiple className="hidden" onChange={handleFileSelect} />
                 <input ref={cameraPhotoRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handleFileSelect} />
                 <input ref={cameraVideoRef} type="file" accept="video/*" capture="environment" className="hidden" onChange={handleFileSelect} />
               </div>
             </motion.div>
           )}
 
-          {step === "preview" && preview && (
+          {step === "preview" && slides.length > 0 && (
             <motion.div
               key="preview"
               initial={{ opacity: 0 }}
@@ -211,102 +262,78 @@ export const StoryComposer = ({ open, onOpenChange }: StoryComposerProps) => {
               exit={{ opacity: 0 }}
               className="relative min-h-[80vh] flex flex-col"
             >
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setStep("edit")}
-                className="absolute top-4 left-4 z-20 text-white hover:bg-white/10"
-                disabled={isUploading}
-              >
-                <X className="h-5 w-5" />
-              </Button>
+              <div className="absolute top-4 left-4 right-4 z-20 flex items-center justify-between">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => { resetForm(); setStep("pick"); }}
+                  className="text-white hover:bg-white/10"
+                  disabled={isUploading}
+                >
+                  <X className="h-5 w-5" />
+                </Button>
+                <span className="text-white text-sm font-medium">
+                  {slides.length} {slides.length === 1 ? "story" : "stories"}
+                </span>
+                <div className="w-8" />
+              </div>
 
-              <div className="flex-1 relative flex items-center justify-center bg-black">
-                {mediaType === "image" ? (
-                  <img
-                    src={preview}
-                    alt="Preview"
-                    className="max-w-full max-h-[70vh] object-contain"
-                    style={{
-                      filter: editorData?.filter
-                        ? [
-                            { id: "warm", css: "brightness(1.1) saturate(1.3) sepia(0.15)" },
-                            { id: "cool", css: "brightness(1.05) saturate(0.9) hue-rotate(15deg)" },
-                            { id: "vintage", css: "sepia(0.4) contrast(1.1) brightness(0.95)" },
-                            { id: "dramatic", css: "contrast(1.4) saturate(1.2) brightness(0.9)" },
-                            { id: "fade", css: "contrast(0.85) brightness(1.1) saturate(0.8)" },
-                            { id: "bw", css: "grayscale(1) contrast(1.2)" },
-                            { id: "vivid", css: "saturate(1.6) contrast(1.1)" },
-                          ].find(f => f.id === editorData.filter)?.css || ""
-                        : "",
-                    }}
-                  />
-                ) : (
-                  <video src={preview} controls playsInline className="max-w-full max-h-[70vh]" />
+              {/* Slide thumbnails */}
+              <div className="flex gap-2 px-4 pt-14 pb-3 overflow-x-auto scrollbar-hide">
+                {slides.map((slide, i) => (
+                  <div key={i} className="relative flex-shrink-0 group">
+                    <button
+                      onClick={() => { setEditingIndex(i); setStep("edit"); }}
+                      className={cn(
+                        "w-16 h-24 rounded-xl overflow-hidden border-2 transition-all",
+                        "hover:border-white",
+                        "border-white/30"
+                      )}
+                    >
+                      {slide.mediaType === "image" ? (
+                        <img src={slide.preview} className="w-full h-full object-cover" alt="" />
+                      ) : (
+                        <video src={slide.preview} className="w-full h-full object-cover" muted />
+                      )}
+                    </button>
+                    {slides.length > 1 && (
+                      <button
+                        onClick={() => handleRemoveSlide(i)}
+                        className="absolute -top-1 -right-1 bg-red-500 rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <X className="h-3 w-3 text-white" />
+                      </button>
+                    )}
+                  </div>
+                ))}
+                {/* Add more button */}
+                <button
+                  onClick={() => addMoreRef.current?.click()}
+                  className="w-16 h-24 rounded-xl border-2 border-dashed border-white/30 flex items-center justify-center hover:border-white/50 transition-colors flex-shrink-0"
+                  disabled={isUploading}
+                >
+                  <Plus className="h-5 w-5 text-white/60" />
+                </button>
+                <input ref={addMoreRef} type="file" accept="image/*,video/*" multiple className="hidden" onChange={handleAddMore} />
+              </div>
+
+              {/* Main preview */}
+              <div className="flex-1 relative flex items-center justify-center bg-black px-4">
+                {slides[0] && (
+                  slides[0].mediaType === "image" ? (
+                    <img src={slides[0].preview} alt="Preview" className="max-w-full max-h-[50vh] object-contain rounded-2xl" />
+                  ) : (
+                    <video src={slides[0].preview} controls playsInline className="max-w-full max-h-[50vh] rounded-2xl" />
+                  )
                 )}
 
-                {/* Render text overlays */}
-                {editorData?.texts.map(t => (
-                  <div
-                    key={t.id}
-                    className="absolute pointer-events-none"
-                    style={{ left: `${t.x}%`, top: `${t.y}%`, transform: "translate(-50%, -50%)" }}
-                  >
-                    <p
-                      style={{
-                        color: t.color,
-                        backgroundColor: t.bgColor || "transparent",
-                        fontSize: `${t.fontSize}px`,
-                        fontWeight: t.bold ? 700 : 400,
-                        fontStyle: t.italic ? "italic" : "normal",
-                      }}
-                      className="px-3 py-1.5 rounded-lg text-center"
-                    >
-                      {t.text}
-                    </p>
-                  </div>
-                ))}
-
-                {/* Render stickers */}
-                {editorData?.stickers.map(s => (
-                  <div
-                    key={s.id}
-                    className="absolute pointer-events-none"
-                    style={{
-                      left: `${s.x}%`,
-                      top: `${s.y}%`,
-                      transform: `translate(-50%, -50%) scale(${s.scale})`,
-                    }}
-                  >
-                    {s.type === "emoji" && <span className="text-5xl">{s.data.emoji}</span>}
-                    {s.type === "poll" && (
-                      <div className="bg-white/95 rounded-2xl p-3 min-w-[180px]">
-                        <p className="text-sm font-bold text-foreground mb-2">{s.data.question}</p>
-                        {s.data.options.map((opt: string, i: number) => (
-                          <div key={i} className="bg-muted rounded-full py-1.5 px-3 mb-1 text-sm text-center">{opt}</div>
-                        ))}
-                      </div>
-                    )}
-                    {s.type === "question" && (
-                      <div className="bg-white/95 rounded-2xl p-3 min-w-[180px] text-center">
-                        <p className="text-xs font-semibold text-primary mb-1">{s.data.question}</p>
-                        <div className="bg-muted rounded-full py-1.5 px-3 text-sm text-muted-foreground">Type your answer...</div>
-                      </div>
-                    )}
-                    {s.type === "countdown" && (
-                      <div className="bg-primary rounded-2xl p-3 min-w-[160px] text-center text-primary-foreground">
-                        <p className="text-xs font-semibold mb-1">{s.data.label}</p>
-                        <p className="text-xl font-bold">24:00:00</p>
-                      </div>
-                    )}
-                  </div>
-                ))}
-
                 {isUploading && (
-                  <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center">
+                  <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center rounded-2xl">
                     <Loader2 className="h-8 w-8 text-white animate-spin mb-4" />
                     <Progress value={uploadProgress} className="w-48 h-2" />
-                    <p className="text-white text-sm mt-2">Uploading...</p>
+                    <p className="text-white text-sm mt-2">
+                      Publishing {currentUploadIndex + 1} of {slides.length}...
+                    </p>
                   </div>
                 )}
               </div>
@@ -317,7 +344,7 @@ export const StoryComposer = ({ open, onOpenChange }: StoryComposerProps) => {
                     <RadioGroup value={audience} onValueChange={setAudience} className="flex justify-center gap-2">
                       {[
                         { value: "public", label: "Public", icon: Globe },
-                        { value: "friends", label: "Friends", icon: Users },
+                        { value: "friends", label: "Followers", icon: Users },
                         { value: "close_friends", label: "Close Friends", icon: Lock },
                       ].map(({ value, label, icon: Icon }) => (
                         <div key={value} className="flex items-center">
@@ -337,7 +364,7 @@ export const StoryComposer = ({ open, onOpenChange }: StoryComposerProps) => {
                     </RadioGroup>
                   </div>
                   <Button onClick={handleUpload} className="w-full rounded-full" size="lg">
-                    Share Story
+                    Share {slides.length > 1 ? `${slides.length} Stories` : "Story"}
                   </Button>
                 </div>
               )}

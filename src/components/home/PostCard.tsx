@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Heart, MessageCircle, Share2, Bookmark, UserCircle } from "lucide-react";
 import { useState, useRef, useCallback } from "react";
-import { usePostReactions, useToggleReaction, REACTION_TYPES, getEmojiForReaction, type ReactionKey } from "@/hooks/usePostReactions";
+import { usePostReactions, useToggleReaction } from "@/hooks/usePostReactions";
 import { formatDistanceToNow } from "date-fns";
 import { CommentsDialog } from "./CommentsDialog";
 import { ReactionBreakdownDialog } from "./ReactionBreakdownDialog";
@@ -25,7 +25,6 @@ import { PostMedia } from "@/hooks/usePosts";
 import { useActiveEffects } from "@/hooks/useActiveEffects";
 import { PrangonVideoPlayer } from "@/components/video/PrangonVideoPlayer";
 import { RenderMentions } from "@/components/ui/RenderMentions";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 interface PostCardProps {
   id: string;
@@ -50,13 +49,10 @@ export const PostCard = ({ id, author, content, image, video, mediaItems, likes,
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showHeartAnimation, setShowHeartAnimation] = useState(false);
   const [showReactionBreakdown, setShowReactionBreakdown] = useState(false);
-  const [showReactionPicker, setShowReactionPicker] = useState(false);
-  const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { user } = useAuth();
   
-  // Fetch user roles for role badge
   const { data: userRoles } = useUserRoles({ userId: author.userId });
   const { effects: authorEffects } = useActiveEffects(author.userId);
   const [isImageLoaded, setIsImageLoaded] = useState(false);
@@ -74,52 +70,30 @@ export const PostCard = ({ id, author, content, image, video, mediaItems, likes,
         .select("id")
         .eq("username", author.username)
         .single();
-      
       if (error) throw error;
       return data;
     },
   });
 
-  const myReaction = reactionData?.myReaction || null;
+  const isLiked = !!reactionData?.myReaction;
 
-  const handleReact = (reaction: ReactionKey) => {
-    if (!myReaction) {
-      setShowHeartAnimation(true);
-      setTimeout(() => setShowHeartAnimation(false), 1000);
-    }
-    toggleReaction.mutate({ reaction, currentReaction: myReaction });
-    setShowReactionPicker(false);
-  };
-
-  const handleQuickReact = () => {
-    if (myReaction) {
-      // Remove reaction
-      toggleReaction.mutate({ reaction: null, currentReaction: myReaction });
+  const handleToggleLike = () => {
+    if (isLiked) {
+      toggleReaction.mutate({ reaction: null, currentReaction: "like" });
     } else {
       setShowHeartAnimation(true);
-      setTimeout(() => setShowHeartAnimation(false), 1000);
+      setTimeout(() => setShowHeartAnimation(false), 800);
       toggleReaction.mutate({ reaction: "like", currentReaction: null });
     }
   };
 
   const handleDoubleTap = () => {
-    if (!myReaction) {
-      handleReact("like");
+    if (!isLiked) {
+      setShowHeartAnimation(true);
+      setTimeout(() => setShowHeartAnimation(false), 800);
+      toggleReaction.mutate({ reaction: "like", currentReaction: null });
     }
   };
-
-  const handleLongPressStart = useCallback(() => {
-    longPressTimer.current = setTimeout(() => {
-      setShowReactionPicker(true);
-    }, 400);
-  }, []);
-
-  const handleLongPressEnd = useCallback(() => {
-    if (longPressTimer.current) {
-      clearTimeout(longPressTimer.current);
-      longPressTimer.current = null;
-    }
-  }, []);
 
   const handleProfileClick = () => {
     if (userProfile?.id) {
@@ -129,57 +103,30 @@ export const PostCard = ({ id, author, content, image, video, mediaItems, likes,
 
   const handleDelete = async () => {
     if (!confirm("Are you sure you want to delete this post?")) return;
-    
     try {
-      const { error } = await supabase
-        .from("posts")
-        .delete()
-        .eq("id", id);
-      
+      const { error } = await supabase.from("posts").delete().eq("id", id);
       if (error) throw error;
-      
       queryClient.invalidateQueries({ queryKey: ["posts"] });
       queryClient.invalidateQueries({ queryKey: ["user-posts"] });
-      
-      toast({
-        title: "Post deleted",
-        description: "Your post has been deleted successfully",
-      });
+      toast({ title: "Post deleted", description: "Your post has been deleted successfully" });
     } catch (error) {
-      console.error("Error deleting post:", error);
-      toast({
-        title: "Error",
-        description: "Failed to delete post. Please try again.",
-        variant: "destructive",
-      });
+      toast({ title: "Error", description: "Failed to delete post.", variant: "destructive" });
     }
   };
 
-  const handleEdit = () => {
-    setShowEditDialog(true);
-  };
+  const handleEdit = () => setShowEditDialog(true);
 
   const handleShare = async () => {
     const postUrl = `${window.location.origin}/post/${id}`;
-    
     if (navigator.share) {
-      try {
-        await navigator.share({
-          title: 'Check out this post on Prangon',
-          text: content,
-          url: postUrl,
-        });
-      } catch (err) {
-        // User cancelled sharing
-      }
+      try { await navigator.share({ title: 'Check out this post on Prangon', text: content, url: postUrl }); } catch {}
     } else {
       await navigator.clipboard.writeText(postUrl);
-      toast({
-        title: "Link copied",
-        description: "Post link copied to clipboard",
-      });
+      toast({ title: "Link copied", description: "Post link copied to clipboard" });
     }
   };
+
+  const likeCount = reactionData?.totalCount || likes;
 
   return (
     <>
@@ -187,10 +134,7 @@ export const PostCard = ({ id, author, content, image, video, mediaItems, likes,
         <CardContent className="p-0">
           {/* Post Header */}
           <div className="flex items-center justify-between p-4">
-            <div 
-              className="flex items-center gap-3 cursor-pointer group"
-              onClick={handleProfileClick}
-            >
+            <div className="flex items-center gap-3 cursor-pointer group" onClick={handleProfileClick}>
               <div className="relative">
                 <div className={cn(
                   "p-[2px] rounded-full",
@@ -244,36 +188,31 @@ export const PostCard = ({ id, author, content, image, video, mediaItems, likes,
             />
           </div>
 
-          {/* Post Content - with content protection */}
+          {/* Post Content */}
           {content && (
             <p className="text-sm px-4 pb-3 leading-relaxed text-foreground select-none">
               <RenderMentions text={content} />
             </p>
           )}
 
-          {/* Post Media - Multi-media carousel or single media */}
+          {/* Post Media */}
           {mediaItems && mediaItems.length > 0 ? (
             <div 
               className="relative bg-muted/50 cursor-pointer overflow-hidden select-none"
               onDoubleClick={handleDoubleTap}
               onContextMenu={(e) => e.preventDefault()}
             >
-              <MediaCarousel 
-                media={mediaItems} 
-                onDoubleClick={handleDoubleTap}
-              />
-              
-              {/* Double tap heart animation */}
+              <MediaCarousel media={mediaItems} onDoubleClick={handleDoubleTap} />
               <AnimatePresence>
                 {showHeartAnimation && (
                   <motion.div
                     initial={{ scale: 0, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
-                    exit={{ scale: 1.5, opacity: 0 }}
-                    transition={{ duration: 0.4, ease: "easeOut" }}
+                    exit={{ scale: 1.8, opacity: 0 }}
+                    transition={{ duration: 0.5, ease: "easeOut" }}
                     className="absolute inset-0 flex items-center justify-center pointer-events-none z-10"
                   >
-                    <Heart className="h-24 w-24 text-primary fill-primary drop-shadow-2xl" />
+                    <Heart className="h-24 w-24 text-red-500 fill-red-500 drop-shadow-2xl" />
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -286,12 +225,9 @@ export const PostCard = ({ id, author, content, image, video, mediaItems, likes,
             >
               {image && (
                 <>
-                  {!isImageLoaded && (
-                    <div className="w-full h-80 shimmer" />
-                  )}
+                  {!isImageLoaded && <div className="w-full h-80 shimmer" />}
                   <img 
-                    src={image} 
-                    alt="Post" 
+                    src={image} alt="Post" 
                     className={cn(
                       "w-full object-cover max-h-[500px] transition-opacity duration-300 pointer-events-none",
                       isImageLoaded ? "opacity-100" : "opacity-0 h-0"
@@ -303,154 +239,97 @@ export const PostCard = ({ id, author, content, image, video, mediaItems, likes,
                 </>
               )}
               {video && (
-                <PrangonVideoPlayer
-                  src={video}
-                  className="w-full max-h-[500px]"
-                  compact
-                />
+                <PrangonVideoPlayer src={video} className="w-full max-h-[500px]" compact />
               )}
-              
-              {/* Double tap heart animation */}
               <AnimatePresence>
                 {showHeartAnimation && (
                   <motion.div
                     initial={{ scale: 0, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
-                    exit={{ scale: 1.5, opacity: 0 }}
-                    transition={{ duration: 0.4, ease: "easeOut" }}
+                    exit={{ scale: 1.8, opacity: 0 }}
+                    transition={{ duration: 0.5, ease: "easeOut" }}
                     className="absolute inset-0 flex items-center justify-center pointer-events-none"
                   >
-                    <Heart className="h-24 w-24 text-primary fill-primary drop-shadow-2xl" />
+                    <Heart className="h-24 w-24 text-red-500 fill-red-500 drop-shadow-2xl" />
                   </motion.div>
                 )}
               </AnimatePresence>
             </div>
           )}
 
-          {/* Reaction Summary Row */}
-          {reactionData && reactionData.totalCount > 0 && (
+          {/* Like count */}
+          {likeCount > 0 && (
             <button
               onClick={() => setShowReactionBreakdown(true)}
-              className="flex items-center gap-1.5 px-4 pb-1 hover:opacity-80 transition-opacity"
+              className="flex items-center gap-1.5 px-4 pt-2 pb-1 hover:opacity-80 transition-opacity"
             >
-              <div className="flex -space-x-0.5">
-                {Object.entries(reactionData.counts)
-                  .sort((a, b) => b[1] - a[1])
-                  .slice(0, 3)
-                  .map(([key]) => (
-                    <span key={key} className="text-sm">{getEmojiForReaction(key)}</span>
-                  ))}
-              </div>
+              <Heart className="h-3.5 w-3.5 text-red-500 fill-red-500" />
               <span className="text-xs text-muted-foreground font-medium">
-                {reactionData.totalCount} {reactionData.totalCount === 1 ? "reaction" : "reactions"}
+                {likeCount} {likeCount === 1 ? "like" : "likes"}
               </span>
             </button>
           )}
 
-          {/* Post Actions */}
+          {/* Post Actions - Instagram style */}
           <div className="p-3">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-0.5">
-                {/* Reaction button with long-press picker */}
-                <Popover open={showReactionPicker} onOpenChange={setShowReactionPicker}>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className={cn(
-                        "gap-1.5 h-10 px-3 rounded-full hover:bg-primary/10 transition-all",
-                        myReaction && "text-primary"
-                      )}
-                      onClick={handleQuickReact}
-                      onMouseDown={handleLongPressStart}
-                      onMouseUp={handleLongPressEnd}
-                      onMouseLeave={handleLongPressEnd}
-                      onTouchStart={handleLongPressStart}
-                      onTouchEnd={handleLongPressEnd}
-                      disabled={toggleReaction.isPending}
-                    >
-                      {myReaction ? (
-                        <span className="text-xl leading-none">{getEmojiForReaction(myReaction)}</span>
-                      ) : (
-                        <Heart className="h-6 w-6" />
-                      )}
-                      <span className={cn(
-                        "text-sm font-semibold tabular-nums",
-                        myReaction && "text-primary"
-                      )}>
-                        {reactionData?.totalCount || likes}
-                      </span>
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-1.5" side="top" align="start">
-                    <div className="flex gap-0.5">
-                      {REACTION_TYPES.map(r => (
-                        <button
-                          key={r.key}
-                          onClick={() => handleReact(r.key)}
-                          className={cn(
-                            "text-2xl p-2 rounded-xl hover:bg-muted transition-all hover:scale-125",
-                            "focus:outline-none active:scale-95",
-                            myReaction === r.key && "bg-primary/10 scale-110"
-                          )}
-                          title={r.label}
-                        >
-                          {r.emoji}
-                        </button>
-                      ))}
-                    </div>
-                  </PopoverContent>
-                </Popover>
-
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="gap-1.5 h-10 px-3 rounded-full hover:bg-primary/10 transition-all"
-                  onClick={() => setShowComments(true)}
+              <div className="flex items-center gap-1">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-10 px-3 rounded-full hover:bg-muted/60 transition-all"
+                  onClick={handleToggleLike}
+                  disabled={toggleReaction.isPending}
                 >
-                  <MessageCircle className="h-6 w-6" />
-                  <span className="text-sm font-semibold tabular-nums">{comments}</span>
+                  <motion.div
+                    animate={isLiked ? { scale: [1, 1.3, 1] } : { scale: 1 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <Heart className={cn(
+                      "h-6 w-6 transition-colors",
+                      isLiked ? "text-red-500 fill-red-500" : "text-foreground"
+                    )} />
+                  </motion.div>
                 </Button>
                 <Button 
                   variant="ghost" 
                   size="sm" 
-                  className="h-10 px-3 rounded-full hover:bg-primary/10 transition-all"
+                  className="gap-1.5 h-10 px-3 rounded-full hover:bg-muted/60 transition-all"
+                  onClick={() => setShowComments(true)}
+                >
+                  <MessageCircle className="h-6 w-6" />
+                  {comments > 0 && <span className="text-sm font-semibold tabular-nums">{comments}</span>}
+                </Button>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="h-10 px-3 rounded-full hover:bg-muted/60 transition-all"
                   onClick={handleShare}
                 >
                   <Share2 className="h-5 w-5" />
                 </Button>
               </div>
-              <div className="flex items-center gap-0.5">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-10 px-3 rounded-full hover:bg-primary/10 transition-all"
-                  onClick={() => {
-                    if (isSaved) {
-                      unsavePost.mutate(id);
-                    } else {
-                      savePost.mutate(id);
-                    }
-                  }}
-                  disabled={savePost.isPending || unsavePost.isPending}
-                >
-                  <Bookmark className={cn(
-                    "h-5 w-5 transition-all",
-                    isSaved && "fill-primary text-primary"
-                  )} />
-                </Button>
-              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-10 px-3 rounded-full hover:bg-muted/60 transition-all"
+                onClick={() => {
+                  if (isSaved) unsavePost.mutate(id);
+                  else savePost.mutate(id);
+                }}
+                disabled={savePost.isPending || unsavePost.isPending}
+              >
+                <Bookmark className={cn(
+                  "h-5 w-5 transition-all",
+                  isSaved && "fill-foreground text-foreground"
+                )} />
+              </Button>
             </div>
           </div>
         </CardContent>
       </Card>
       
-      <CommentsDialog 
-        postId={id} 
-        open={showComments} 
-        onOpenChange={setShowComments} 
-      />
-
+      <CommentsDialog postId={id} open={showComments} onOpenChange={setShowComments} />
       <EditPostDialog
         postId={id}
         currentCaption={content}
@@ -459,7 +338,6 @@ export const PostCard = ({ id, author, content, image, video, mediaItems, likes,
         open={showEditDialog}
         onOpenChange={setShowEditDialog}
       />
-
       <ReactionBreakdownDialog
         postId={id}
         open={showReactionBreakdown}

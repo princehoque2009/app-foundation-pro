@@ -16,17 +16,19 @@ const Home = () => {
 
   return (
     <MainLayout>
-      <div className="bg-gradient-to-b from-background to-muted/20 min-h-screen select-none">
-        <div className="bg-card border-b border-border py-4">
+      <div className="bg-background min-h-screen select-none">
+        {/* Stories Row */}
+        <div className="bg-card border-b border-border/50 py-3">
           {isLoading ? <StorySkeleton /> : <Stories />}
         </div>
 
         <SuggestedAccounts />
 
-        <div className="max-w-2xl mx-auto px-4 py-4">
-          <SmartFeedAd placement="home_feed" className="mb-4" />
+        {/* Feed */}
+        <div className="max-w-xl mx-auto px-3 py-3">
+          <SmartFeedAd placement="home_feed" className="mb-3" />
           {isLoading ? (
-            <div className="space-y-4">
+            <div className="space-y-3">
               <PostSkeleton />
               <PostSkeleton />
               <PostSkeleton />
@@ -56,7 +58,7 @@ const Home = () => {
                   timestamp={post.created_at}
                 />
                 {(index + 1) % AD_INTERVAL === 0 && index < posts.length - 1 && (
-                  <SmartFeedAd key={`ad-${index}`} placement="home_feed" className="mb-4" />
+                  <SmartFeedAd key={`ad-${index}`} placement="home_feed" className="mb-3" />
                 )}
               </Fragment>
             ))
