@@ -9,17 +9,17 @@ const Friends = () => {
   return (
     <MainLayout>
       <div className="max-w-screen-xl mx-auto px-4 py-6">
-        <h1 className="text-2xl font-bold mb-6">Friends</h1>
+        <h1 className="text-2xl font-bold mb-6">Followers</h1>
         
-        <Tabs defaultValue="friends" className="w-full">
+        <Tabs defaultValue="followers" className="w-full">
           <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="friends">My Friends</TabsTrigger>
+            <TabsTrigger value="followers">Following</TabsTrigger>
             <TabsTrigger value="requests">Requests</TabsTrigger>
-            <TabsTrigger value="suggestions">Suggestions</TabsTrigger>
+            <TabsTrigger value="suggestions">Discover</TabsTrigger>
             <TabsTrigger value="search">Search</TabsTrigger>
           </TabsList>
           
-          <TabsContent value="friends" className="mt-6">
+          <TabsContent value="followers" className="mt-6">
             <MyFriends />
           </TabsContent>
           

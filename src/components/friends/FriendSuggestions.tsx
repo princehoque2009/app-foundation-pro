@@ -14,7 +14,6 @@ export const FriendSuggestions = () => {
   const { data: suggestions } = useQuery({
     queryKey: ["friend-suggestions", user?.id],
     queryFn: async () => {
-      // Get profiles excluding current user, existing friends, and pending requests
       const { data: existingFriends } = await supabase
         .from("friendships")
         .select("friend_id")
@@ -54,15 +53,14 @@ export const FriendSuggestions = () => {
           from_user_id: user?.id,
           to_user_id: toUserId,
         });
-      
       if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["friend-suggestions"] });
       queryClient.invalidateQueries({ queryKey: ["friend-requests-sent"] });
       toast({
-        title: "Friend request sent",
-        description: "Your friend request has been sent successfully.",
+        title: "Follow request sent",
+        description: "Your follow request has been sent successfully.",
       });
     },
   });
@@ -78,7 +76,7 @@ export const FriendSuggestions = () => {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
       {suggestions.map((profile) => (
-        <Card key={profile.id} className="p-4">
+        <Card key={profile.id} className="p-4 rounded-2xl">
           <div className="flex items-center gap-3 mb-3">
             <Avatar>
               <AvatarImage src={profile.avatar_url || ""} />
@@ -93,11 +91,11 @@ export const FriendSuggestions = () => {
           </div>
           <Button
             size="sm"
-            className="w-full"
+            className="w-full rounded-xl"
             onClick={() => sendRequestMutation.mutate(profile.id)}
           >
             <UserPlus className="h-4 w-4 mr-1" />
-            Add Friend
+            Follow
           </Button>
         </Card>
       ))}

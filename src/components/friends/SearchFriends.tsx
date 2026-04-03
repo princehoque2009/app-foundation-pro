@@ -18,14 +18,12 @@ export const SearchFriends = () => {
     queryKey: ["search-users", searchQuery],
     queryFn: async () => {
       if (!searchQuery.trim()) return [];
-
       const { data, error } = await supabase
         .from("profiles")
         .select("*")
         .or(`username.ilike.%${searchQuery}%,display_name.ilike.%${searchQuery}%`)
         .neq("id", user?.id)
         .limit(10);
-      
       if (error) throw error;
       return data;
     },
@@ -40,14 +38,13 @@ export const SearchFriends = () => {
           from_user_id: user?.id,
           to_user_id: toUserId,
         });
-      
       if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["friend-requests-sent"] });
       toast({
-        title: "Friend request sent",
-        description: "Your friend request has been sent successfully.",
+        title: "Follow request sent",
+        description: "Your follow request has been sent successfully.",
       });
     },
   });
@@ -60,14 +57,14 @@ export const SearchFriends = () => {
           placeholder="Search by username or name..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="pl-10"
+          className="pl-10 rounded-xl"
         />
       </div>
 
       {searchResults && searchResults.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {searchResults.map((profile) => (
-            <Card key={profile.id} className="p-4">
+            <Card key={profile.id} className="p-4 rounded-2xl">
               <div className="flex items-center gap-3 mb-3">
                 <Avatar>
                   <AvatarImage src={profile.avatar_url || ""} />
@@ -82,11 +79,11 @@ export const SearchFriends = () => {
               </div>
               <Button
                 size="sm"
-                className="w-full"
+                className="w-full rounded-xl"
                 onClick={() => sendRequestMutation.mutate(profile.id)}
               >
                 <UserPlus className="h-4 w-4 mr-1" />
-                Add Friend
+                Follow
               </Button>
             </Card>
           ))}
@@ -95,7 +92,7 @@ export const SearchFriends = () => {
         <p className="text-center text-muted-foreground py-8">No users found</p>
       ) : (
         <p className="text-center text-muted-foreground py-8">
-          Start typing to search for friends
+          Start typing to search for people
         </p>
       )}
     </div>
