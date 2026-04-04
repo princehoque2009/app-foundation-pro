@@ -231,8 +231,6 @@ const UserProfile = () => {
           isOwner={false}
           postsCount={canViewContent ? (posts?.length || 0) : 0}
           isLoading={profileLoading}
-          isPrivate={isPrivate}
-          isFollowing={!!isFollowing}
         />
 
         {/* Action Buttons */}
