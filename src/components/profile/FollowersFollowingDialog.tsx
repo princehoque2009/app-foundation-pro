@@ -351,7 +351,7 @@ export const FollowersFollowingDialog = ({
   const filterLabels: Record<FilterType, string> = {
     all: "All",
     newest: "Newest",
-    mutual: "Mutual Friends",
+    mutual: "Mutual",
   };
 
   return (
