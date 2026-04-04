@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { MessageCircle, UserPlus, UserMinus, Clock, Info, ChevronDown } from "lucide-react";
+import { MessageCircle, UserPlus, UserMinus, Clock, Info, Lock } from "lucide-react";
 import { ProfileAboutSection } from "@/components/profile/ProfileAboutSection";
 import { ProfileActionsDropdown } from "@/components/profile/ProfileActionsDropdown";
 import { ProfileHeader } from "@/components/profile/ProfileHeader";
@@ -37,43 +37,38 @@ const UserProfile = () => {
         .select("*")
         .eq("id", userId)
         .single();
-      
       if (error) throw error;
       return data;
     },
     enabled: !!userId,
   });
 
-  // Check friendship status
-  const { data: friendship } = useQuery({
-    queryKey: ["friendship", user?.id, userId],
+  // Check if current user follows this profile
+  const { data: isFollowing } = useQuery({
+    queryKey: ["is-following", user?.id, userId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data } = await supabase
         .from("friendships")
-        .select("*")
+        .select("id")
         .eq("user_id", user?.id)
         .eq("friend_id", userId)
         .maybeSingle();
-      
-      if (error) throw error;
-      return data;
+      return !!data;
     },
     enabled: !!user?.id && !!userId && user.id !== userId,
   });
 
-  // Check pending friend request
+  // Check pending follow request
   const { data: pendingRequest } = useQuery({
-    queryKey: ["friend-request", user?.id, userId],
+    queryKey: ["follow-request", user?.id, userId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data } = await supabase
         .from("friend_requests")
         .select("*")
         .eq("from_user_id", user?.id)
         .eq("to_user_id", userId)
         .eq("status", "pending")
         .maybeSingle();
-      
-      if (error) throw error;
       return data;
     },
     enabled: !!user?.id && !!userId && user.id !== userId,
@@ -88,14 +83,13 @@ const UserProfile = () => {
         .select("*, profiles!posts_user_id_fkey(*)")
         .eq("user_id", userId)
         .order("created_at", { ascending: false });
-      
       if (error) throw error;
       return data;
     },
     enabled: !!userId,
   });
 
-  // Fetch pinned posts for this user
+  // Fetch pinned posts
   const { data: pinnedPosts } = useQuery({
     queryKey: ["pinned-posts", userId],
     queryFn: async () => {
@@ -104,15 +98,18 @@ const UserProfile = () => {
         .select("post_id")
         .eq("user_id", userId)
         .order("display_order", { ascending: true });
-      
       if (error) throw error;
       return data?.map(p => p.post_id) || [];
     },
     enabled: !!userId,
   });
 
-  // Transform posts into creations format
+  const isPrivate = profile?.account_type === "private";
+  const canViewContent = !isPrivate || isFollowing;
+
+  // Transform posts
   const creations = useMemo(() => {
+    if (!canViewContent) return [];
     const pinnedSet = new Set(pinnedPosts || []);
     return posts?.map(post => ({
       id: post.id,
@@ -122,57 +119,76 @@ const UserProfile = () => {
       likes: post.likes_count || 0,
       isPinned: pinnedSet.has(post.id),
     })) || [];
-  }, [posts, pinnedPosts]);
+  }, [posts, pinnedPosts, canViewContent]);
 
-  const regularPosts = posts?.filter(post => !post.is_reel) || [];
-  const reelPosts = posts?.filter(post => post.is_reel) || [];
-  const mediaPosts = posts?.filter(post => post.media_url) || [];
+  const mediaPosts = canViewContent ? (posts?.filter(post => post.media_url) || []) : [];
+  const reelPosts = canViewContent ? (posts?.filter(post => post.is_reel) || []) : [];
 
   const tabs = [
-    { id: "all", label: "All", count: posts?.length || 0 },
+    { id: "all", label: "All", count: canViewContent ? (posts?.length || 0) : 0 },
     { id: "media", label: "Media", count: mediaPosts.length },
     { id: "reels", label: "Reels", count: reelPosts.length },
   ];
 
-  const sendFriendRequest = useMutation({
+  // Follow: instant for public, request for private
+  const followMutation = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase
-        .from("friend_requests")
-        .insert({
-          from_user_id: user?.id,
-          to_user_id: userId,
-        });
-      
-      if (error) throw error;
+      if (isPrivate) {
+        // Send follow request
+        const { error } = await supabase
+          .from("friend_requests")
+          .insert({ from_user_id: user?.id, to_user_id: userId });
+        if (error) throw error;
+      } else {
+        // Instant follow via friend request auto-accept pattern
+        // Insert request as accepted + create friendship directly
+        const { error } = await supabase
+          .from("friend_requests")
+          .insert({ from_user_id: user?.id, to_user_id: userId, status: "accepted" });
+        if (error) throw error;
+      }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["friend-request"] });
-      toast({ title: "Friend request sent!" });
+      queryClient.invalidateQueries({ queryKey: ["is-following"] });
+      queryClient.invalidateQueries({ queryKey: ["follow-request"] });
+      queryClient.invalidateQueries({ queryKey: ["profile", userId] });
+      toast({ title: isPrivate ? "Follow request sent" : "Following!" });
     },
   });
 
-  const unfriend = useMutation({
+  const unfollowMutation = useMutation({
     mutationFn: async () => {
-      const { error: error1 } = await supabase
+      await supabase
         .from("friendships")
         .delete()
         .eq("user_id", user?.id)
         .eq("friend_id", userId);
-
-      if (error1) throw error1;
-
-      const { error: error2 } = await supabase
+      // Also remove reverse if exists
+      await supabase
         .from("friendships")
         .delete()
         .eq("user_id", userId)
         .eq("friend_id", user!.id);
-
-      if (error2) throw error2;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["friendship"] });
-      queryClient.invalidateQueries({ queryKey: ["friendships"] });
-      toast({ title: "Removed from friends" });
+      queryClient.invalidateQueries({ queryKey: ["is-following"] });
+      queryClient.invalidateQueries({ queryKey: ["profile", userId] });
+      toast({ title: "Unfollowed" });
+    },
+  });
+
+  const cancelRequestMutation = useMutation({
+    mutationFn: async () => {
+      await supabase
+        .from("friend_requests")
+        .delete()
+        .eq("from_user_id", user?.id)
+        .eq("to_user_id", userId)
+        .eq("status", "pending");
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["follow-request"] });
+      toast({ title: "Request cancelled" });
     },
   });
 
@@ -182,16 +198,11 @@ const UserProfile = () => {
     navigate(`/messages?conversation=${conversationId}`);
   };
 
-  const handlePostClick = (item: { id: string }) => {
-    setSelectedPostId(item.id);
-  };
-
   if (user?.id === userId) {
     navigate("/profile");
     return null;
   }
 
-  // Loading skeleton
   if (profileLoading) {
     return (
       <MainLayout>
@@ -214,48 +225,50 @@ const UserProfile = () => {
   return (
     <MainLayout>
       <div className="max-w-screen-lg mx-auto bg-background min-h-screen">
-        {/* Profile Header */}
         <ProfileHeader
           profile={profile}
           userId={userId!}
           isOwner={false}
-          postsCount={posts?.length || 0}
+          postsCount={canViewContent ? (posts?.length || 0) : 0}
           isLoading={profileLoading}
         />
 
-        {/* Action Buttons for Other Users */}
+        {/* Action Buttons */}
         <div className="px-4 sm:px-6 pb-4 flex items-center gap-2 border-b border-border">
-          {friendship ? (
+          {isFollowing ? (
             <>
               <Button onClick={handleMessage} className="flex-1 rounded-full gap-2">
                 <MessageCircle className="h-4 w-4" />
                 Message
               </Button>
-              <Button 
-                variant="outline" 
-                onClick={() => unfriend.mutate()}
+              <Button
+                variant="outline"
+                onClick={() => unfollowMutation.mutate()}
                 className="rounded-full gap-2"
               >
                 <UserMinus className="h-4 w-4" />
-                Unfriend
+                Following
               </Button>
             </>
           ) : pendingRequest ? (
-            <Button disabled variant="secondary" className="flex-1 rounded-full gap-2">
+            <Button
+              variant="secondary"
+              onClick={() => cancelRequestMutation.mutate()}
+              className="flex-1 rounded-full gap-2"
+            >
               <Clock className="h-4 w-4" />
-              Request Sent
+              Requested
             </Button>
           ) : (
-            <Button 
-              onClick={() => sendFriendRequest.mutate()}
+            <Button
+              onClick={() => followMutation.mutate()}
               className="flex-1 rounded-full gap-2"
             >
               <UserPlus className="h-4 w-4" />
-              Add Friend
+              Follow
             </Button>
           )}
-          
-          {/* About Toggle Button */}
+
           <Button
             variant="ghost"
             size="icon"
@@ -264,7 +277,7 @@ const UserProfile = () => {
           >
             <Info className={cn("h-4 w-4 transition-colors", showAbout && "text-primary")} />
           </Button>
-          
+
           {profile && (
             <ProfileActionsDropdown
               userId={userId!}
@@ -274,7 +287,7 @@ const UserProfile = () => {
           )}
         </div>
 
-        {/* Collapsible About Section */}
+        {/* About Section */}
         <AnimatePresence>
           {showAbout && (
             <motion.div
@@ -289,7 +302,7 @@ const UserProfile = () => {
                   bio={profile?.bio}
                   dateOfBirth={profile?.date_of_birth}
                   createdAt={profile?.created_at}
-                  postsCount={posts?.length || 0}
+                  postsCount={canViewContent ? (posts?.length || 0) : 0}
                   followersCount={profile?.followers_count || 0}
                   followingCount={profile?.following_count || 0}
                   country={profile?.country}
@@ -303,33 +316,40 @@ const UserProfile = () => {
           )}
         </AnimatePresence>
 
-        {/* Profile Tabs */}
-        <ProfileTabs
-          activeTab={activeTab}
-          onTabChange={setActiveTab}
-          tabs={tabs}
-        />
-
-        {/* Content Grid */}
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={activeTab}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
-          >
-            <ProfileContentGrid
-              items={creations}
-              activeTab={activeTab}
-              isLoading={postsLoading}
-              onItemClick={handlePostClick}
-            />
-          </motion.div>
-        </AnimatePresence>
+        {/* Content: gated for private accounts */}
+        {canViewContent ? (
+          <>
+            <ProfileTabs activeTab={activeTab} onTabChange={setActiveTab} tabs={tabs} />
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={activeTab}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
+              >
+                <ProfileContentGrid
+                  items={creations}
+                  activeTab={activeTab}
+                  isLoading={postsLoading}
+                  onItemClick={(item) => setSelectedPostId(item.id)}
+                />
+              </motion.div>
+            </AnimatePresence>
+          </>
+        ) : (
+          <div className="flex flex-col items-center justify-center py-16 px-6 text-center">
+            <div className="w-20 h-20 rounded-full border-2 border-border flex items-center justify-center mb-4">
+              <Lock className="h-8 w-8 text-muted-foreground" />
+            </div>
+            <h3 className="text-lg font-semibold">This account is private</h3>
+            <p className="text-muted-foreground text-sm mt-1 max-w-xs">
+              Follow to see their photos and videos.
+            </p>
+          </div>
+        )}
       </div>
 
-      {/* Post View Dialog */}
       <PostViewDialog
         postId={selectedPostId}
         open={!!selectedPostId}

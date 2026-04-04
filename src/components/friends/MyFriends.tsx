@@ -30,7 +30,7 @@ export const MyFriends = () => {
   if (!friendships || friendships.length === 0) {
     return (
       <div className="text-center py-12">
-        <p className="text-muted-foreground">No friends yet. Start connecting with people!</p>
+        <p className="text-muted-foreground">No followers yet. Start connecting with people!</p>
       </div>
     );
   }

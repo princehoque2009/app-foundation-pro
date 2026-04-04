@@ -248,10 +248,10 @@ export const FollowersFollowingDialog = ({
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["my-friendships"] });
       queryClient.invalidateQueries({ queryKey: ["friend-requests-sent"] });
-      toast({ title: "Friend request sent!" });
+      toast({ title: "Follow request sent!" });
     },
     onError: () => {
-      toast({ title: "Failed to send request", variant: "destructive" });
+      toast({ title: "Failed to follow", variant: "destructive" });
     },
   });
 
@@ -351,7 +351,7 @@ export const FollowersFollowingDialog = ({
   const filterLabels: Record<FilterType, string> = {
     all: "All",
     newest: "Newest",
-    mutual: "Mutual Friends",
+    mutual: "Mutual",
   };
 
   return (
@@ -359,7 +359,7 @@ export const FollowersFollowingDialog = ({
       <DialogContent className="max-w-md max-h-[80vh] flex flex-col p-0 gap-0 rounded-2xl overflow-hidden">
         <DialogHeader className="px-4 py-3 border-b border-border shrink-0">
           <DialogTitle className="text-center font-semibold">
-            Connections
+            {activeTab === "followers" ? "Followers" : "Following"}
           </DialogTitle>
         </DialogHeader>
 

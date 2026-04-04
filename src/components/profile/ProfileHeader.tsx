@@ -235,18 +235,34 @@ export const ProfileHeader = ({
               </span>
               <span className="text-sm text-muted-foreground ml-1.5">posts</span>
             </button>
-            <button className="group text-left" onClick={() => openFollowersDialog("followers")}>
-              <span className="text-lg font-bold text-foreground group-hover:text-primary transition-colors">
-                {profile?.followers_count || 0}
-              </span>
-              <span className="text-sm text-muted-foreground ml-1.5">followers</span>
-            </button>
-            <button className="group text-left" onClick={() => openFollowersDialog("following")}>
-              <span className="text-lg font-bold text-foreground group-hover:text-primary transition-colors">
-                {profile?.following_count || 0}
-              </span>
-              <span className="text-sm text-muted-foreground ml-1.5">following</span>
-            </button>
+            {/* Hide follower/following counts for private accounts viewed by non-owners */}
+            {(isOwner || profile?.account_type !== "private") ? (
+              <>
+                <button className="group text-left" onClick={() => openFollowersDialog("followers")}>
+                  <span className="text-lg font-bold text-foreground group-hover:text-primary transition-colors">
+                    {profile?.followers_count || 0}
+                  </span>
+                  <span className="text-sm text-muted-foreground ml-1.5">followers</span>
+                </button>
+                <button className="group text-left" onClick={() => openFollowersDialog("following")}>
+                  <span className="text-lg font-bold text-foreground group-hover:text-primary transition-colors">
+                    {profile?.following_count || 0}
+                  </span>
+                  <span className="text-sm text-muted-foreground ml-1.5">following</span>
+                </button>
+              </>
+            ) : (
+              <>
+                <div className="text-left">
+                  <span className="text-lg font-bold text-foreground">{profile?.followers_count || 0}</span>
+                  <span className="text-sm text-muted-foreground ml-1.5">followers</span>
+                </div>
+                <div className="text-left">
+                  <span className="text-lg font-bold text-foreground">{profile?.following_count || 0}</span>
+                  <span className="text-sm text-muted-foreground ml-1.5">following</span>
+                </div>
+              </>
+            )}
           </motion.div>
         </div>
       </div>
