@@ -248,10 +248,10 @@ export const FollowersFollowingDialog = ({
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["my-friendships"] });
       queryClient.invalidateQueries({ queryKey: ["friend-requests-sent"] });
-      toast({ title: "Friend request sent!" });
+      toast({ title: "Follow request sent!" });
     },
     onError: () => {
-      toast({ title: "Failed to send request", variant: "destructive" });
+      toast({ title: "Failed to follow", variant: "destructive" });
     },
   });
 
