@@ -76,6 +76,8 @@ interface StoryEditorCanvasProps {
     stickers: StickerElement[];
     drawings: DrawingPath[];
     filter: string;
+    musicUrl?: string;
+    musicTitle?: string;
   }) => void;
   onCancel: () => void;
 }
