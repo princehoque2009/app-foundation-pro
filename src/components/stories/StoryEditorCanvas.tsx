@@ -120,7 +120,9 @@ export const StoryEditorCanvas = ({
   // Question sticker
   const [questionText, setQuestionText] = useState("");
 
-  const canvasRef = useRef<HTMLDivElement>(null);
+  // Music state
+  const [selectedMusic, setSelectedMusic] = useState<{ url: string; title: string; artist: string } | null>(null);
+  const musicInputRef = useRef<HTMLInputElement>(null);
   const drawCanvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -284,7 +286,7 @@ export const StoryEditorCanvas = ({
   };
 
   const handleSave = () => {
-    onSave({ texts, stickers, drawings, filter: activeFilter });
+    onSave({ texts, stickers, drawings, filter: activeFilter, musicUrl: selectedMusic?.url, musicTitle: selectedMusic?.title });
   };
 
   const tools = [
@@ -292,6 +294,7 @@ export const StoryEditorCanvas = ({
     { id: "stickers" as EditorTool, icon: Smile, label: "Stickers" },
     { id: "draw" as EditorTool, icon: Paintbrush, label: "Draw" },
     { id: "filters" as EditorTool, icon: Sparkles, label: "Filters" },
+    { id: "music" as EditorTool, icon: Music, label: "Music" },
   ];
 
   return (
