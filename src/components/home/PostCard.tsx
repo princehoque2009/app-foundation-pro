@@ -25,6 +25,7 @@ import { PostMedia } from "@/hooks/usePosts";
 import { useActiveEffects } from "@/hooks/useActiveEffects";
 import { PrangonVideoPlayer } from "@/components/video/PrangonVideoPlayer";
 import { RenderMentions } from "@/components/ui/RenderMentions";
+import { useRecordPostView } from "@/hooks/usePostViews";
 
 interface PostCardProps {
   id: string;
@@ -61,8 +62,12 @@ export const PostCard = ({ id, author, content, image, video, mediaItems, likes,
   const toggleReaction = useToggleReaction(id);
   const { savePost, unsavePost } = useSavedPosts();
   const { data: isSaved } = useIsPostSaved(id);
+  const recordView = useRecordPostView();
 
-  const { data: userProfile } = useQuery({
+  // Record view when post is rendered
+  useState(() => {
+    recordView.mutate(id);
+  });
     queryKey: ["user-by-username", author.username],
     queryFn: async () => {
       const { data, error } = await supabase
