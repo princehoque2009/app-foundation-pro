@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Type, Smile, Paintbrush, Sparkles, Undo2, Redo2, X, Check,
   Bold, Italic, AlignCenter, Palette, BarChart3, HelpCircle,
-  Timer, MapPin, AtSign, ChevronDown
+  Timer, MapPin, AtSign, ChevronDown, Music
 } from "lucide-react";
 
 // ─── Text Styles ───────────────────────────────────────────────
@@ -38,7 +38,7 @@ const FILTERS = [
   { id: "vivid", label: "Vivid", css: "saturate(1.6) contrast(1.1)" },
 ];
 
-type EditorTool = "none" | "text" | "stickers" | "draw" | "filters";
+type EditorTool = "none" | "text" | "stickers" | "draw" | "filters" | "music";
 
 export interface TextElement {
   id: string;
