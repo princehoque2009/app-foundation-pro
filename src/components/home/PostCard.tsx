@@ -2,7 +2,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Heart, MessageCircle, Share2, Bookmark, UserCircle } from "lucide-react";
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { usePostReactions, useToggleReaction } from "@/hooks/usePostReactions";
 import { formatDistanceToNow } from "date-fns";
 import { CommentsDialog } from "./CommentsDialog";
@@ -25,6 +25,7 @@ import { PostMedia } from "@/hooks/usePosts";
 import { useActiveEffects } from "@/hooks/useActiveEffects";
 import { PrangonVideoPlayer } from "@/components/video/PrangonVideoPlayer";
 import { RenderMentions } from "@/components/ui/RenderMentions";
+import { useRecordPostView } from "@/hooks/usePostViews";
 
 interface PostCardProps {
   id: string;
@@ -61,6 +62,11 @@ export const PostCard = ({ id, author, content, image, video, mediaItems, likes,
   const toggleReaction = useToggleReaction(id);
   const { savePost, unsavePost } = useSavedPosts();
   const { data: isSaved } = useIsPostSaved(id);
+  const recordView = useRecordPostView();
+
+  useEffect(() => {
+    recordView.mutate(id);
+  }, [id]);
 
   const { data: userProfile } = useQuery({
     queryKey: ["user-by-username", author.username],

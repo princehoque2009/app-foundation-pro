@@ -1168,6 +1168,35 @@ export type Database = {
           },
         ]
       }
+      post_views: {
+        Row: {
+          id: string
+          post_id: string
+          user_id: string
+          viewed_at: string
+        }
+        Insert: {
+          id?: string
+          post_id: string
+          user_id: string
+          viewed_at?: string
+        }
+        Update: {
+          id?: string
+          post_id?: string
+          user_id?: string
+          viewed_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "post_views_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       posts: {
         Row: {
           caption: string | null
@@ -1181,6 +1210,7 @@ export type Database = {
           pinned_comment_id: string | null
           updated_at: string
           user_id: string
+          views_count: number | null
         }
         Insert: {
           caption?: string | null
@@ -1194,6 +1224,7 @@ export type Database = {
           pinned_comment_id?: string | null
           updated_at?: string
           user_id: string
+          views_count?: number | null
         }
         Update: {
           caption?: string | null
@@ -1207,6 +1238,7 @@ export type Database = {
           pinned_comment_id?: string | null
           updated_at?: string
           user_id?: string
+          views_count?: number | null
         }
         Relationships: [
           {
@@ -2079,6 +2111,10 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      increment_story_views: {
+        Args: { p_story_id: string }
+        Returns: undefined
       }
       is_group_admin: {
         Args: { p_group: string; p_user: string }

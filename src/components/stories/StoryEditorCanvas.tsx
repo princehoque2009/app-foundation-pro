@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Type, Smile, Paintbrush, Sparkles, Undo2, Redo2, X, Check,
   Bold, Italic, AlignCenter, Palette, BarChart3, HelpCircle,
-  Timer, MapPin, AtSign, ChevronDown
+  Timer, MapPin, AtSign, ChevronDown, Music
 } from "lucide-react";
 
 // ─── Text Styles ───────────────────────────────────────────────
@@ -38,7 +38,7 @@ const FILTERS = [
   { id: "vivid", label: "Vivid", css: "saturate(1.6) contrast(1.1)" },
 ];
 
-type EditorTool = "none" | "text" | "stickers" | "draw" | "filters";
+type EditorTool = "none" | "text" | "stickers" | "draw" | "filters" | "music";
 
 export interface TextElement {
   id: string;
@@ -76,6 +76,8 @@ interface StoryEditorCanvasProps {
     stickers: StickerElement[];
     drawings: DrawingPath[];
     filter: string;
+    musicUrl?: string;
+    musicTitle?: string;
   }) => void;
   onCancel: () => void;
 }
@@ -118,6 +120,9 @@ export const StoryEditorCanvas = ({
   // Question sticker
   const [questionText, setQuestionText] = useState("");
 
+  // Music state
+  const [selectedMusic, setSelectedMusic] = useState<{ url: string; title: string; artist: string } | null>(null);
+  const musicInputRef = useRef<HTMLInputElement>(null);
   const canvasRef = useRef<HTMLDivElement>(null);
   const drawCanvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -282,7 +287,7 @@ export const StoryEditorCanvas = ({
   };
 
   const handleSave = () => {
-    onSave({ texts, stickers, drawings, filter: activeFilter });
+    onSave({ texts, stickers, drawings, filter: activeFilter, musicUrl: selectedMusic?.url, musicTitle: selectedMusic?.title });
   };
 
   const tools = [
@@ -290,6 +295,7 @@ export const StoryEditorCanvas = ({
     { id: "stickers" as EditorTool, icon: Smile, label: "Stickers" },
     { id: "draw" as EditorTool, icon: Paintbrush, label: "Draw" },
     { id: "filters" as EditorTool, icon: Sparkles, label: "Filters" },
+    { id: "music" as EditorTool, icon: Music, label: "Music" },
   ];
 
   return (
@@ -756,7 +762,100 @@ export const StoryEditorCanvas = ({
             </div>
           </motion.div>
         )}
+
+        {activeTool === "music" && (
+          <motion.div
+            initial={{ y: 100, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 100, opacity: 0 }}
+            className="absolute bottom-0 left-0 right-0 z-40 bg-black/90 backdrop-blur-xl rounded-t-3xl p-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] space-y-4"
+          >
+            <div className="flex items-center gap-2 text-white text-sm font-semibold mb-2">
+              <Music className="h-4 w-4 text-primary" />
+              Add Music
+            </div>
+
+            {selectedMusic ? (
+              <div className="flex items-center gap-3 bg-white/10 rounded-2xl p-3">
+                <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-primary/60 to-primary/20 flex items-center justify-center">
+                  <Music className="h-5 w-5 text-white" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-white text-sm font-medium truncate">{selectedMusic.title}</p>
+                  <p className="text-white/50 text-xs truncate">{selectedMusic.artist}</p>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setSelectedMusic(null)}
+                  className="text-white/60 hover:bg-white/10 h-8 w-8"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <button
+                  onClick={() => musicInputRef.current?.click()}
+                  className="w-full bg-white/5 rounded-2xl p-4 flex flex-col items-center gap-2 hover:bg-white/10 transition-colors border border-dashed border-white/20"
+                >
+                  <Music className="h-6 w-6 text-white/60" />
+                  <span className="text-white/80 text-sm font-medium">Upload Audio File</span>
+                  <span className="text-white/40 text-xs">MP3, WAV, or AAC</span>
+                </button>
+                <input
+                  ref={musicInputRef}
+                  type="file"
+                  accept="audio/*"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      const url = URL.createObjectURL(file);
+                      setSelectedMusic({
+                        url,
+                        title: file.name.replace(/\.[^/.]+$/, ""),
+                        artist: "My Music",
+                      });
+                    }
+                    e.target.value = "";
+                  }}
+                />
+
+                {/* Popular sample tracks */}
+                <p className="text-white/40 text-xs uppercase tracking-wider">Sample Sounds</p>
+                {[
+                  { title: "Chill Vibes", artist: "Ambient" },
+                  { title: "Upbeat Energy", artist: "Pop" },
+                  { title: "Lo-Fi Beats", artist: "Study" },
+                ].map((track) => (
+                  <button
+                    key={track.title}
+                    onClick={() => setSelectedMusic({ url: "", title: track.title, artist: track.artist })}
+                    className="w-full flex items-center gap-3 p-2.5 rounded-xl hover:bg-white/10 transition-colors"
+                  >
+                    <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-primary/40 to-purple-500/40 flex items-center justify-center">
+                      <Music className="h-4 w-4 text-white" />
+                    </div>
+                    <div className="text-left">
+                      <p className="text-white text-sm font-medium">{track.title}</p>
+                      <p className="text-white/50 text-xs">{track.artist}</p>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+          </motion.div>
+        )}
       </AnimatePresence>
+
+      {/* Music indicator overlay */}
+      {selectedMusic && activeTool !== "music" && (
+        <div className="absolute bottom-20 left-4 z-30 flex items-center gap-2 bg-black/50 backdrop-blur-sm rounded-full px-3 py-1.5">
+          <Music className="h-3.5 w-3.5 text-white animate-pulse" />
+          <span className="text-white text-xs font-medium truncate max-w-[120px]">{selectedMusic.title}</span>
+        </div>
+      )}
     </div>
   );
 };

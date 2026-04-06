@@ -23,8 +23,10 @@ const getIcon = (type: string) => {
     case "comment_reply":
       return <Reply className="h-4 w-4 text-blue-400" />;
     case "friend_request":
+    case "follow_request":
       return <UserPlus className="h-4 w-4 text-emerald-500" />;
     case "friend_accept":
+    case "follow_accept":
       return <UserPlus className="h-4 w-4 text-emerald-500" />;
     case "story_view":
     case "story_reaction":
@@ -56,7 +58,9 @@ const getCategory = (type: string): "social" | "messages" | "system" => {
     case "comment":
     case "comment_reply":
     case "friend_request":
+    case "follow_request":
     case "friend_accept":
+    case "follow_accept":
     case "story_view":
     case "story_reaction":
     case "mention":
