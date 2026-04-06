@@ -64,10 +64,11 @@ export const PostCard = ({ id, author, content, image, video, mediaItems, likes,
   const { data: isSaved } = useIsPostSaved(id);
   const recordView = useRecordPostView();
 
-  // Record view when post is rendered
-  useState(() => {
+  useEffect(() => {
     recordView.mutate(id);
-  });
+  }, [id]);
+
+  const { data: userProfile } = useQuery({
     queryKey: ["user-by-username", author.username],
     queryFn: async () => {
       const { data, error } = await supabase
