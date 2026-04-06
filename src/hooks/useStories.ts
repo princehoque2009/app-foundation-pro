@@ -161,15 +161,12 @@ export const useStories = () => {
           { story_id: storyId, viewer_id: user.id },
           { onConflict: "story_id,viewer_id" }
         );
-      // Increment views_count
-      try {
-        await supabase.rpc("increment_story_views" as any, { p_story_id: storyId });
-      } catch {
-        // Fallback: ignore if function doesn't exist
-      }
+      // Update real view count from story_views table
+      await supabase.rpc("increment_story_views" as any, { p_story_id: storyId });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["story-views", user?.id] });
+      queryClient.invalidateQueries({ queryKey: ["stories"] });
     },
   });
 
