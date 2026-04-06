@@ -2,7 +2,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Heart, MessageCircle, Share2, Bookmark, UserCircle } from "lucide-react";
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { usePostReactions, useToggleReaction } from "@/hooks/usePostReactions";
 import { formatDistanceToNow } from "date-fns";
 import { CommentsDialog } from "./CommentsDialog";
