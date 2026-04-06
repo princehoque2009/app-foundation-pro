@@ -123,6 +123,7 @@ export const StoryEditorCanvas = ({
   // Music state
   const [selectedMusic, setSelectedMusic] = useState<{ url: string; title: string; artist: string } | null>(null);
   const musicInputRef = useRef<HTMLInputElement>(null);
+  const canvasRef = useRef<HTMLDivElement>(null);
   const drawCanvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
