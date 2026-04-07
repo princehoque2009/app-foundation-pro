@@ -134,14 +134,25 @@ const UserProfile = () => {
   const followMutation = useMutation({
     mutationFn: async () => {
       if (isPrivate) {
-        // Send follow request
+        // Send follow request - delete any old rejected/accepted requests first
+        await supabase
+          .from("friend_requests")
+          .delete()
+          .eq("from_user_id", user?.id)
+          .eq("to_user_id", userId);
+        
         const { error } = await supabase
           .from("friend_requests")
           .insert({ from_user_id: user?.id, to_user_id: userId });
         if (error) throw error;
       } else {
-        // Instant follow via friend request auto-accept pattern
-        // Insert request as accepted + create friendship directly
+        // Instant follow - clean up old requests first
+        await supabase
+          .from("friend_requests")
+          .delete()
+          .eq("from_user_id", user?.id)
+          .eq("to_user_id", userId);
+        
         const { error } = await supabase
           .from("friend_requests")
           .insert({ from_user_id: user?.id, to_user_id: userId, status: "accepted" });
@@ -158,20 +169,27 @@ const UserProfile = () => {
 
   const unfollowMutation = useMutation({
     mutationFn: async () => {
+      // Delete friendships
       await supabase
         .from("friendships")
         .delete()
         .eq("user_id", user?.id)
         .eq("friend_id", userId);
-      // Also remove reverse if exists
       await supabase
         .from("friendships")
         .delete()
         .eq("user_id", userId)
         .eq("friend_id", user!.id);
+      // Also clean up any friend_requests so re-follow works
+      await supabase
+        .from("friend_requests")
+        .delete()
+        .eq("from_user_id", user?.id)
+        .eq("to_user_id", userId);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["is-following"] });
+      queryClient.invalidateQueries({ queryKey: ["follow-request"] });
       queryClient.invalidateQueries({ queryKey: ["profile", userId] });
       toast({ title: "Unfollowed" });
     },

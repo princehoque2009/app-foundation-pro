@@ -63,13 +63,13 @@ export const StoryAvatar = ({
       whileTap={{ scale: 0.92 }}
     >
       <div className="relative">
-        {/* Gradient ring */}
+        {/* Ring: only show for active stories */}
         <div
           className={cn(
             s.outer,
             "rounded-full p-[3px] transition-transform duration-200 group-hover:scale-105",
             hasActiveStory && hasUnviewedStory &&
-              "bg-gradient-to-tr from-amber-400 via-rose-500 to-purple-600",
+              "story-ring",
             hasActiveStory && !hasUnviewedStory && "bg-muted",
             !hasActiveStory && !isAddStory && "bg-transparent"
           )}
