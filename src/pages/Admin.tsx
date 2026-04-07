@@ -61,6 +61,7 @@ const Admin = () => {
         return <AdminFeatureControls />;
       default:
         return <AdminDashboard />;
+    }
   };
 
   return (
