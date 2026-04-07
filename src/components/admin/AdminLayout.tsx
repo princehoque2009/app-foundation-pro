@@ -26,6 +26,7 @@ interface AdminLayoutProps {
 const sidebarItems = [
   { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
   { id: "users", label: "Users", icon: Users },
+  { id: "features", label: "System Controls", icon: Shield },
   { id: "messenger", label: "Messenger", icon: MessageSquare },
   { id: "reports", label: "Reports", icon: FileText },
   { id: "verification", label: "Verification", icon: BadgeCheck },
