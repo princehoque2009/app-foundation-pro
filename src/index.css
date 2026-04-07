@@ -569,3 +569,8 @@
     animation: gradient-x 3s ease infinite;
   }
 }
+
+/* Hide Lovable badge */
+#lovable-badge {
+  display: none !important;
+}

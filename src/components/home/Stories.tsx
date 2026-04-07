@@ -47,9 +47,14 @@ export const Stories = () => {
     }
   };
 
+  // Allow adding more stories even if user already has active ones
+  const handleAddStory = () => {
+    setComposerOpen(true);
+  };
+
   return (
     <>
-      {/* Stories row with gradient background */}
+      {/* Stories row */}
       <div className="relative py-3">
         <div className="flex gap-3.5 overflow-x-auto px-4 scrollbar-hide">
           {/* Your Story */}
@@ -57,15 +62,25 @@ export const Stories = () => {
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.3 }}
+            className="relative"
           >
             <StoryAvatar
               imageUrl={currentUserProfile?.avatar_url || user?.user_metadata?.avatar_url}
               name="Your Story"
-              isAddStory={!hasOwnStory}
+              isAddStory
               hasActiveStory={hasOwnStory}
               hasUnviewedStory={false}
-              onClick={handleOwnStoryTap}
+              onClick={hasOwnStory ? handleOwnStoryTap : handleAddStory}
             />
+            {/* If user has stories, show small + to add more */}
+            {hasOwnStory && (
+              <button
+                onClick={(e) => { e.stopPropagation(); handleAddStory(); }}
+                className="absolute -bottom-0.5 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground rounded-full h-5 w-5 flex items-center justify-center text-xs font-bold border-2 border-background shadow-sm z-10"
+              >
+                +
+              </button>
+            )}
           </motion.div>
 
           {/* Other Users' Stories - unviewed first */}

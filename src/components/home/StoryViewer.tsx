@@ -3,12 +3,14 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { X, UserCircle, Trash2, Send, ChevronLeft, ChevronRight, Eye, Volume2, VolumeX, MoreHorizontal } from "lucide-react";
+import { X, UserCircle, Trash2, Send, ChevronLeft, ChevronRight, Eye, Volume2, VolumeX, Heart } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { useAuth } from "@/contexts/AuthContext";
 import { useStories, StoryGroup } from "@/hooks/useStories";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 interface StoryViewerProps {
   storyGroups: StoryGroup[];
@@ -19,7 +21,6 @@ interface StoryViewerProps {
 }
 
 const STORY_DURATION = 6000;
-const REACTIONS = ["❤️", "🔥", "👏", "😂", "😮", "😢"];
 const STORY_FILTERS: Record<string, string> = {
   warm: "brightness(1.1) saturate(1.3) sepia(0.15)",
   cool: "brightness(1.05) saturate(0.9) hue-rotate(15deg)",
@@ -46,7 +47,6 @@ export const StoryViewer = ({
   const [replyText, setReplyText] = useState("");
   const [showViewers, setShowViewers] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
-  const [showReactions, setShowReactions] = useState(false);
   const [flyingReaction, setFlyingReaction] = useState<string | null>(null);
   const timerRef = useRef<number | null>(null);
   const startTimeRef = useRef(0);
@@ -64,6 +64,55 @@ export const StoryViewer = ({
     : [];
   const filterCss = currentStory?.filter_name ? STORY_FILTERS[currentStory.filter_name] || "" : "";
 
+  // Fetch viewers + reactions for owner
+  const { data: viewersData } = useQuery({
+    queryKey: ["story-viewers-detail", currentStory?.id],
+    queryFn: async () => {
+      if (!currentStory?.id) return { viewers: [], reactions: [] };
+      const [viewsRes, reactionsRes] = await Promise.all([
+        supabase
+          .from("story_views")
+          .select("viewer_id, viewed_at")
+          .eq("story_id", currentStory.id)
+          .order("viewed_at", { ascending: false }),
+        supabase
+          .from("story_reactions")
+          .select("user_id, reaction, created_at")
+          .eq("story_id", currentStory.id),
+      ]);
+      
+      // Fetch profiles for viewers
+      const viewerIds = [...new Set([
+        ...(viewsRes.data || []).map(v => v.viewer_id),
+        ...(reactionsRes.data || []).map(r => r.user_id),
+      ])];
+      
+      let profiles: Record<string, any> = {};
+      if (viewerIds.length > 0) {
+        const { data: profilesData } = await supabase
+          .from("profiles")
+          .select("id, username, display_name, avatar_url")
+          .in("id", viewerIds);
+        profiles = Object.fromEntries((profilesData || []).map(p => [p.id, p]));
+      }
+      
+      return {
+        viewers: (viewsRes.data || []).map(v => ({
+          ...v,
+          profile: profiles[v.viewer_id],
+        })),
+        reactions: (reactionsRes.data || []).map(r => ({
+          ...r,
+          profile: profiles[r.user_id],
+        })),
+        reactionMap: Object.fromEntries(
+          (reactionsRes.data || []).map(r => [r.user_id, r.reaction])
+        ),
+      };
+    },
+    enabled: !!currentStory?.id && isOwner && showViewers,
+  });
+
   useEffect(() => {
     if (open) {
       setGroupIndex(initialGroupIndex);
@@ -71,7 +120,6 @@ export const StoryViewer = ({
       setProgress(0);
       setIsPaused(false);
       setShowViewers(false);
-      setShowReactions(false);
       elapsedRef.current = 0;
     }
   }, [open, initialGroupIndex, initialStoryIndex]);
@@ -111,7 +159,7 @@ export const StoryViewer = ({
   const goNext = useCallback(() => {
     setProgress(0);
     elapsedRef.current = 0;
-    setShowReactions(false);
+    setShowViewers(false);
     if (storyIndex < (currentGroup?.stories.length || 0) - 1) {
       setStoryIndex(s => s + 1);
     } else if (groupIndex < storyGroups.length - 1) {
@@ -157,10 +205,10 @@ export const StoryViewer = ({
     goNext();
   };
 
-  const handleReaction = (reaction: string) => {
+  const handleHeartReaction = () => {
     if (!currentStory) return;
-    sendReaction.mutate({ storyId: currentStory.id, reaction });
-    setFlyingReaction(reaction);
+    sendReaction.mutate({ storyId: currentStory.id, reaction: "❤️" });
+    setFlyingReaction("❤️");
     setTimeout(() => setFlyingReaction(null), 800);
   };
 
@@ -178,7 +226,6 @@ export const StoryViewer = ({
     const dx = e.changedTouches[0].clientX - touchStartRef.current.x;
     const dy = e.changedTouches[0].clientY - touchStartRef.current.y;
     if (Math.abs(dy) > 100 && dy > 0 && Math.abs(dx) < 50) {
-      // Swipe down → close
       onOpenChange(false);
       return;
     }
@@ -391,31 +438,55 @@ export const StoryViewer = ({
           {/* Bottom section */}
           <div className="absolute bottom-0 left-0 right-0 z-30 bg-gradient-to-t from-black/90 via-black/50 to-transparent pt-16 pb-6 px-4">
             {isOwner ? (
-              <button
-                onClick={() => setShowViewers(!showViewers)}
-                className="flex items-center gap-2 text-white/80 text-sm mb-2 hover:text-white transition-colors"
-              >
-                <Eye className="h-4 w-4" />
-                <span>{currentStory.views_count || 0} views</span>
-              </button>
+              <div>
+                <button
+                  onClick={() => setShowViewers(!showViewers)}
+                  className="flex items-center gap-2 text-white/80 text-sm mb-2 hover:text-white transition-colors"
+                >
+                  <Eye className="h-4 w-4" />
+                  <span>{currentStory.views_count || 0} views</span>
+                </button>
+                
+                {/* Viewers panel */}
+                <AnimatePresence>
+                  {showViewers && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: "auto", opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      className="bg-black/80 rounded-2xl p-3 mb-3 max-h-[40vh] overflow-y-auto"
+                      onClick={e => e.stopPropagation()}
+                    >
+                      <p className="text-white text-xs font-semibold mb-2">
+                        Viewers ({viewersData?.viewers?.length || 0})
+                      </p>
+                      {viewersData?.viewers?.map((viewer: any) => (
+                        <div key={viewer.viewer_id} className="flex items-center gap-2 py-1.5">
+                          <Avatar className="h-7 w-7">
+                            <AvatarImage src={viewer.profile?.avatar_url || ""} />
+                            <AvatarFallback className="text-[10px]">
+                              {viewer.profile?.username?.[0]?.toUpperCase() || "?"}
+                            </AvatarFallback>
+                          </Avatar>
+                          <span className="text-white text-xs flex-1 truncate">
+                            {viewer.profile?.display_name || viewer.profile?.username || "User"}
+                          </span>
+                          {viewersData?.reactionMap?.[viewer.viewer_id] && (
+                            <span className="text-sm">{viewersData.reactionMap[viewer.viewer_id]}</span>
+                          )}
+                        </div>
+                      ))}
+                      {(!viewersData?.viewers || viewersData.viewers.length === 0) && (
+                        <p className="text-white/50 text-xs py-2">No viewers yet</p>
+                      )}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
             ) : (
               <div className="space-y-3">
-                {/* Reaction emojis */}
-                <div className="flex justify-center gap-3">
-                  {REACTIONS.map(emoji => (
-                    <motion.button
-                      key={emoji}
-                      onClick={e => { e.stopPropagation(); handleReaction(emoji); }}
-                      whileTap={{ scale: 1.4 }}
-                      className="text-2xl hover:scale-110 transition-transform"
-                    >
-                      {emoji}
-                    </motion.button>
-                  ))}
-                </div>
-
-                {/* Reply input */}
-                <div className="flex gap-2">
+                {/* Reply input + heart */}
+                <div className="flex gap-2 items-center">
                   <Input
                     value={replyText}
                     onChange={e => setReplyText(e.target.value)}
@@ -425,7 +496,7 @@ export const StoryViewer = ({
                     onFocus={() => { setIsPaused(true); stopTimer(); }}
                     onBlur={() => setIsPaused(false)}
                   />
-                  {replyText && (
+                  {replyText ? (
                     <Button
                       size="icon"
                       className="rounded-full h-10 w-10"
@@ -433,6 +504,14 @@ export const StoryViewer = ({
                     >
                       <Send className="h-4 w-4" />
                     </Button>
+                  ) : (
+                    <motion.button
+                      onClick={e => { e.stopPropagation(); handleHeartReaction(); }}
+                      whileTap={{ scale: 1.4 }}
+                      className="h-10 w-10 flex items-center justify-center rounded-full hover:bg-white/10 transition-colors"
+                    >
+                      <Heart className="h-6 w-6 text-white" />
+                    </motion.button>
                   )}
                 </div>
               </div>

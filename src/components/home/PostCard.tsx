@@ -2,7 +2,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Heart, MessageCircle, Share2, Bookmark, UserCircle } from "lucide-react";
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { usePostReactions, useToggleReaction } from "@/hooks/usePostReactions";
 import { formatDistanceToNow } from "date-fns";
 import { CommentsDialog } from "./CommentsDialog";
@@ -136,27 +136,18 @@ export const PostCard = ({ id, author, content, image, video, mediaItems, likes,
 
   return (
     <>
-      <Card className="border-0 shadow-sm hover:shadow-md mb-4 overflow-hidden animate-fade-in transition-all duration-300 rounded-2xl bg-card">
+      <Card className="border border-border shadow-sm hover:shadow-md mb-4 overflow-hidden animate-fade-in transition-all duration-300 rounded-2xl bg-card">
         <CardContent className="p-0">
           {/* Post Header */}
           <div className="flex items-center justify-between p-4">
             <div className="flex items-center gap-3 cursor-pointer group" onClick={handleProfileClick}>
               <div className="relative">
-                <div className={cn(
-                  "p-[2px] rounded-full",
-                  authorEffects.hasNeonFrame
-                    ? "bg-gradient-to-br from-fuchsia-500 via-purple-500 to-pink-500 shadow-[0_0_10px_rgba(217,70,239,0.4)]"
-                    : authorEffects.hasPremiumFrame
-                    ? "bg-gradient-to-br from-amber-400 via-yellow-500 to-amber-600 shadow-[0_0_8px_rgba(245,158,11,0.3)]"
-                    : "bg-gradient-to-br from-primary via-primary/80 to-primary/60"
-                )}>
-                  <Avatar className="h-10 w-10 border-2 border-background transition-transform group-hover:scale-105">
-                    <AvatarImage src={author.avatar || undefined} alt={author.name} />
-                    <AvatarFallback className="bg-muted text-muted-foreground">
-                      <UserCircle className="h-6 w-6" />
-                    </AvatarFallback>
-                  </Avatar>
-                </div>
+                <Avatar className="h-10 w-10 border border-border transition-transform group-hover:scale-105">
+                  <AvatarImage src={author.avatar || undefined} alt={author.name} />
+                  <AvatarFallback className="bg-muted text-muted-foreground">
+                    <UserCircle className="h-6 w-6" />
+                  </AvatarFallback>
+                </Avatar>
               </div>
               <div>
                 <div className="flex items-center gap-1.5">
