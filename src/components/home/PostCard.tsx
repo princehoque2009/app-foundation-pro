@@ -26,6 +26,8 @@ import { useActiveEffects } from "@/hooks/useActiveEffects";
 import { PrangonVideoPlayer } from "@/components/video/PrangonVideoPlayer";
 import { RenderMentions } from "@/components/ui/RenderMentions";
 import { useRecordPostView } from "@/hooks/usePostViews";
+import { ReactionTrayButton } from "./ReactionTrayButton";
+import { getReactionMeta } from "@/hooks/usePostReactions";
 
 interface PostCardProps {
   id: string;
@@ -82,22 +84,21 @@ export const PostCard = ({ id, author, content, image, video, mediaItems, likes,
   });
 
   const isLiked = !!reactionData?.myReaction;
+  const myReaction = (reactionData?.myReaction as any) || null;
 
-  const handleToggleLike = () => {
-    if (isLiked) {
-      toggleReaction.mutate({ reaction: null, currentReaction: "like" });
-    } else {
+  const handleReact = (key: any) => {
+    if (key && !myReaction) {
       setShowHeartAnimation(true);
       setTimeout(() => setShowHeartAnimation(false), 800);
-      toggleReaction.mutate({ reaction: "like", currentReaction: null });
     }
+    toggleReaction.mutate({ reaction: key, currentReaction: myReaction });
   };
 
   const handleDoubleTap = () => {
     if (!isLiked) {
       setShowHeartAnimation(true);
       setTimeout(() => setShowHeartAnimation(false), 800);
-      toggleReaction.mutate({ reaction: "like", currentReaction: null });
+      toggleReaction.mutate({ reaction: "love" as any, currentReaction: myReaction });
     }
   };
 
@@ -209,7 +210,9 @@ export const PostCard = ({ id, author, content, image, video, mediaItems, likes,
                     transition={{ duration: 0.5, ease: "easeOut" }}
                     className="absolute inset-0 flex items-center justify-center pointer-events-none z-10"
                   >
-                    <Heart className="h-24 w-24 text-red-500 fill-red-500 drop-shadow-2xl" />
+                    <span className="text-7xl drop-shadow-2xl">
+                      {getReactionMeta(myReaction || "love").emoji}
+                    </span>
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -247,59 +250,60 @@ export const PostCard = ({ id, author, content, image, video, mediaItems, likes,
                     transition={{ duration: 0.5, ease: "easeOut" }}
                     className="absolute inset-0 flex items-center justify-center pointer-events-none"
                   >
-                    <Heart className="h-24 w-24 text-red-500 fill-red-500 drop-shadow-2xl" />
+                    <span className="text-7xl drop-shadow-2xl">
+                      {getReactionMeta(myReaction || "love").emoji}
+                    </span>
                   </motion.div>
                 )}
               </AnimatePresence>
             </div>
           )}
 
-          {/* Like count */}
+          {/* Reaction summary */}
           {likeCount > 0 && (
             <button
               onClick={() => setShowReactionBreakdown(true)}
               className="flex items-center gap-1.5 px-4 pt-2 pb-1 hover:opacity-80 transition-opacity"
             >
-              <Heart className="h-3.5 w-3.5 text-red-500 fill-red-500" />
+              <div className="flex -space-x-1">
+                {Object.entries(reactionData?.counts || {})
+                  .filter(([_, c]) => (c as number) > 0)
+                  .sort((a, b) => (b[1] as number) - (a[1] as number))
+                  .slice(0, 3)
+                  .map(([key]) => (
+                    <span key={key} className="text-base leading-none">
+                      {getReactionMeta(key).emoji}
+                    </span>
+                  ))}
+              </div>
               <span className="text-xs text-muted-foreground font-medium">
-                {likeCount} {likeCount === 1 ? "like" : "likes"}
+                {likeCount} {likeCount === 1 ? "reaction" : "reactions"}
               </span>
             </button>
           )}
 
-          {/* Post Actions - Instagram style */}
+          {/* Post Actions */}
           <div className="p-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-1">
+                <ReactionTrayButton
+                  currentReaction={myReaction}
+                  count={likeCount}
+                  onReact={handleReact}
+                  disabled={toggleReaction.isPending}
+                />
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-10 px-3 rounded-full hover:bg-muted/60 transition-all"
-                  onClick={handleToggleLike}
-                  disabled={toggleReaction.isPending}
-                >
-                  <motion.div
-                    animate={isLiked ? { scale: [1, 1.3, 1] } : { scale: 1 }}
-                    transition={{ duration: 0.3 }}
-                  >
-                    <Heart className={cn(
-                      "h-6 w-6 transition-colors",
-                      isLiked ? "text-red-500 fill-red-500" : "text-foreground"
-                    )} />
-                  </motion.div>
-                </Button>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
                   className="gap-1.5 h-10 px-3 rounded-full hover:bg-muted/60 transition-all"
                   onClick={() => setShowComments(true)}
                 >
                   <MessageCircle className="h-6 w-6" />
                   {comments > 0 && <span className="text-sm font-semibold tabular-nums">{comments}</span>}
                 </Button>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
+                <Button
+                  variant="ghost"
+                  size="sm"
                   className="h-10 px-3 rounded-full hover:bg-muted/60 transition-all"
                   onClick={handleShare}
                 >
