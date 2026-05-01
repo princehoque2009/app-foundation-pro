@@ -15,14 +15,18 @@ const AD_INTERVAL = 7;
 const Home = () => {
   const { data: posts, isLoading } = usePosts(false);
   const { t } = useTranslation();
+  const { settings } = useAppSettings();
+  const { isAdmin } = useRoles();
+  const showStories = isAdmin || settings.stories_enabled !== false;
 
   return (
     <MainLayout>
       <div className="bg-background min-h-screen select-none">
-        {/* Stories Row */}
-        <div className="bg-card border-b border-border/50 py-3">
-          {isLoading ? <StorySkeleton /> : <Stories />}
-        </div>
+        {showStories && (
+          <div className="bg-card border-b border-border/50 py-3">
+            {isLoading ? <StorySkeleton /> : <Stories />}
+          </div>
+        )}
 
         <SuggestedAccounts />
 
