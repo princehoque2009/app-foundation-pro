@@ -1,5 +1,7 @@
 import { MainLayout } from "@/components/layout/MainLayout";
 import { Stories } from "@/components/home/Stories";
+import { useAppSettings } from "@/contexts/AppSettingsContext";
+import { useRoles } from "@/contexts/RolesContext";
 import { PostCard } from "@/components/home/PostCard";
 import { SuggestedAccounts } from "@/components/home/SuggestedAccounts";
 import { usePosts } from "@/hooks/usePosts";
