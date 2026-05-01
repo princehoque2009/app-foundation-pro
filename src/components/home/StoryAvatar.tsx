@@ -11,6 +11,7 @@ interface StoryAvatarProps {
   isAddStory?: boolean;
   size?: "sm" | "md" | "lg";
   onClick?: () => void;
+  onPlusClick?: () => void;
   className?: string;
 }
 
@@ -22,83 +23,58 @@ export const StoryAvatar = ({
   isAddStory = false,
   size = "md",
   onClick,
+  onPlusClick,
   className,
 }: StoryAvatarProps) => {
   const sizeClasses = {
-    sm: {
-      outer: "h-14 w-14",
-      avatar: "h-12 w-12",
-      plus: "h-3 w-3",
-      plusContainer: "h-5 w-5",
-      icon: "h-5 w-5",
-      nameWidth: "max-w-[56px]",
-    },
-    md: {
-      outer: "h-[72px] w-[72px]",
-      avatar: "h-[64px] w-[64px]",
-      plus: "h-3.5 w-3.5",
-      plusContainer: "h-[22px] w-[22px]",
-      icon: "h-8 w-8",
-      nameWidth: "max-w-[72px]",
-    },
-    lg: {
-      outer: "h-20 w-20",
-      avatar: "h-[74px] w-[74px]",
-      plus: "h-4 w-4",
-      plusContainer: "h-6 w-6",
-      icon: "h-10 w-10",
-      nameWidth: "max-w-[80px]",
-    },
+    sm: { outer: "h-14 w-14", avatar: "h-full w-full", plus: "h-3 w-3", plusContainer: "h-5 w-5", icon: "h-5 w-5", nameWidth: "max-w-[56px]" },
+    md: { outer: "h-[72px] w-[72px]", avatar: "h-full w-full", plus: "h-3.5 w-3.5", plusContainer: "h-[22px] w-[22px]", icon: "h-8 w-8", nameWidth: "max-w-[72px]" },
+    lg: { outer: "h-20 w-20", avatar: "h-full w-full", plus: "h-4 w-4", plusContainer: "h-6 w-6", icon: "h-10 w-10", nameWidth: "max-w-[80px]" },
   };
 
   const s = sizeClasses[size];
 
   return (
-    <motion.button
-      onClick={onClick}
-      className={cn(
-        "relative flex flex-col items-center gap-1 flex-shrink-0 group",
-        className
-      )}
-      whileTap={{ scale: 0.92 }}
-    >
+    <div className={cn("relative flex flex-col items-center gap-1 flex-shrink-0 group", className)}>
       <div className="relative">
-        {/* Ring: only show for active stories */}
-        <div
+        {/* Perfect circular ring container */}
+        <motion.button
+          onClick={onClick}
+          whileTap={{ scale: 0.94 }}
           className={cn(
             s.outer,
-            "rounded-full p-[3px] transition-transform duration-200 group-hover:scale-105",
-            hasActiveStory && hasUnviewedStory &&
-              "story-ring",
+            "rounded-full p-[3px] aspect-square transition-transform duration-200 group-hover:scale-105 flex items-center justify-center",
+            hasActiveStory && hasUnviewedStory && "story-ring",
             hasActiveStory && !hasUnviewedStory && "bg-muted",
-            !hasActiveStory && !isAddStory && "bg-transparent"
+            !hasActiveStory && "bg-transparent"
           )}
         >
-          <Avatar className={cn(s.avatar, "border-[3px] border-background")}>
-            <AvatarImage
-              src={imageUrl}
-              alt={name}
-              className="object-cover"
-            />
+          <Avatar className={cn(s.avatar, "border-[2px] border-background aspect-square")}>
+            <AvatarImage src={imageUrl} alt={name} className="object-cover" />
             <AvatarFallback className="bg-muted text-muted-foreground">
               <UserCircle className={s.icon} />
             </AvatarFallback>
           </Avatar>
-        </div>
+        </motion.button>
 
-        {/* Add story plus */}
+        {/* SINGLE plus button — bottom-right, only for "Your Story" */}
         {isAddStory && (
-          <div
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onPlusClick?.();
+            }}
+            aria-label="Add to your story"
             className={cn(
               "absolute -bottom-0.5 -right-0.5 rounded-full",
               "bg-primary text-primary-foreground shadow-md",
               "border-2 border-background",
-              "flex items-center justify-center",
+              "flex items-center justify-center z-10 hover:scale-110 transition-transform",
               s.plusContainer
             )}
           >
             <Plus className={s.plus} strokeWidth={3} />
-          </div>
+          </button>
         )}
       </div>
 
@@ -112,6 +88,6 @@ export const StoryAvatar = ({
       >
         {name}
       </span>
-    </motion.button>
+    </div>
   );
 };
