@@ -10,7 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 export const Stories = () => {
   const { user } = useAuth();
-  const { storyGroups, isLoading, viewedStoryIds } = useStories();
+  const { storyGroups, isLoading } = useStories();
   const [composerOpen, setComposerOpen] = useState(false);
   const [viewerOpen, setViewerOpen] = useState(false);
   const [viewerGroupIndex, setViewerGroupIndex] = useState(0);
@@ -38,7 +38,8 @@ export const Stories = () => {
     setViewerOpen(true);
   };
 
-  const handleOwnStoryTap = () => {
+  // DP click → view active story if exists, else open composer
+  const handleOwnDpTap = () => {
     if (hasOwnStory) {
       const idx = storyGroups.findIndex(g => g.user.id === user?.id);
       if (idx >= 0) handleStoryTap(idx);
@@ -47,22 +48,20 @@ export const Stories = () => {
     }
   };
 
-  // Allow adding more stories even if user already has active ones
+  // + icon click → always opens composer to append new story
   const handleAddStory = () => {
     setComposerOpen(true);
   };
 
   return (
     <>
-      {/* Stories row */}
       <div className="relative py-3">
         <div className="flex gap-3.5 overflow-x-auto px-4 scrollbar-hide">
-          {/* Your Story */}
+          {/* Your Story — single + icon (built into StoryAvatar) */}
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.3 }}
-            className="relative"
           >
             <StoryAvatar
               imageUrl={currentUserProfile?.avatar_url || user?.user_metadata?.avatar_url}
@@ -70,20 +69,12 @@ export const Stories = () => {
               isAddStory
               hasActiveStory={hasOwnStory}
               hasUnviewedStory={false}
-              onClick={hasOwnStory ? handleOwnStoryTap : handleAddStory}
+              onClick={handleOwnDpTap}
+              onPlusClick={handleAddStory}
             />
-            {/* If user has stories, show small + to add more */}
-            {hasOwnStory && (
-              <button
-                onClick={(e) => { e.stopPropagation(); handleAddStory(); }}
-                className="absolute -bottom-0.5 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground rounded-full h-5 w-5 flex items-center justify-center text-xs font-bold border-2 border-background shadow-sm z-10"
-              >
-                +
-              </button>
-            )}
           </motion.div>
 
-          {/* Other Users' Stories - unviewed first */}
+          {/* Other users */}
           {!isLoading && storyGroups
             .filter(g => g.user.id !== user?.id)
             .map((group, index) => {
@@ -106,10 +97,9 @@ export const Stories = () => {
               );
             })}
 
-          {/* Loading Skeleton */}
           {isLoading && [...Array(5)].map((_, i) => (
             <div key={i} className="flex flex-col items-center gap-1.5 flex-shrink-0 animate-pulse">
-              <div className="h-[68px] w-[68px] rounded-full bg-muted" />
+              <div className="h-[72px] w-[72px] rounded-full bg-muted" />
               <div className="h-3 w-12 rounded bg-muted" />
             </div>
           ))}

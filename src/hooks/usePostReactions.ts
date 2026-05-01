@@ -1,14 +1,24 @@
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
-// Simplified to heart-only (Instagram style)
+// Premium custom reaction set (Facebook-style, but stylized — not plain emoji vibe)
 export const REACTION_TYPES = [
-  { emoji: "❤️", label: "Like", key: "like" },
+  { key: "like",    label: "Like",    emoji: "👍", color: "from-blue-400 to-blue-600",       ring: "ring-blue-400" },
+  { key: "love",    label: "Love",    emoji: "❤️", color: "from-rose-400 to-red-600",         ring: "ring-rose-400" },
+  { key: "support", label: "Support", emoji: "🤝", color: "from-emerald-400 to-teal-600",    ring: "ring-emerald-400" },
+  { key: "fire",    label: "Hype",    emoji: "🔥", color: "from-orange-400 to-rose-600",     ring: "ring-orange-400" },
+  { key: "laugh",   label: "Laugh",   emoji: "😂", color: "from-yellow-300 to-amber-500",    ring: "ring-yellow-400" },
+  { key: "shock",   label: "Shock",   emoji: "😮", color: "from-sky-300 to-indigo-500",      ring: "ring-sky-400" },
+  { key: "respect", label: "Respect", emoji: "🫡", color: "from-violet-400 to-purple-600",   ring: "ring-violet-400" },
 ] as const;
 
-export type ReactionKey = "like";
+export type ReactionKey = typeof REACTION_TYPES[number]["key"];
 
-export const getEmojiForReaction = (_key: string): string => "❤️";
+export const getReactionMeta = (key?: string | null) =>
+  REACTION_TYPES.find(r => r.key === key) || REACTION_TYPES[0];
+
+export const getEmojiForReaction = (key?: string | null): string =>
+  getReactionMeta(key).emoji;
 
 export const usePostReactions = (postId: string) => {
   return useQuery({
@@ -23,10 +33,15 @@ export const usePostReactions = (postId: string) => {
 
       if (error) throw error;
 
-      const myReaction = user ? data?.find(r => r.user_id === user.id)?.reaction || null : null;
+      const myReaction = user ? (data?.find(r => r.user_id === user.id)?.reaction as ReactionKey | undefined) ?? null : null;
       const totalCount = data?.length || 0;
 
-      return { myReaction, counts: { like: totalCount }, totalCount };
+      const counts: Record<string, number> = {};
+      for (const r of data || []) {
+        counts[r.reaction] = (counts[r.reaction] || 0) + 1;
+      }
+
+      return { myReaction, counts, totalCount };
     },
   });
 };
@@ -39,19 +54,21 @@ export const useToggleReaction = (postId: string) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
-      if (reaction === null || currentReaction) {
-        // Remove reaction (unlike)
-        const { error } = await supabase
+      // Always remove existing reaction first (clean slate)
+      if (currentReaction) {
+        const { error: delErr } = await supabase
           .from("post_reactions")
           .delete()
           .eq("post_id", postId)
           .eq("user_id", user.id);
-        if (error) throw error;
-      } else {
-        // Insert heart reaction
+        if (delErr) throw delErr;
+      }
+
+      // If picking a new (different) reaction, insert it
+      if (reaction && reaction !== currentReaction) {
         const { error } = await supabase
           .from("post_reactions")
-          .insert({ post_id: postId, user_id: user.id, reaction: "like" });
+          .insert({ post_id: postId, user_id: user.id, reaction });
         if (error) throw error;
       }
     },
@@ -61,25 +78,26 @@ export const useToggleReaction = (postId: string) => {
 
       queryClient.setQueryData(["post-reactions", postId], (old: any) => {
         if (!old) return old;
-        const isRemoving = reaction === null || !!currentReaction;
-        const newTotal = isRemoving
-          ? Math.max(0, old.totalCount - 1)
-          : old.totalCount + 1;
-
-        return {
-          myReaction: isRemoving ? null : "like",
-          counts: { like: newTotal },
-          totalCount: newTotal,
-        };
+        const newCounts = { ...(old.counts || {}) };
+        if (currentReaction) {
+          newCounts[currentReaction] = Math.max(0, (newCounts[currentReaction] || 0) - 1);
+        }
+        const isSame = reaction && reaction === currentReaction;
+        const newReaction = isSame ? null : reaction;
+        if (newReaction) {
+          newCounts[newReaction] = (newCounts[newReaction] || 0) + 1;
+        }
+        const newTotal = Object.values(newCounts).reduce<number>((a, b) => a + (b as number), 0);
+        return { myReaction: newReaction, counts: newCounts, totalCount: newTotal };
       });
 
-      // Optimistically update posts list
       queryClient.setQueryData(["posts"], (old: any) => {
         if (!old) return old;
         return old.map((post: any) => {
           if (post.id !== postId) return post;
-          const isRemoving = reaction === null || !!currentReaction;
-          const delta = isRemoving ? -1 : 1;
+          let delta = 0;
+          if (currentReaction && (!reaction || reaction === currentReaction)) delta = -1;
+          else if (!currentReaction && reaction) delta = 1;
           return { ...post, likes_count: Math.max(0, (post.likes_count || 0) + delta) };
         });
       });
@@ -99,7 +117,6 @@ export const useToggleReaction = (postId: string) => {
   });
 };
 
-// Fetch all likers for breakdown dialog
 export const useReactionUsers = (postId: string, _filterReaction?: string | null) => {
   return useQuery({
     queryKey: ["reaction-users", postId],

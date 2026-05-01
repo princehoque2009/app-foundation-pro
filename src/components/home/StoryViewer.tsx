@@ -1,5 +1,9 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -48,6 +52,7 @@ export const StoryViewer = ({
   const [showViewers, setShowViewers] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [flyingReaction, setFlyingReaction] = useState<string | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const timerRef = useRef<number | null>(null);
   const startTimeRef = useRef(0);
   const elapsedRef = useRef(0);
@@ -199,9 +204,18 @@ export const StoryViewer = ({
     if (isPaused) setIsPaused(false);
   };
 
-  const handleDelete = async () => {
+  const handleDeleteRequest = () => {
+    if (!currentStory) return;
+    setIsPaused(true);
+    stopTimer();
+    setConfirmDelete(true);
+  };
+
+  const handleConfirmDelete = async () => {
     if (!currentStory) return;
     await deleteStory.mutateAsync(currentStory.id);
+    setConfirmDelete(false);
+    setIsPaused(false);
     goNext();
   };
 
@@ -286,7 +300,7 @@ export const StoryViewer = ({
                 </Button>
               )}
               {isOwner && (
-                <Button variant="ghost" size="icon" onClick={handleDelete} className="text-white hover:bg-white/10 h-8 w-8" disabled={deleteStory.isPending}>
+                <Button variant="ghost" size="icon" onClick={handleDeleteRequest} className="text-white hover:bg-white/10 h-8 w-8" disabled={deleteStory.isPending}>
                   <Trash2 className="h-4 w-4" />
                 </Button>
               )}
@@ -519,6 +533,26 @@ export const StoryViewer = ({
           </div>
         </div>
       </DialogContent>
+
+      <AlertDialog open={confirmDelete} onOpenChange={(open) => { setConfirmDelete(open); if (!open) setIsPaused(false); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this story?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this story? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Dialog>
   );
 };

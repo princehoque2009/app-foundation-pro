@@ -12,6 +12,12 @@ export interface AppSettings {
   phone_login_enabled: boolean;
   require_dob: boolean;
   min_age_required: number;
+  // Feature toggles managed via Admin → System Controls
+  stories_enabled: boolean;
+  explore_enabled: boolean;
+  notifications_enabled: boolean;
+  posting_enabled: boolean;
+  profile_editing_enabled: boolean;
 }
 
 interface AppSettingsContextType {
@@ -31,6 +37,11 @@ const DEFAULT_SETTINGS: AppSettings = {
   phone_login_enabled: true,
   require_dob: true,
   min_age_required: 13,
+  stories_enabled: true,
+  explore_enabled: true,
+  notifications_enabled: true,
+  posting_enabled: true,
+  profile_editing_enabled: true,
 };
 
 const AppSettingsContext = createContext<AppSettingsContextType | undefined>(undefined);
