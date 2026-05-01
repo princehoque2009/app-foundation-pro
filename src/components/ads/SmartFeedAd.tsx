@@ -110,21 +110,9 @@ export const SmartFeedAd = ({ className, placement = "home_feed" }: SmartFeedAdP
     );
   }
 
+  // Hide entirely when no ad is active (no placeholder shown to users)
   if (!ad) {
-    return (
-      <Card className={cn("overflow-hidden border-dashed border-border/60 bg-muted/10", className)}>
-        <div className="flex items-center gap-1.5 px-4 py-2">
-          <Sparkles className="h-3 w-3 text-muted-foreground/30" />
-          <span className="text-xs text-muted-foreground/30">Sponsored</span>
-        </div>
-        <div className="aspect-video bg-muted/30 flex items-center justify-center">
-          <div className="text-center space-y-1">
-            <Sparkles className="h-8 w-8 text-muted-foreground/20 mx-auto" />
-            <p className="text-xs text-muted-foreground/30">Ad space</p>
-          </div>
-        </div>
-      </Card>
-    );
+    return null;
   }
 
   return (
