@@ -9,6 +9,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { AppSettingsProvider } from "@/contexts/AppSettingsContext";
 import { RolesProvider } from "@/contexts/RolesContext";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+import { FeatureGate } from "@/components/layout/FeatureGate";
 import { SplashScreen } from "@/components/SplashScreen";
 import { useSessionTimeout } from "@/hooks/useSessionTimeout";
 import { OnboardingSlides } from "@/components/onboarding/OnboardingSlides";
