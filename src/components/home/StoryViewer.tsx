@@ -133,6 +133,18 @@ export const StoryViewer = ({
     if (open && currentStory && user?.id && currentStory.user_id !== user.id) {
       recordView.mutate(currentStory.id);
     }
+    // Preload existing reaction so heart stays filled across sessions
+    if (open && currentStory && user?.id) {
+      supabase
+        .from("story_reactions")
+        .select("id")
+        .eq("story_id", currentStory.id)
+        .eq("user_id", user.id)
+        .maybeSingle()
+        .then(({ data }) => {
+          if (data) setLikedStoryIds(prev => new Set(prev).add(currentStory.id));
+        });
+    }
   }, [open, currentStory?.id]);
 
   const startTimer = useCallback(() => {
@@ -219,9 +231,14 @@ export const StoryViewer = ({
     goNext();
   };
 
+  // Track which stories the current viewer has already liked (one heart per story, like Instagram)
+  const [likedStoryIds, setLikedStoryIds] = useState<Set<string>>(new Set());
+  const hasLikedCurrent = currentStory ? likedStoryIds.has(currentStory.id) : false;
+
   const handleHeartReaction = () => {
-    if (!currentStory) return;
+    if (!currentStory || hasLikedCurrent) return;
     sendReaction.mutate({ storyId: currentStory.id, reaction: "❤️" });
+    setLikedStoryIds(prev => new Set(prev).add(currentStory.id));
     setFlyingReaction("❤️");
     setTimeout(() => setFlyingReaction(null), 800);
   };
@@ -522,9 +539,11 @@ export const StoryViewer = ({
                     <motion.button
                       onClick={e => { e.stopPropagation(); handleHeartReaction(); }}
                       whileTap={{ scale: 1.4 }}
-                      className="h-10 w-10 flex items-center justify-center rounded-full hover:bg-white/10 transition-colors"
+                      disabled={hasLikedCurrent}
+                      className="h-10 w-10 flex items-center justify-center rounded-full hover:bg-white/10 transition-colors disabled:opacity-100"
+                      aria-label={hasLikedCurrent ? "Liked" : "Like"}
                     >
-                      <Heart className="h-6 w-6 text-white" />
+                      <Heart className={cn("h-6 w-6 transition-colors", hasLikedCurrent ? "fill-red-500 text-red-500" : "text-white")} />
                     </motion.button>
                   )}
                 </div>
