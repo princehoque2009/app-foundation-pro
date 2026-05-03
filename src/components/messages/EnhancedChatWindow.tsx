@@ -482,23 +482,23 @@ export const EnhancedChatWindow = ({
 
       {/* Reply preview */}
       {replyingTo && (
-        <div className="flex items-center gap-2 px-4 py-2 bg-card/80 backdrop-blur-sm border-t">
-          <div className="w-1 h-10 bg-primary rounded-full" />
+        <div className="flex items-center gap-2 px-3 py-2 bg-card/95 backdrop-blur-md border-t">
+          <div className="w-1 h-9 rounded-full bg-gradient-to-b from-[#FF6A5A] to-[#FF3D7F]" />
           <div className="flex-1 min-w-0">
-            <p className="font-medium text-xs text-primary">Replying to</p>
-            <p className="truncate text-sm text-muted-foreground">
+            <p className="font-medium text-[11px] text-[#FF3D7F]">Replying to message</p>
+            <p className="truncate text-xs text-muted-foreground">
               {replyingTo.text || "Media"}
             </p>
           </div>
-          <Button variant="ghost" size="icon" onClick={() => setReplyingTo(null)}>
+          <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full" onClick={() => setReplyingTo(null)}>
             <X className="h-4 w-4" />
           </Button>
         </div>
       )}
 
       {/* Input */}
-      <div className="p-4 border-t bg-card/80 backdrop-blur-sm">
-        <div className="flex items-center gap-2">
+      <div className="px-3 py-2.5 border-t bg-card/95 backdrop-blur-md sticky bottom-0">
+        <div className="flex items-end gap-2">
           <input
             type="file"
             ref={fileInputRef}
@@ -507,61 +507,73 @@ export const EnhancedChatWindow = ({
             accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.zip"
           />
 
-          {/* Emoji picker */}
-          <Popover open={showEmoji} onOpenChange={setShowEmoji}>
-            <PopoverTrigger asChild>
-              <Button variant="ghost" size="icon" className="shrink-0">
-                <Smile className="h-5 w-5" />
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-2" side="top" align="start">
-              <div className="flex gap-1 flex-wrap max-w-[200px]">
-                {EMOJI_LIST.map((emoji) => (
-                  <button
-                    key={emoji}
-                    onClick={() => {
-                      setMessageText(prev => prev + emoji);
-                      setShowEmoji(false);
-                    }}
-                    className="text-xl p-1 rounded hover:bg-muted transition-colors"
-                  >
-                    {emoji}
-                  </button>
-                ))}
-              </div>
-            </PopoverContent>
-          </Popover>
-          
           <Button
             variant="ghost"
             size="icon"
             onClick={() => fileInputRef.current?.click()}
             disabled={isUploading}
-            className="shrink-0"
+            className="shrink-0 h-10 w-10 rounded-full text-muted-foreground hover:text-foreground"
           >
-            <Paperclip className="h-5 w-5" />
+            <Paperclip className="h-[18px] w-[18px]" />
           </Button>
 
-          <Input
-            value={messageText}
-            onChange={(e) => {
-              setMessageText(e.target.value);
-              if (settings.typingIndicator) handleTyping();
-            }}
-            onKeyPress={handleKeyPress}
-            placeholder={isUploading ? "Uploading..." : "Type a message..."}
-            className="flex-1 bg-muted/50 border-0 rounded-full px-4"
-            disabled={isUploading}
-          />
+          <div className="flex-1 flex items-center gap-1 bg-muted/70 rounded-full pl-4 pr-1 py-1">
+            <Input
+              value={messageText}
+              onChange={(e) => {
+                setMessageText(e.target.value);
+                if (settings.typingIndicator) handleTyping();
+              }}
+              onKeyPress={handleKeyPress}
+              placeholder={isUploading ? "Uploading…" : "Message…"}
+              className="flex-1 bg-transparent border-0 px-0 h-8 focus-visible:ring-0 focus-visible:ring-offset-0 text-[15px]"
+              disabled={isUploading}
+            />
 
-          <Button
-            onClick={handleSend}
-            disabled={!messageText.trim() || isUploading}
-            size="icon"
-            className="shrink-0 rounded-full bg-primary hover:bg-primary/90"
-          >
-            <Send className="h-5 w-5" />
-          </Button>
+            <Popover open={showEmoji} onOpenChange={setShowEmoji}>
+              <PopoverTrigger asChild>
+                <Button variant="ghost" size="icon" className="shrink-0 h-8 w-8 rounded-full text-muted-foreground hover:text-foreground">
+                  <Smile className="h-[18px] w-[18px]" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-2 rounded-2xl" side="top" align="end">
+                <div className="flex gap-1 flex-wrap max-w-[220px]">
+                  {EMOJI_LIST.map((emoji) => (
+                    <button
+                      key={emoji}
+                      onClick={() => {
+                        setMessageText(prev => prev + emoji);
+                        setShowEmoji(false);
+                      }}
+                      className="text-xl p-1.5 rounded-lg hover:bg-muted transition-colors"
+                    >
+                      {emoji}
+                    </button>
+                  ))}
+                </div>
+              </PopoverContent>
+            </Popover>
+          </div>
+
+          {messageText.trim() ? (
+            <Button
+              onClick={handleSend}
+              disabled={!messageText.trim() || isUploading}
+              size="icon"
+              className="shrink-0 h-10 w-10 rounded-full bg-gradient-to-br from-[#FF6A5A] via-[#FF3D7F] to-[#FF8A5B] hover:opacity-90 text-white shadow-md border-0"
+            >
+              <Send className="h-[18px] w-[18px]" />
+            </Button>
+          ) : (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="shrink-0 h-10 w-10 rounded-full text-muted-foreground hover:text-foreground"
+              onClick={() => fileInputRef.current?.click()}
+            >
+              <Image className="h-[18px] w-[18px]" />
+            </Button>
+          )}
         </div>
       </div>
     </div>
