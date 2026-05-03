@@ -272,29 +272,28 @@ const Messages = () => {
 
           {/* Friends / Chat list */}
           <ScrollArea className="flex-1">
-            <div className="p-2 space-y-1">
+            <div className="p-2 space-y-0.5">
               {/* New Group Button */}
               <button
                 onClick={() => setShowCreateGroup(true)}
-                className="w-full p-3 rounded-xl flex items-center gap-3 transition-all hover:bg-accent/50 text-primary"
+                className="w-full p-2.5 rounded-2xl flex items-center gap-3 transition-all hover:bg-accent/60"
               >
-                <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
-                  <Plus className="h-6 w-6" />
+                <div className="h-12 w-12 rounded-full bg-gradient-to-br from-[#FF6A5A] via-[#FF3D7F] to-[#FF8A5B] flex items-center justify-center shadow-sm">
+                  <Plus className="h-6 w-6 text-white" strokeWidth={2.5} />
                 </div>
                 <div className="flex-1 text-left">
-                  <h3 className="font-semibold">Create New Group</h3>
-                  <p className="text-sm text-muted-foreground">Start a group chat</p>
+                  <h3 className="font-semibold text-[15px]">New Group</h3>
+                  <p className="text-xs text-muted-foreground">Start a group conversation</p>
                 </div>
               </button>
 
               {friendsLoading ? (
-                // Loading skeletons
-                Array.from({ length: 5 }).map((_, i) => (
-                  <div key={i} className="flex items-center gap-3 p-3">
+                Array.from({ length: 6 }).map((_, i) => (
+                  <div key={i} className="flex items-center gap-3 p-2.5">
                     <Skeleton className="h-12 w-12 rounded-full" />
                     <div className="flex-1 space-y-2">
-                      <Skeleton className="h-4 w-32" />
-                      <Skeleton className="h-3 w-48" />
+                      <Skeleton className="h-3.5 w-32" />
+                      <Skeleton className="h-3 w-44" />
                     </div>
                   </div>
                 ))
@@ -302,62 +301,58 @@ const Messages = () => {
                 filteredFriends.map((friend) => {
                   const preview = chatPreviews[friend.id];
                   const isOnline = onlineStatus[friend.id];
-                  
+                  const hasUnread = preview?.unreadCount && preview.unreadCount > 0;
+
                   return (
                     <button
                       key={friend.id}
                       onClick={() => handleSelectFriend(friend.id, friend)}
                       className={cn(
-                        "w-full p-3 rounded-xl flex items-center gap-3 transition-all hover:bg-accent/50",
-                        selectedFriend?.id === friend.id && "bg-accent",
-                        preview?.unreadCount && preview.unreadCount > 0 && "bg-primary/5"
+                        "w-full p-2.5 rounded-2xl flex items-center gap-3 transition-all hover:bg-accent/60",
+                        selectedFriend?.id === friend.id && "bg-accent"
                       )}
                     >
-                      <div className="relative">
-                        <Avatar className="h-12 w-12 ring-2 ring-background">
+                      <div className="relative shrink-0">
+                        <Avatar className="h-12 w-12">
                           <AvatarImage src={friend.avatar_url || ""} />
-                          <AvatarFallback className="bg-primary/10 text-primary">
+                          <AvatarFallback className="bg-muted text-foreground">
                             {friend.display_name?.[0] || friend.username?.[0]}
                           </AvatarFallback>
                         </Avatar>
-                        {/* Online indicator */}
-                        <span 
-                          className={cn(
-                            "absolute bottom-0 right-0 h-3.5 w-3.5 rounded-full border-2 border-card",
-                            isOnline ? "bg-green-500" : "bg-muted-foreground/50"
-                          )} 
-                        />
+                        {isOnline && (
+                          <span className="absolute bottom-0 right-0 h-3.5 w-3.5 rounded-full bg-green-500 border-2 border-card" />
+                        )}
                       </div>
                       <div className="flex-1 min-w-0 text-left">
-                        <div className="flex items-center justify-between">
+                        <div className="flex items-center justify-between gap-2">
                           <h3 className={cn(
-                            "font-semibold truncate",
-                            preview?.unreadCount && preview.unreadCount > 0 && "text-foreground"
+                            "truncate text-[15px] leading-tight",
+                            hasUnread ? "font-semibold text-foreground" : "font-medium"
                           )}>
                             {friend.display_name || friend.username}
                           </h3>
                           {preview?.lastMessageTime && (
-                            <span className="text-xs text-muted-foreground">
+                            <span className={cn(
+                              "text-[11px] shrink-0",
+                              hasUnread ? "text-[#FF3D7F] font-semibold" : "text-muted-foreground"
+                            )}>
                               {formatTime(preview.lastMessageTime)}
                             </span>
                           )}
                         </div>
-                        <div className="flex items-center justify-between">
+                        <div className="flex items-center justify-between gap-2 mt-0.5">
                           <p className={cn(
-                            "text-sm truncate",
-                            preview?.unreadCount && preview.unreadCount > 0 
-                              ? "text-foreground font-medium" 
+                            "text-[13px] truncate",
+                            hasUnread
+                              ? "text-foreground font-medium"
                               : "text-muted-foreground"
                           )}>
                             {preview?.lastMessage || `@${friend.username}`}
                           </p>
-                          {preview?.unreadCount && preview.unreadCount > 0 && (
-                            <Badge 
-                              variant="default" 
-                              className="h-5 min-w-[20px] px-1.5 text-xs rounded-full bg-primary"
-                            >
+                          {hasUnread && (
+                            <span className="h-5 min-w-[20px] px-1.5 text-[11px] font-semibold rounded-full bg-gradient-to-br from-[#FF6A5A] to-[#FF3D7F] text-white flex items-center justify-center shrink-0">
                               {preview.unreadCount}
-                            </Badge>
+                            </span>
                           )}
                         </div>
                       </div>
@@ -365,15 +360,17 @@ const Messages = () => {
                   );
                 })
               ) : friends && friends.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-12 text-center px-4">
-                  <UserCircle className="h-16 w-16 text-muted-foreground/50 mb-4" />
-                  <p className="text-muted-foreground font-medium">No friends yet</p>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Add friends to start chatting
+                <div className="flex flex-col items-center justify-center py-16 text-center px-4">
+                  <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-3">
+                    <UserCircle className="h-9 w-9 text-muted-foreground/60" />
+                  </div>
+                  <p className="font-semibold">No conversations yet</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Follow people to start chatting
                   </p>
                 </div>
               ) : (
-                <div className="text-center py-8 text-muted-foreground">
+                <div className="text-center py-10 text-sm text-muted-foreground">
                   No results found
                 </div>
               )}
