@@ -195,87 +195,79 @@ export const EnhancedChatWindow = ({
   return (
     <div className={cn("flex flex-col h-full", getBackgroundClass())}>
       {/* Header */}
-      <div className="flex items-center gap-3 p-4 border-b bg-card/80 backdrop-blur-sm">
+      <div className="flex items-center gap-3 px-3 py-2.5 border-b bg-card/95 backdrop-blur-md sticky top-0 z-20">
         {onBack && (
-          <Button variant="ghost" size="icon" onClick={onBack} className="md:hidden">
+          <Button variant="ghost" size="icon" onClick={onBack} className="md:hidden -ml-1 h-9 w-9">
             <ArrowLeft className="h-5 w-5" />
           </Button>
         )}
-        
-        <div className="relative">
-          <Avatar className="h-10 w-10 ring-2 ring-background">
-            <AvatarImage src={friendProfile.avatar_url || ""} />
-            <AvatarFallback className="bg-primary/10 text-primary">
-              {friendProfile.display_name?.[0] || friendProfile.username[0]}
-            </AvatarFallback>
-          </Avatar>
-          {friendStatus.online && (
-            <span className="absolute bottom-0 right-0 h-3 w-3 bg-green-500 rounded-full border-2 border-card animate-pulse" />
-          )}
-        </div>
 
-        <div className="flex-1 min-w-0">
-          <h3 className="font-semibold flex items-center gap-1.5 truncate">
-            {friendProfile.display_name || friendProfile.username}
-            {friendProfile.is_verified && <VerifiedBadge size="sm" />}
-          </h3>
-          <p className="text-xs text-muted-foreground">
-            {friendStatus.online
-              ? isTyping
-                ? "typing..."
-                : "Online"
-              : friendStatus.lastSeen
-              ? `Last seen ${formatTime(friendStatus.lastSeen)}`
-              : "Offline"}
-          </p>
-        </div>
+        <button className="flex items-center gap-3 flex-1 min-w-0 text-left rounded-xl hover:bg-muted/50 -mx-1 px-1 py-1 transition-colors">
+          <div className="relative shrink-0">
+            <div className="p-[2px] rounded-full bg-gradient-to-br from-[#FF6A5A] via-[#FF3D7F] to-[#FF8A5B]">
+              <Avatar className="h-10 w-10 border-2 border-card">
+                <AvatarImage src={friendProfile.avatar_url || ""} />
+                <AvatarFallback className="bg-muted text-foreground text-sm">
+                  {friendProfile.display_name?.[0] || friendProfile.username[0]}
+                </AvatarFallback>
+              </Avatar>
+            </div>
+            {friendStatus.online && (
+              <span className="absolute bottom-0 right-0 h-3 w-3 bg-green-500 rounded-full border-2 border-card" />
+            )}
+          </div>
 
-        <div className="flex items-center gap-1">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => onStartCall?.("audio")}
-            className="text-primary hover:bg-primary/10"
-          >
-            <Phone className="h-5 w-5" />
+          <div className="flex-1 min-w-0">
+            <h3 className="font-semibold text-[15px] flex items-center gap-1.5 truncate leading-tight">
+              {friendProfile.display_name || friendProfile.username}
+              {friendProfile.is_verified && <VerifiedBadge size="sm" />}
+            </h3>
+            <p className="text-[11px] text-muted-foreground leading-tight mt-0.5">
+              {isTyping
+                ? "typing…"
+                : friendStatus.online
+                ? "Active now"
+                : friendStatus.lastSeen
+                ? `Active ${formatTime(friendStatus.lastSeen)}`
+                : "Offline"}
+            </p>
+          </div>
+        </button>
+
+        <div className="flex items-center gap-0.5 shrink-0">
+          <Button variant="ghost" size="icon" onClick={() => onStartCall?.("audio")} className="h-9 w-9 rounded-full">
+            <Phone className="h-[18px] w-[18px]" />
           </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => onStartCall?.("video")}
-            className="text-primary hover:bg-primary/10"
-          >
-            <Video className="h-5 w-5" />
+          <Button variant="ghost" size="icon" onClick={() => onStartCall?.("video")} className="h-9 w-9 rounded-full">
+            <Video className="h-[18px] w-[18px]" />
           </Button>
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon">
-                <MoreVertical className="h-5 w-5" />
+              <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full">
+                <MoreVertical className="h-[18px] w-[18px]" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-48">
-              <DropdownMenuItem>
+            <DropdownMenuContent align="end" className="w-52 rounded-xl">
+              <DropdownMenuItem className="rounded-lg">
                 <User className="h-4 w-4 mr-2" />
                 View Profile
               </DropdownMenuItem>
-              <DropdownMenuItem>
+              <DropdownMenuItem className="rounded-lg">
                 <BellOff className="h-4 w-4 mr-2" />
                 Mute Notifications
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>
+              <DropdownMenuItem className="rounded-lg">
                 <Trash2 className="h-4 w-4 mr-2" />
                 Clear Chat
               </DropdownMenuItem>
-              <DropdownMenuItem className="text-destructive">
+              <DropdownMenuItem className="rounded-lg text-destructive focus:text-destructive">
                 <Flag className="h-4 w-4 mr-2" />
                 Report Conversation
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-
-          <MessengerSettings />
         </div>
       </div>
 
