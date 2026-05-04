@@ -4,21 +4,18 @@ import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { MainLayout } from "@/components/layout/MainLayout";
-import { EnhancedChatWindow } from "@/components/messages/EnhancedChatWindow";
+import { SupabaseChatWindow } from "@/components/messages/SupabaseChatWindow";
 import { MessengerSettings } from "@/components/messages/MessengerSettings";
-import { CallInterface } from "@/components/calling/CallInterface";
 import { CreateGroupDialog } from "@/components/groups/CreateGroupDialog";
-import { useWebRTC } from "@/hooks/useWebRTC";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { MessageCircle, Search, Users, UserCircle, Plus, Settings, Circle } from "lucide-react";
+import { MessageCircle, Search, Users, UserCircle, Plus, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { ref, onValue, off } from "firebase/database";
-import { rtdb } from "@/lib/firebase";
+import { useChatPreviews } from "@/hooks/useChat";
+import { usePresence, useSelfPresence } from "@/hooks/usePresence";
 
 interface Profile {
   id: string;
