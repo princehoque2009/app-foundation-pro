@@ -164,7 +164,7 @@ export const useChat = (conversationId: string | null) => {
         setMessages((prev) => prev.filter((m) => m.id !== tempId));
         return;
       }
-      setMessages((prev) => prev.map((m) => (m.id === tempId ? (data as ChatMessage) : m)));
+      setMessages((prev) => prev.map((m) => (m.id === tempId ? (data as unknown as ChatMessage) : m)));
       await supabase
         .from("conversations" as any)
         .update({ updated_at: new Date().toISOString() })
