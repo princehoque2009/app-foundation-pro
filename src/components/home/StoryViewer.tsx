@@ -242,8 +242,6 @@ export const StoryViewer = ({
     goNext();
   };
 
-  // Track which stories the current viewer has already liked (one heart per story, like Instagram)
-  const [likedStoryIds, setLikedStoryIds] = useState<Set<string>>(new Set());
   const hasLikedCurrent = currentStory ? likedStoryIds.has(currentStory.id) : false;
 
   const handleHeartReaction = () => {
