@@ -133,19 +133,30 @@ export const StoryViewer = ({
     if (open && currentStory && user?.id && currentStory.user_id !== user.id) {
       recordView.mutate(currentStory.id);
     }
-    // Preload existing reaction so heart stays filled across sessions
-    if (open && currentStory && user?.id) {
-      supabase
-        .from("story_reactions")
-        .select("id")
-        .eq("story_id", currentStory.id)
-        .eq("user_id", user.id)
-        .maybeSingle()
-        .then(({ data }) => {
-          if (data) setLikedStoryIds(prev => new Set(prev).add(currentStory.id));
-        });
-    }
   }, [open, currentStory?.id]);
+
+  // Track which stories the current viewer has already liked (one heart per story, like Instagram)
+  const [likedStoryIds, setLikedStoryIds] = useState<Set<string>>(new Set());
+
+  // Pre-load all liked stories from this group so the heart shows correctly
+  useEffect(() => {
+    if (!open || !user?.id || !currentGroup?.stories?.length) return;
+    const ids = currentGroup.stories.map((s) => s.id);
+    supabase
+      .from("story_reactions")
+      .select("story_id")
+      .eq("user_id", user.id)
+      .in("story_id", ids)
+      .then(({ data }) => {
+        if (data?.length) {
+          setLikedStoryIds((prev) => {
+            const next = new Set(prev);
+            data.forEach((r: any) => next.add(r.story_id));
+            return next;
+          });
+        }
+      });
+  }, [open, user?.id, currentGroup?.stories?.map((s) => s.id).join(",")]);
 
   const startTimer = useCallback(() => {
     if (isVideo) return;
