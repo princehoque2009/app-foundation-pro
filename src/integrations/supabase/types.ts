@@ -1933,6 +1933,27 @@ export type Database = {
           },
         ]
       }
+      user_status: {
+        Row: {
+          is_online: boolean
+          last_seen: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          is_online?: boolean
+          last_seen?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          is_online?: boolean
+          last_seen?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       verification_requests: {
         Row: {
           admin_notes: string | null
