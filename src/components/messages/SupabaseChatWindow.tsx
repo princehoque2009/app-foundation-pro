@@ -255,7 +255,7 @@ export const SupabaseChatWindow = ({ friendProfile, onBack }: SupabaseChatWindow
 
           <Input
             value={text}
-            onChange={(e) => setText(e.target.value)}
+            onChange={(e) => handleTyping(e.target.value)}
             onKeyDown={(e) => {
               if (e.key === "Enter" && !e.shiftKey) {
                 e.preventDefault();
