@@ -5,7 +5,24 @@ import { useAuth } from "@/contexts/AuthContext";
 export interface PresenceStatus {
   is_online: boolean;
   last_seen: string;
+  typing_in_conversation?: string | null;
 }
+
+/** Set the current user's typing indicator for a given conversation (or null to clear). */
+export const setTypingStatus = async (userId: string, conversationId: string | null) => {
+  await supabase
+    .from("user_status" as any)
+    .upsert(
+      {
+        user_id: userId,
+        is_online: true,
+        last_seen: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        typing_in_conversation: conversationId,
+      } as any,
+      { onConflict: "user_id" }
+    );
+};
 
 /** Upserts the current user's presence and keeps it fresh while tab is open. */
 export const useSelfPresence = () => {
