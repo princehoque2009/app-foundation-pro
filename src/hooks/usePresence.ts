@@ -74,12 +74,16 @@ export const usePresence = (userIds: string[]) => {
     (async () => {
       const { data } = await supabase
         .from("user_status" as any)
-        .select("user_id, is_online, last_seen")
+        .select("user_id, is_online, last_seen, typing_in_conversation")
         .in("user_id", userIds);
       if (cancelled || !data) return;
       const next: Record<string, PresenceStatus> = {};
       (data as any[]).forEach((row) => {
-        next[row.user_id] = { is_online: row.is_online, last_seen: row.last_seen };
+        next[row.user_id] = {
+          is_online: row.is_online,
+          last_seen: row.last_seen,
+          typing_in_conversation: row.typing_in_conversation,
+        };
       });
       setStatuses(next);
     })();
