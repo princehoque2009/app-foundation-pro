@@ -2132,6 +2132,10 @@ export type Database = {
         Returns: string
       }
       delete_expired_stories: { Args: never; Returns: undefined }
+      get_or_create_direct_conversation: {
+        Args: { p_other_user: string }
+        Returns: string
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

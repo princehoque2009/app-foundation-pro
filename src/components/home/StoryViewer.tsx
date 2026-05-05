@@ -546,43 +546,17 @@ export const StoryViewer = ({
                         if (!value || !user?.id || !currentStory) return;
                         setReplyText("");
                         try {
-                          // Find/create 1:1 conversation
-                          const { data: mine } = await supabase
-                            .from("conversation_participants")
-                            .select("conversation_id")
-                            .eq("user_id", user.id);
-                          const ids = (mine || []).map((r: any) => r.conversation_id);
-                          let convId: string | null = null;
-                          if (ids.length) {
-                            const { data: shared } = await supabase
-                              .from("conversation_participants")
-                              .select("conversation_id")
-                              .eq("user_id", currentStory.user_id)
-                              .in("conversation_id", ids);
-                            convId = (shared || [])[0]?.conversation_id || null;
-                          }
-                          if (!convId) {
-                            const { data: convo } = await supabase
-                              .from("conversations")
-                              .insert({})
-                              .select("id")
-                              .single();
-                            convId = (convo as any)?.id || null;
-                            if (convId) {
-                              await supabase.from("conversation_participants").insert([
-                                { conversation_id: convId, user_id: user.id },
-                                { conversation_id: convId, user_id: currentStory.user_id },
-                              ]);
-                            }
-                          }
-                          if (convId) {
-                            await supabase.from("messages").insert({
-                              conversation_id: convId,
-                              sender_id: user.id,
-                              content: value,
-                              reply_to_story_id: currentStory.id,
-                            } as any);
-                          }
+                          const { data: convId, error: convErr } = await supabase.rpc(
+                            "get_or_create_direct_conversation" as any,
+                            { p_other_user: currentStory.user_id }
+                          );
+                          if (convErr || !convId) throw convErr || new Error("No conversation");
+                          await supabase.from("messages").insert({
+                            conversation_id: convId as unknown as string,
+                            sender_id: user.id,
+                            content: value,
+                            reply_to_story_id: currentStory.id,
+                          } as any);
                         } catch (err) {
                           console.error("Story reply failed", err);
                         }
