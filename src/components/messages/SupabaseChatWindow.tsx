@@ -194,16 +194,26 @@ export const SupabaseChatWindow = ({ friendProfile, onBack }: SupabaseChatWindow
                       <audio src={m.media_url} controls className="mb-0.5" />
                     )}
                     {m.content && (
-                      <div
-                        className={cn(
-                          "px-3.5 py-2 text-[15px] leading-snug break-words",
-                          radius,
-                          isOwn
-                            ? "bg-coral-gradient text-white"
-                            : "bg-muted text-foreground"
+                      <div className={cn("flex flex-col", isOwn ? "items-end" : "items-start")}>
+                        {m.reply_to_story_id && (
+                          <div className={cn(
+                            "text-[11px] mb-1 px-2 py-1 rounded-full border",
+                            isOwn ? "border-primary/30 text-muted-foreground" : "border-border text-muted-foreground"
+                          )}>
+                            ↪ Replied to a story
+                          </div>
                         )}
-                      >
-                        {m.content}
+                        <div
+                          className={cn(
+                            "px-3.5 py-2 text-[15px] leading-snug break-words",
+                            radius,
+                            isOwn
+                              ? "bg-coral-gradient text-white"
+                              : "bg-muted text-foreground"
+                          )}
+                        >
+                          {m.content}
+                        </div>
                       </div>
                     )}
                     {isLast && (
