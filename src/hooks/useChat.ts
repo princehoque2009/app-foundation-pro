@@ -29,45 +29,17 @@ export const useDirectConversation = (otherUserId?: string) => {
     setLoading(true);
 
     (async () => {
-      // Find conversations the current user is in
-      const { data: mine } = await supabase
-        .from("conversation_participants" as any)
-        .select("conversation_id")
-        .eq("user_id", user.id);
-
-      const ids = (mine as any[] | null)?.map((r) => r.conversation_id) || [];
-      let foundId: string | null = null;
-
-      if (ids.length > 0) {
-        const { data: shared } = await supabase
-          .from("conversation_participants" as any)
-          .select("conversation_id")
-          .eq("user_id", otherUserId)
-          .in("conversation_id", ids);
-        foundId = (shared as any[] | null)?.[0]?.conversation_id || null;
-      }
-
-      if (!foundId) {
-        const { data: convo, error } = await supabase
-          .from("conversations" as any)
-          .insert({})
-          .select("id")
-          .single();
-        if (error || !convo) {
-          if (!cancelled) setLoading(false);
-          return;
-        }
-        foundId = (convo as any).id;
-        await supabase.from("conversation_participants" as any).insert([
-          { conversation_id: foundId, user_id: user.id },
-          { conversation_id: foundId, user_id: otherUserId },
-        ]);
-      }
-
-      if (!cancelled) {
-        setConversationId(foundId);
+      const { data, error } = await supabase.rpc("get_or_create_direct_conversation" as any, {
+        p_other_user: otherUserId,
+      });
+      if (cancelled) return;
+      if (error) {
+        console.error("get_or_create_direct_conversation failed", error);
         setLoading(false);
+        return;
       }
+      setConversationId((data as unknown as string) || null);
+      setLoading(false);
     })();
 
     return () => {
