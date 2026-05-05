@@ -98,7 +98,11 @@ export const usePresence = (userIds: string[]) => {
           if (!row || !userIds.includes(row.user_id)) return;
           setStatuses((prev) => ({
             ...prev,
-            [row.user_id]: { is_online: !!row.is_online, last_seen: row.last_seen },
+            [row.user_id]: {
+              is_online: !!row.is_online,
+              last_seen: row.last_seen,
+              typing_in_conversation: row.typing_in_conversation,
+            },
           }));
         }
       )
