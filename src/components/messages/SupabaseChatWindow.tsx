@@ -45,12 +45,47 @@ export const SupabaseChatWindow = ({ friendProfile, onBack }: SupabaseChatWindow
   const [uploading, setUploading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const typingTimeoutRef = useRef<number | null>(null);
 
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [messages.length]);
+
+  // Mark messages as read when viewing
+  useEffect(() => {
+    if (!conversationId || !user?.id) return;
+    const unread = messages.filter((m) => m.sender_id !== user.id && !m.is_read);
+    if (unread.length === 0) return;
+    (async () => {
+      const { supabase } = await import("@/integrations/supabase/client");
+      await supabase
+        .from("messages" as any)
+        .update({ is_read: true })
+        .in("id", unread.map((m) => m.id));
+    })();
+  }, [messages, conversationId, user?.id]);
+
+  // Typing indicator: debounced
+  const handleTyping = (val: string) => {
+    setText(val);
+    if (!user?.id || !conversationId) return;
+    setTypingStatus(user.id, conversationId);
+    if (typingTimeoutRef.current) window.clearTimeout(typingTimeoutRef.current);
+    typingTimeoutRef.current = window.setTimeout(() => {
+      setTypingStatus(user.id, null);
+    }, 2500);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (typingTimeoutRef.current) window.clearTimeout(typingTimeoutRef.current);
+      if (user?.id) setTypingStatus(user.id, null);
+    };
+  }, [conversationId, user?.id]);
+
+  const isFriendTyping = status?.typing_in_conversation && status.typing_in_conversation === conversationId;
 
   const handleSend = async () => {
     if (!text.trim()) return;
