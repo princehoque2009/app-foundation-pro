@@ -207,14 +207,24 @@ export const SupabaseChatWindow = ({ friendProfile, onBack }: SupabaseChatWindow
                       </div>
                     )}
                     {isLast && (
-                      <span className="text-[10px] text-muted-foreground mt-1 px-1">
+                      <span className="text-[10px] text-muted-foreground mt-1 px-1 flex items-center gap-1">
                         {formatBubbleTime(m.created_at)}
+                        {isOwn && (m.is_read ? <CheckCheck className="h-3 w-3 text-primary" /> : <Check className="h-3 w-3" />)}
                       </span>
                     )}
                   </div>
                 </div>
               );
             })
+          )}
+          {isFriendTyping && (
+            <div className="flex justify-start">
+              <div className="bg-muted rounded-2xl px-4 py-2.5 flex gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-foreground/50 animate-bounce" />
+                <span className="w-1.5 h-1.5 rounded-full bg-foreground/50 animate-bounce [animation-delay:120ms]" />
+                <span className="w-1.5 h-1.5 rounded-full bg-foreground/50 animate-bounce [animation-delay:240ms]" />
+              </div>
+            </div>
           )}
         </div>
       </ScrollArea>
