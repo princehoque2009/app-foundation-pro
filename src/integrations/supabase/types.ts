@@ -861,6 +861,7 @@ export type Database = {
           media_type: string | null
           media_url: string | null
           reply_to_id: string | null
+          reply_to_story_id: string | null
           sender_id: string
         }
         Insert: {
@@ -873,6 +874,7 @@ export type Database = {
           media_type?: string | null
           media_url?: string | null
           reply_to_id?: string | null
+          reply_to_story_id?: string | null
           sender_id: string
         }
         Update: {
@@ -885,6 +887,7 @@ export type Database = {
           media_type?: string | null
           media_url?: string | null
           reply_to_id?: string | null
+          reply_to_story_id?: string | null
           sender_id?: string
         }
         Relationships: [
@@ -1937,18 +1940,21 @@ export type Database = {
         Row: {
           is_online: boolean
           last_seen: string
+          typing_in_conversation: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
           is_online?: boolean
           last_seen?: string
+          typing_in_conversation?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
           is_online?: boolean
           last_seen?: string
+          typing_in_conversation?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -2136,6 +2142,10 @@ export type Database = {
       increment_story_views: {
         Args: { p_story_id: string }
         Returns: undefined
+      }
+      is_conversation_participant: {
+        Args: { p_conversation_id: string; p_user_id: string }
+        Returns: boolean
       }
       is_group_admin: {
         Args: { p_group: string; p_user: string }

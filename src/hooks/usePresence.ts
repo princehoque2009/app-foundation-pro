@@ -5,7 +5,24 @@ import { useAuth } from "@/contexts/AuthContext";
 export interface PresenceStatus {
   is_online: boolean;
   last_seen: string;
+  typing_in_conversation?: string | null;
 }
+
+/** Set the current user's typing indicator for a given conversation (or null to clear). */
+export const setTypingStatus = async (userId: string, conversationId: string | null) => {
+  await supabase
+    .from("user_status" as any)
+    .upsert(
+      {
+        user_id: userId,
+        is_online: true,
+        last_seen: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        typing_in_conversation: conversationId,
+      } as any,
+      { onConflict: "user_id" }
+    );
+};
 
 /** Upserts the current user's presence and keeps it fresh while tab is open. */
 export const useSelfPresence = () => {
@@ -57,12 +74,16 @@ export const usePresence = (userIds: string[]) => {
     (async () => {
       const { data } = await supabase
         .from("user_status" as any)
-        .select("user_id, is_online, last_seen")
+        .select("user_id, is_online, last_seen, typing_in_conversation")
         .in("user_id", userIds);
       if (cancelled || !data) return;
       const next: Record<string, PresenceStatus> = {};
       (data as any[]).forEach((row) => {
-        next[row.user_id] = { is_online: row.is_online, last_seen: row.last_seen };
+        next[row.user_id] = {
+          is_online: row.is_online,
+          last_seen: row.last_seen,
+          typing_in_conversation: row.typing_in_conversation,
+        };
       });
       setStatuses(next);
     })();
@@ -77,7 +98,11 @@ export const usePresence = (userIds: string[]) => {
           if (!row || !userIds.includes(row.user_id)) return;
           setStatuses((prev) => ({
             ...prev,
-            [row.user_id]: { is_online: !!row.is_online, last_seen: row.last_seen },
+            [row.user_id]: {
+              is_online: !!row.is_online,
+              last_seen: row.last_seen,
+              typing_in_conversation: row.typing_in_conversation,
+            },
           }));
         }
       )

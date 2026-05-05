@@ -11,6 +11,7 @@ export interface ChatMessage {
   media_type: string | null;
   created_at: string;
   is_read: boolean | null;
+  reply_to_story_id?: string | null;
 }
 
 /** Find or create a 1:1 conversation between current user and otherUserId. */

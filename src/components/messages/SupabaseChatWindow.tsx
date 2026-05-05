@@ -1,14 +1,14 @@
 import { useState, useRef, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useChat, useDirectConversation } from "@/hooks/useChat";
-import { usePresence, formatLastSeen } from "@/hooks/usePresence";
+import { usePresence, formatLastSeen, setTypingStatus } from "@/hooks/usePresence";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { VerifiedBadge } from "@/components/ui/VerifiedBadge";
-import { ArrowLeft, Send, Image as ImageIcon, Smile, Loader2 } from "lucide-react";
+import { ArrowLeft, Send, Image as ImageIcon, Smile, Loader2, Check, CheckCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format, isToday, isYesterday } from "date-fns";
 
@@ -45,12 +45,47 @@ export const SupabaseChatWindow = ({ friendProfile, onBack }: SupabaseChatWindow
   const [uploading, setUploading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const typingTimeoutRef = useRef<number | null>(null);
 
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [messages.length]);
+
+  // Mark messages as read when viewing
+  useEffect(() => {
+    if (!conversationId || !user?.id) return;
+    const unread = messages.filter((m) => m.sender_id !== user.id && !m.is_read);
+    if (unread.length === 0) return;
+    (async () => {
+      const { supabase } = await import("@/integrations/supabase/client");
+      await supabase
+        .from("messages" as any)
+        .update({ is_read: true })
+        .in("id", unread.map((m) => m.id));
+    })();
+  }, [messages, conversationId, user?.id]);
+
+  // Typing indicator: debounced
+  const handleTyping = (val: string) => {
+    setText(val);
+    if (!user?.id || !conversationId) return;
+    setTypingStatus(user.id, conversationId);
+    if (typingTimeoutRef.current) window.clearTimeout(typingTimeoutRef.current);
+    typingTimeoutRef.current = window.setTimeout(() => {
+      setTypingStatus(user.id, null);
+    }, 2500);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (typingTimeoutRef.current) window.clearTimeout(typingTimeoutRef.current);
+      if (user?.id) setTypingStatus(user.id, null);
+    };
+  }, [conversationId, user?.id]);
+
+  const isFriendTyping = status?.typing_in_conversation && status.typing_in_conversation === conversationId;
 
   const handleSend = async () => {
     if (!text.trim()) return;
@@ -98,8 +133,8 @@ export const SupabaseChatWindow = ({ friendProfile, onBack }: SupabaseChatWindow
             </h3>
             {friendProfile.is_verified && <VerifiedBadge size="sm" />}
           </div>
-          <p className={cn("text-xs truncate", status?.is_online ? "text-green-500 font-medium" : "text-muted-foreground")}>
-            {formatLastSeen(status)}
+          <p className={cn("text-xs truncate", isFriendTyping ? "text-primary font-medium" : status?.is_online ? "text-green-500 font-medium" : "text-muted-foreground")}>
+            {isFriendTyping ? "typing…" : formatLastSeen(status)}
           </p>
         </div>
       </div>
@@ -159,27 +194,47 @@ export const SupabaseChatWindow = ({ friendProfile, onBack }: SupabaseChatWindow
                       <audio src={m.media_url} controls className="mb-0.5" />
                     )}
                     {m.content && (
-                      <div
-                        className={cn(
-                          "px-3.5 py-2 text-[15px] leading-snug break-words",
-                          radius,
-                          isOwn
-                            ? "bg-coral-gradient text-white"
-                            : "bg-muted text-foreground"
+                      <div className={cn("flex flex-col", isOwn ? "items-end" : "items-start")}>
+                        {m.reply_to_story_id && (
+                          <div className={cn(
+                            "text-[11px] mb-1 px-2 py-1 rounded-full border",
+                            isOwn ? "border-primary/30 text-muted-foreground" : "border-border text-muted-foreground"
+                          )}>
+                            ↪ Replied to a story
+                          </div>
                         )}
-                      >
-                        {m.content}
+                        <div
+                          className={cn(
+                            "px-3.5 py-2 text-[15px] leading-snug break-words",
+                            radius,
+                            isOwn
+                              ? "bg-coral-gradient text-white"
+                              : "bg-muted text-foreground"
+                          )}
+                        >
+                          {m.content}
+                        </div>
                       </div>
                     )}
                     {isLast && (
-                      <span className="text-[10px] text-muted-foreground mt-1 px-1">
+                      <span className="text-[10px] text-muted-foreground mt-1 px-1 flex items-center gap-1">
                         {formatBubbleTime(m.created_at)}
+                        {isOwn && (m.is_read ? <CheckCheck className="h-3 w-3 text-primary" /> : <Check className="h-3 w-3" />)}
                       </span>
                     )}
                   </div>
                 </div>
               );
             })
+          )}
+          {isFriendTyping && (
+            <div className="flex justify-start">
+              <div className="bg-muted rounded-2xl px-4 py-2.5 flex gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-foreground/50 animate-bounce" />
+                <span className="w-1.5 h-1.5 rounded-full bg-foreground/50 animate-bounce [animation-delay:120ms]" />
+                <span className="w-1.5 h-1.5 rounded-full bg-foreground/50 animate-bounce [animation-delay:240ms]" />
+              </div>
+            </div>
           )}
         </div>
       </ScrollArea>
@@ -210,7 +265,7 @@ export const SupabaseChatWindow = ({ friendProfile, onBack }: SupabaseChatWindow
 
           <Input
             value={text}
-            onChange={(e) => setText(e.target.value)}
+            onChange={(e) => handleTyping(e.target.value)}
             onKeyDown={(e) => {
               if (e.key === "Enter" && !e.shiftKey) {
                 e.preventDefault();
