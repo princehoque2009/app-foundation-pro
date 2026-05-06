@@ -27,7 +27,7 @@ export const useConversations = () => {
           .neq("user_id", user?.id);
         if (oErr) throw oErr;
 
-        const otherUserIds = Array.from(new Set((otherParts || []).map((p: any) => p.user_id)));
+        const otherUserIds: string[] = Array.from(new Set((otherParts || []).map((p: any) => p.user_id as string)));
 
         // 3. Profiles in one query
         const { data: profiles }: any = otherUserIds.length
