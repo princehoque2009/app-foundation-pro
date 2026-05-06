@@ -40,6 +40,7 @@ export const SupabaseChatWindow = ({ friendProfile, onBack }: SupabaseChatWindow
   const { messages, loading, sendText, sendMedia } = useChat(conversationId);
   const presence = usePresence([friendProfile.id]);
   const status = presence[friendProfile.id];
+  const online = isUserOnline(status);
 
   const [text, setText] = useState("");
   const [uploading, setUploading] = useState(false);
