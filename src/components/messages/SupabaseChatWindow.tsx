@@ -134,7 +134,7 @@ export const SupabaseChatWindow = ({ friendProfile, onBack }: SupabaseChatWindow
             </h3>
             {friendProfile.is_verified && <VerifiedBadge size="sm" />}
           </div>
-          <p className={cn("text-xs truncate", isFriendTyping ? "text-primary font-medium" : status?.is_online ? "text-green-500 font-medium" : "text-muted-foreground")}>
+          <p className={cn("text-xs truncate", isFriendTyping ? "text-primary font-medium" : online ? "text-green-500 font-medium" : "text-muted-foreground")}>
             {isFriendTyping ? "typing…" : formatLastSeen(status)}
           </p>
         </div>
