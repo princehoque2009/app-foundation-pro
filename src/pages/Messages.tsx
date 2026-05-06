@@ -15,7 +15,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { MessageCircle, Search, Users, UserCircle, Plus, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useChatPreviews } from "@/hooks/useChat";
-import { usePresence, useSelfPresence } from "@/hooks/usePresence";
+import { usePresence, useSelfPresence, isUserOnline } from "@/hooks/usePresence";
 
 interface Profile {
   id: string;
@@ -192,7 +192,7 @@ const Messages = () => {
               ) : filteredFriends.length > 0 ? (
                 filteredFriends.map((friend) => {
                   const preview = previews[friend.id];
-                  const isOnline = presenceMap[friend.id]?.is_online;
+                  const isOnline = isUserOnline(presenceMap[friend.id]);
                   const hasUnread = preview?.unreadCount && preview.unreadCount > 0;
 
                   return (

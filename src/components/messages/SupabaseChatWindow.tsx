@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useChat, useDirectConversation } from "@/hooks/useChat";
-import { usePresence, formatLastSeen, setTypingStatus } from "@/hooks/usePresence";
+import { usePresence, formatLastSeen, setTypingStatus, isUserOnline } from "@/hooks/usePresence";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -40,6 +40,7 @@ export const SupabaseChatWindow = ({ friendProfile, onBack }: SupabaseChatWindow
   const { messages, loading, sendText, sendMedia } = useChat(conversationId);
   const presence = usePresence([friendProfile.id]);
   const status = presence[friendProfile.id];
+  const online = isUserOnline(status);
 
   const [text, setText] = useState("");
   const [uploading, setUploading] = useState(false);
@@ -122,7 +123,7 @@ export const SupabaseChatWindow = ({ friendProfile, onBack }: SupabaseChatWindow
               <AvatarFallback>{friendProfile.display_name?.[0] || friendProfile.username?.[0]}</AvatarFallback>
             </Avatar>
           </div>
-          {status?.is_online && (
+          {online && (
             <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full bg-green-500 border-2 border-card" />
           )}
         </div>
@@ -133,7 +134,7 @@ export const SupabaseChatWindow = ({ friendProfile, onBack }: SupabaseChatWindow
             </h3>
             {friendProfile.is_verified && <VerifiedBadge size="sm" />}
           </div>
-          <p className={cn("text-xs truncate", isFriendTyping ? "text-primary font-medium" : status?.is_online ? "text-green-500 font-medium" : "text-muted-foreground")}>
+          <p className={cn("text-xs truncate", isFriendTyping ? "text-primary font-medium" : online ? "text-green-500 font-medium" : "text-muted-foreground")}>
             {isFriendTyping ? "typing…" : formatLastSeen(status)}
           </p>
         </div>
