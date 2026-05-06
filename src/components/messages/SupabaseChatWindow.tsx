@@ -415,6 +415,26 @@ export const SupabaseChatWindow = ({ friendProfile, onBack }: SupabaseChatWindow
           )}
         </div>
       </div>
+
+      <ChatInfoPanel
+        open={infoOpen}
+        onOpenChange={setInfoOpen}
+        friend={friendProfile}
+        conversationId={conversationId}
+        status={status}
+        onCleared={() => {
+          if (conversationId && user?.id) {
+            setClearedAt(localStorage.getItem(`chat_cleared_${conversationId}_${user.id}`));
+          }
+        }}
+      />
+
+      <FullscreenMediaViewer
+        open={viewerOpen}
+        onOpenChange={setViewerOpen}
+        items={mediaItems}
+        startId={viewerStartId}
+      />
     </div>
   );
 };
