@@ -10,56 +10,54 @@ export const useConversations = () => {
     queryKey: ["conversations", user?.id],
     queryFn: async () => {
       try {
-        const { data, error }: any = await supabase
+        // 1. My conversation IDs
+        const { data: myParts, error: mErr }: any = await supabase
           .from("conversation_participants" as any)
-          .select(`
-            conversation_id,
-            conversations (
-              id,
-              created_at,
-              updated_at
-            )
-          `)
+          .select("conversation_id")
           .eq("user_id", user?.id);
+        if (mErr) throw mErr;
+        const convIds = (myParts || []).map((r: any) => r.conversation_id);
+        if (convIds.length === 0) return [];
 
-        if (error) throw error;
-        if (!data) return [];
+        // 2. Other participants in those conversations (no FK embed)
+        const { data: otherParts, error: oErr }: any = await supabase
+          .from("conversation_participants" as any)
+          .select("conversation_id, user_id")
+          .in("conversation_id", convIds)
+          .neq("user_id", user?.id);
+        if (oErr) throw oErr;
 
-        // Get the other participant for each conversation
-        const conversationsWithUsers = await Promise.all(
-          data.map(async (item: any) => {
-            try {
-              const { data: participants, error: participantsError }: any = await supabase
-                .from("conversation_participants" as any)
-                .select("user_id, profiles (*)")
-                .eq("conversation_id", item.conversation_id)
-                .neq("user_id", user?.id)
-                .maybeSingle();
+        const otherUserIds = Array.from(new Set((otherParts || []).map((p: any) => p.user_id)));
 
-              if (participantsError) throw participantsError;
+        // 3. Profiles in one query
+        const { data: profiles }: any = otherUserIds.length
+          ? await supabase
+              .from("profiles")
+              .select("id, username, display_name, avatar_url, is_verified")
+              .in("id", otherUserIds)
+          : { data: [] };
+        const profileMap: Record<string, any> = {};
+        (profiles || []).forEach((p: any) => { profileMap[p.id] = p; });
 
-              // Get last message
-              const { data: lastMessage }: any = await supabase
-                .from("messages" as any)
-                .select("*")
-                .eq("conversation_id", item.conversation_id)
-                .order("created_at", { ascending: false })
-                .limit(1)
-                .maybeSingle();
+        // 4. Last message per conversation in one query
+        const { data: msgs }: any = await supabase
+          .from("messages" as any)
+          .select("id, conversation_id, sender_id, content, media_type, created_at, is_read")
+          .in("conversation_id", convIds)
+          .order("created_at", { ascending: false })
+          .limit(500);
+        const lastMsgMap: Record<string, any> = {};
+        (msgs || []).forEach((m: any) => {
+          if (!lastMsgMap[m.conversation_id]) lastMsgMap[m.conversation_id] = m;
+        });
 
-              return {
-                ...(item.conversations || {}),
-                otherUser: participants?.profiles || null,
-                lastMessage: lastMessage || null,
-              };
-            } catch (error) {
-              console.error("Error fetching conversation details:", error);
-              return null;
-            }
-          })
-        );
-
-        return conversationsWithUsers.filter(Boolean);
+        return (otherParts || [])
+          .map((p: any) => ({
+            id: p.conversation_id,
+            otherUser: profileMap[p.user_id] || null,
+            lastMessage: lastMsgMap[p.conversation_id] || null,
+          }))
+          .filter((c: any) => c.otherUser);
       } catch (error) {
         console.error("Error fetching conversations:", error);
         return [];
