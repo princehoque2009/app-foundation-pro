@@ -43,7 +43,7 @@ export const useSelfPresence = () => {
     };
 
     setStatus(true);
-    const heartbeat = window.setInterval(() => setStatus(true), 45_000);
+    const heartbeat = window.setInterval(() => setStatus(true), 30_000);
 
     const handleVis = () => setStatus(!document.hidden);
     const handleLeave = () => setStatus(false);
