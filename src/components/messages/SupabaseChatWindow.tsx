@@ -90,12 +90,12 @@ export const SupabaseChatWindow = ({ friendProfile, onBack }: SupabaseChatWindow
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  }, [messages.length]);
+  }, [visibleMessages.length]);
 
   // Mark messages as read when viewing
   useEffect(() => {
     if (!conversationId || !user?.id) return;
-    const unread = messages.filter((m) => m.sender_id !== user.id && !m.is_read);
+    const unread = visibleMessages.filter((m) => m.sender_id !== user.id && !m.is_read);
     if (unread.length === 0) return;
     (async () => {
       const { supabase } = await import("@/integrations/supabase/client");
@@ -104,7 +104,7 @@ export const SupabaseChatWindow = ({ friendProfile, onBack }: SupabaseChatWindow
         .update({ is_read: true })
         .in("id", unread.map((m) => m.id));
     })();
-  }, [messages, conversationId, user?.id]);
+  }, [visibleMessages, conversationId, user?.id]);
 
   // Typing indicator: debounced
   const handleTyping = (val: string) => {
