@@ -165,7 +165,10 @@ export const SupabaseChatWindow = ({ friendProfile, onBack }: SupabaseChatWindow
             <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full bg-green-500 border-2 border-card" />
           )}
         </div>
-        <div className="flex-1 min-w-0">
+        <button
+          onClick={() => setInfoOpen(true)}
+          className="flex-1 min-w-0 text-left"
+        >
           <div className="flex items-center gap-1">
             <h3 className="font-semibold text-[15px] truncate">
               {friendProfile.display_name || friendProfile.username}
@@ -175,7 +178,10 @@ export const SupabaseChatWindow = ({ friendProfile, onBack }: SupabaseChatWindow
           <p className={cn("text-xs truncate", isFriendTyping ? "text-primary font-medium" : online ? "text-green-500 font-medium" : "text-muted-foreground")}>
             {isFriendTyping ? "typing…" : formatLastSeen(status)}
           </p>
-        </div>
+        </button>
+        <Button variant="ghost" size="icon" onClick={() => setInfoOpen(true)} className="shrink-0">
+          <Info className="h-5 w-5" />
+        </Button>
       </div>
 
       {/* Messages */}
