@@ -47,9 +47,44 @@ export const SupabaseChatWindow = ({ friendProfile, onBack }: SupabaseChatWindow
 
   const [text, setText] = useState("");
   const [uploading, setUploading] = useState(false);
+  const [infoOpen, setInfoOpen] = useState(false);
+  const [viewerOpen, setViewerOpen] = useState(false);
+  const [viewerStartId, setViewerStartId] = useState<string | undefined>();
+  const [clearedAt, setClearedAt] = useState<string | null>(() =>
+    conversationId && user?.id ? localStorage.getItem(`chat_cleared_${conversationId}_${user.id}`) : null
+  );
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const typingTimeoutRef = useRef<number | null>(null);
+
+  // Re-read cleared timestamp when chat changes
+  useEffect(() => {
+    if (!conversationId || !user?.id) return;
+    setClearedAt(localStorage.getItem(`chat_cleared_${conversationId}_${user.id}`));
+  }, [conversationId, user?.id]);
+
+  // Filter out cleared messages
+  const visibleMessages = useMemo(() => {
+    if (!clearedAt) return messages;
+    const t = new Date(clearedAt).getTime();
+    return messages.filter((m) => new Date(m.created_at).getTime() > t);
+  }, [messages, clearedAt]);
+
+  const messageIds = useMemo(() => visibleMessages.map((m) => m.id), [visibleMessages]);
+  const { byMsg: reactionsByMsg, react } = useMessageReactions(messageIds);
+
+  const mediaItems: ViewerItem[] = useMemo(
+    () =>
+      visibleMessages
+        .filter((m) => m.media_url && (m.media_type === "image" || m.media_type === "video"))
+        .map((m) => ({ id: m.id, url: m.media_url!, type: m.media_type as "image" | "video" })),
+    [visibleMessages]
+  );
+
+  const openViewer = (id: string) => {
+    setViewerStartId(id);
+    setViewerOpen(true);
+  };
 
   useEffect(() => {
     if (scrollRef.current) {
