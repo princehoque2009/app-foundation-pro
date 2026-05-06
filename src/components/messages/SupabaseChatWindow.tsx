@@ -123,7 +123,7 @@ export const SupabaseChatWindow = ({ friendProfile, onBack }: SupabaseChatWindow
               <AvatarFallback>{friendProfile.display_name?.[0] || friendProfile.username?.[0]}</AvatarFallback>
             </Avatar>
           </div>
-          {status?.is_online && (
+          {online && (
             <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full bg-green-500 border-2 border-card" />
           )}
         </div>
