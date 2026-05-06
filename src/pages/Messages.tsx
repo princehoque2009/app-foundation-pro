@@ -192,7 +192,7 @@ const Messages = () => {
               ) : filteredFriends.length > 0 ? (
                 filteredFriends.map((friend) => {
                   const preview = previews[friend.id];
-                  const isOnline = presenceMap[friend.id]?.is_online;
+                  const isOnline = isUserOnline(presenceMap[friend.id]);
                   const hasUnread = preview?.unreadCount && preview.unreadCount > 0;
 
                   return (
