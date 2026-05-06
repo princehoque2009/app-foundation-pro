@@ -15,7 +15,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { MessageCircle, Search, Users, UserCircle, Plus, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useChatPreviews } from "@/hooks/useChat";
-import { usePresence, useSelfPresence } from "@/hooks/usePresence";
+import { usePresence, useSelfPresence, isUserOnline } from "@/hooks/usePresence";
 
 interface Profile {
   id: string;
