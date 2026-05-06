@@ -117,9 +117,18 @@ export const usePresence = (userIds: string[]) => {
   return statuses;
 };
 
+// Anything older than this with is_online=true is treated as a ghost (e.g. tab crashed)
+const ONLINE_STALE_MS = 90_000;
+
+export const isUserOnline = (status?: PresenceStatus) => {
+  if (!status?.is_online) return false;
+  if (!status.last_seen) return false;
+  return Date.now() - new Date(status.last_seen).getTime() < ONLINE_STALE_MS;
+};
+
 export const formatLastSeen = (status?: PresenceStatus) => {
   if (!status) return "Offline";
-  if (status.is_online) return "Active now";
+  if (isUserOnline(status)) return "Active now";
   if (!status.last_seen) return "Offline";
   const diff = Date.now() - new Date(status.last_seen).getTime();
   const m = Math.floor(diff / 60000);
