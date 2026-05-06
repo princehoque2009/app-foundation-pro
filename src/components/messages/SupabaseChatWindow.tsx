@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useChat, useDirectConversation } from "@/hooks/useChat";
-import { usePresence, formatLastSeen, setTypingStatus } from "@/hooks/usePresence";
+import { usePresence, formatLastSeen, setTypingStatus, isUserOnline } from "@/hooks/usePresence";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
