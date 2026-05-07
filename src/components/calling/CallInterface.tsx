@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
-import { useWebRTC, CallStatus } from "@/hooks/useWebRTC";
+import type { CallStatus } from "@/hooks/useWebRTC";
+import { useCall } from "@/contexts/CallContext";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -52,7 +53,7 @@ export const CallInterface = ({ profile }: CallInterfaceProps) => {
     hangUp,
     toggleAudio,
     toggleVideo,
-  } = useWebRTC();
+  } = useCall();
 
   const localVideoRef = useRef<HTMLVideoElement>(null);
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
