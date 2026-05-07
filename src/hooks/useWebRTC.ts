@@ -551,5 +551,6 @@ export const useWebRTC = () => {
     hangUp,
     toggleAudio,
     toggleVideo,
+    switchCamera,
   };
 };
