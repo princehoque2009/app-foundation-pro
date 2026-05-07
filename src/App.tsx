@@ -13,6 +13,7 @@ import { FeatureGate } from "@/components/layout/FeatureGate";
 import { SplashScreen } from "@/components/SplashScreen";
 import { useSessionTimeout } from "@/hooks/useSessionTimeout";
 import { OnboardingSlides } from "@/components/onboarding/OnboardingSlides";
+import { CallProvider } from "@/contexts/CallContext";
 
 // Core pages loaded eagerly to prevent blank screen flashes on tab switch
 import Home from "./pages/Home";
@@ -104,6 +105,7 @@ const App = () => {
               <SessionManager />
               <AppSettingsProvider>
                 <RolesProvider>
+                  <CallProvider>
                   <Suspense fallback={<div className="min-h-screen bg-background" />}>
                     <Routes>
                     <Route path="/auth" element={<Auth />} />
@@ -144,6 +146,7 @@ const App = () => {
                     <Route path="*" element={<NotFound />} />
                     </Routes>
                   </Suspense>
+                  </CallProvider>
                 </RolesProvider>
               </AppSettingsProvider>
             </AuthProvider>

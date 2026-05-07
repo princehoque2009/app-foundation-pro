@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
-import { useWebRTC, CallStatus } from "@/hooks/useWebRTC";
+import type { CallStatus } from "@/hooks/useWebRTC";
+import { useCall } from "@/contexts/CallContext";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -52,7 +53,8 @@ export const CallInterface = ({ profile }: CallInterfaceProps) => {
     hangUp,
     toggleAudio,
     toggleVideo,
-  } = useWebRTC();
+    switchCamera,
+  } = useCall();
 
   const localVideoRef = useRef<HTMLVideoElement>(null);
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
@@ -457,6 +459,16 @@ export const CallInterface = ({ profile }: CallInterfaceProps) => {
                   onClick={handleToggleVideo}
                 >
                   {isVideoOff ? <VideoOff className="h-5 w-5" /> : <Video className="h-5 w-5" />}
+                </Button>
+
+                <Button
+                  variant="secondary"
+                  size="lg"
+                  className="h-12 w-12 rounded-full"
+                  onClick={switchCamera}
+                  title="Switch camera"
+                >
+                  ⇅
                 </Button>
 
                 <Button
