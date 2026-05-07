@@ -465,6 +465,16 @@ export const CallInterface = ({ profile }: CallInterfaceProps) => {
                   variant="secondary"
                   size="lg"
                   className="h-12 w-12 rounded-full"
+                  onClick={switchCamera}
+                  title="Switch camera"
+                >
+                  ⇅
+                </Button>
+
+                <Button
+                  variant="secondary"
+                  size="lg"
+                  className="h-12 w-12 rounded-full"
                   onClick={() => fileInputRef.current?.click()}
                   disabled={isUploadingMedia || callStatus !== "connected"}
                 >
