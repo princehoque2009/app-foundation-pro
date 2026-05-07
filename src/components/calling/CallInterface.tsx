@@ -53,6 +53,8 @@ export const CallInterface = ({ profile }: CallInterfaceProps) => {
     hangUp,
     toggleAudio,
     toggleVideo,
+    toggleVideo,
+    switchCamera,
   } = useCall();
 
   const localVideoRef = useRef<HTMLVideoElement>(null);
