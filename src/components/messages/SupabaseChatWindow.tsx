@@ -9,11 +9,12 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { VerifiedBadge } from "@/components/ui/VerifiedBadge";
-import { ArrowLeft, Send, Image as ImageIcon, Smile, Loader2, Check, CheckCheck, Info } from "lucide-react";
+import { ArrowLeft, Send, Image as ImageIcon, Smile, Loader2, Check, CheckCheck, Info, Phone, Video, PhoneMissed, PhoneOff } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format, isToday, isYesterday } from "date-fns";
 import { ChatInfoPanel } from "./ChatInfoPanel";
 import { FullscreenMediaViewer, type ViewerItem } from "./FullscreenMediaViewer";
+import { useCall } from "@/contexts/CallContext";
 
 const EMOJIS = ["😀", "😂", "❤️", "👍", "🔥", "🎉", "😢", "😮", "💯", "✨", "🙌", "👏"];
 
@@ -44,6 +45,12 @@ export const SupabaseChatWindow = ({ friendProfile, onBack }: SupabaseChatWindow
   const presence = usePresence([friendProfile.id]);
   const status = presence[friendProfile.id];
   const online = isUserOnline(status);
+  const { startAudioCall, startVideoCall, setCallProfile } = useCall();
+
+  // Keep call UI synced with current friend profile
+  useEffect(() => {
+    setCallProfile(friendProfile);
+  }, [friendProfile.id]);
 
   const [text, setText] = useState("");
   const [uploading, setUploading] = useState(false);
