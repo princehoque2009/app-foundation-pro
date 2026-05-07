@@ -186,6 +186,24 @@ export const SupabaseChatWindow = ({ friendProfile, onBack }: SupabaseChatWindow
             {isFriendTyping ? "typing…" : formatLastSeen(status)}
           </p>
         </button>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => startAudioCall(friendProfile.id, conversationId)}
+          className="shrink-0"
+          aria-label="Audio call"
+        >
+          <Phone className="h-5 w-5" />
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => startVideoCall(friendProfile.id, conversationId)}
+          className="shrink-0"
+          aria-label="Video call"
+        >
+          <Video className="h-5 w-5" />
+        </Button>
         <Button variant="ghost" size="icon" onClick={() => setInfoOpen(true)} className="shrink-0">
           <Info className="h-5 w-5" />
         </Button>
