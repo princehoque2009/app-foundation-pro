@@ -472,6 +472,9 @@ export const useWebRTC = () => {
     } catch (err) {
       console.error("[WebRTC] switchCamera failed", err);
     }
+  }, []);
+
+  // Start duration timer
   const startDurationTimer = () => {
     if (callStartTimeRef.current) return; // Already started
     
