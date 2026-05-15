@@ -448,6 +448,32 @@ export const useWebRTC = () => {
     return true;
   }, [localStream]);
 
+  // Switch front/back camera (mobile)
+  const switchCamera = useCallback(async () => {
+    const pc = peerConnectionRef.current;
+    const stream = localStreamRef.current;
+    if (!pc || !stream) return;
+    const currentVideo = stream.getVideoTracks()[0];
+    if (!currentVideo) return;
+    const currentFacing = (currentVideo.getSettings().facingMode as string) || "user";
+    const newFacing = currentFacing === "user" ? "environment" : "user";
+    try {
+      const newStream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { ideal: newFacing }, width: { ideal: 1280 }, height: { ideal: 720 } },
+        audio: false,
+      });
+      const newTrack = newStream.getVideoTracks()[0];
+      const sender = pc.getSenders().find((s) => s.track?.kind === "video");
+      if (sender) await sender.replaceTrack(newTrack);
+      stream.removeTrack(currentVideo);
+      currentVideo.stop();
+      stream.addTrack(newTrack);
+      setLocalStream(new MediaStream(stream.getTracks()));
+    } catch (err) {
+      console.error("[WebRTC] switchCamera failed", err);
+    }
+  }, []);
+
   // Start duration timer
   const startDurationTimer = () => {
     if (callStartTimeRef.current) return; // Already started
@@ -525,5 +551,6 @@ export const useWebRTC = () => {
     hangUp,
     toggleAudio,
     toggleVideo,
+    switchCamera,
   };
 };

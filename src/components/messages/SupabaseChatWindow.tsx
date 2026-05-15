@@ -9,11 +9,12 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { VerifiedBadge } from "@/components/ui/VerifiedBadge";
-import { ArrowLeft, Send, Image as ImageIcon, Smile, Loader2, Check, CheckCheck, Info } from "lucide-react";
+import { ArrowLeft, Send, Image as ImageIcon, Smile, Loader2, Check, CheckCheck, Info, Phone, Video, PhoneMissed, PhoneOff } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format, isToday, isYesterday } from "date-fns";
 import { ChatInfoPanel } from "./ChatInfoPanel";
 import { FullscreenMediaViewer, type ViewerItem } from "./FullscreenMediaViewer";
+import { useCall } from "@/contexts/CallContext";
 
 const EMOJIS = ["😀", "😂", "❤️", "👍", "🔥", "🎉", "😢", "😮", "💯", "✨", "🙌", "👏"];
 
@@ -44,6 +45,12 @@ export const SupabaseChatWindow = ({ friendProfile, onBack }: SupabaseChatWindow
   const presence = usePresence([friendProfile.id]);
   const status = presence[friendProfile.id];
   const online = isUserOnline(status);
+  const { startAudioCall, startVideoCall, setCallProfile } = useCall();
+
+  // Keep call UI synced with current friend profile
+  useEffect(() => {
+    setCallProfile(friendProfile);
+  }, [friendProfile.id]);
 
   const [text, setText] = useState("");
   const [uploading, setUploading] = useState(false);
@@ -179,6 +186,24 @@ export const SupabaseChatWindow = ({ friendProfile, onBack }: SupabaseChatWindow
             {isFriendTyping ? "typing…" : formatLastSeen(status)}
           </p>
         </button>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => startAudioCall(friendProfile.id, conversationId)}
+          className="shrink-0"
+          aria-label="Audio call"
+        >
+          <Phone className="h-5 w-5" />
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => startVideoCall(friendProfile.id, conversationId)}
+          className="shrink-0"
+          aria-label="Video call"
+        >
+          <Video className="h-5 w-5" />
+        </Button>
         <Button variant="ghost" size="icon" onClick={() => setInfoOpen(true)} className="shrink-0">
           <Info className="h-5 w-5" />
         </Button>
@@ -207,11 +232,40 @@ export const SupabaseChatWindow = ({ friendProfile, onBack }: SupabaseChatWindow
           ) : (
             visibleMessages.map((m, i) => {
               const isOwn = m.sender_id === user?.id;
+
+              // Call log system bubble
+              if (m.message_type === "call_log") {
+                const isVideo = m.call_type === "video";
+                const Icon = m.call_status === "missed" || m.call_status === "declined" ? PhoneMissed : isVideo ? Video : Phone;
+                const label =
+                  m.call_status === "missed" ? (isOwn ? `Unanswered ${isVideo ? "video " : ""}call` : `Missed ${isVideo ? "video " : ""}call`) :
+                  m.call_status === "declined" ? `${isVideo ? "Video c" : "C"}all declined` :
+                  m.call_status === "started" ? `${isOwn ? "You started" : "Started"} a ${isVideo ? "video " : ""}call` :
+                  `${isVideo ? "Video c" : "C"}all ended`;
+                const dur = m.call_duration ? ` · ${Math.floor(m.call_duration / 60)}:${String(m.call_duration % 60).padStart(2, "0")}` : "";
+                const isError = m.call_status === "missed" || m.call_status === "declined";
+                return (
+                  <div key={m.id} className="flex justify-center my-2">
+                    <button
+                      onClick={() => isVideo ? startVideoCall(friendProfile.id, conversationId) : startAudioCall(friendProfile.id, conversationId)}
+                      className={cn(
+                        "inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium border bg-card hover:bg-accent transition",
+                        isError ? "text-destructive border-destructive/30" : "text-muted-foreground"
+                      )}
+                    >
+                      <Icon className="h-3.5 w-3.5" />
+                      <span>{label}{dur}</span>
+                      <span className="opacity-60">· {format(new Date(m.created_at), "h:mm a")}</span>
+                    </button>
+                  </div>
+                );
+              }
+
               const prev = visibleMessages[i - 1];
               const next = visibleMessages[i + 1];
-              const sameAsPrev = prev?.sender_id === m.sender_id &&
+              const sameAsPrev = prev?.sender_id === m.sender_id && prev?.message_type !== "call_log" &&
                 new Date(m.created_at).getTime() - new Date(prev.created_at).getTime() < 5 * 60_000;
-              const sameAsNext = next?.sender_id === m.sender_id &&
+              const sameAsNext = next?.sender_id === m.sender_id && next?.message_type !== "call_log" &&
                 new Date(next.created_at).getTime() - new Date(m.created_at).getTime() < 5 * 60_000;
               const isLast = !sameAsNext;
 

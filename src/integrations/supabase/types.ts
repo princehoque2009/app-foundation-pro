@@ -852,6 +852,9 @@ export type Database = {
       }
       messages: {
         Row: {
+          call_duration: number | null
+          call_status: string | null
+          call_type: string | null
           content: string | null
           conversation_id: string
           created_at: string
@@ -860,11 +863,15 @@ export type Database = {
           is_read: boolean | null
           media_type: string | null
           media_url: string | null
+          message_type: string
           reply_to_id: string | null
           reply_to_story_id: string | null
           sender_id: string
         }
         Insert: {
+          call_duration?: number | null
+          call_status?: string | null
+          call_type?: string | null
           content?: string | null
           conversation_id: string
           created_at?: string
@@ -873,11 +880,15 @@ export type Database = {
           is_read?: boolean | null
           media_type?: string | null
           media_url?: string | null
+          message_type?: string
           reply_to_id?: string | null
           reply_to_story_id?: string | null
           sender_id: string
         }
         Update: {
+          call_duration?: number | null
+          call_status?: string | null
+          call_type?: string | null
           content?: string | null
           conversation_id?: string
           created_at?: string
@@ -886,6 +897,7 @@ export type Database = {
           is_read?: boolean | null
           media_type?: string | null
           media_url?: string | null
+          message_type?: string
           reply_to_id?: string | null
           reply_to_story_id?: string | null
           sender_id?: string
