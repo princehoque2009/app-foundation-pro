@@ -14,6 +14,7 @@ import { cn } from "@/lib/utils";
 import { format, isToday, isYesterday } from "date-fns";
 import { ChatInfoPanel } from "./ChatInfoPanel";
 import { FullscreenMediaViewer, type ViewerItem } from "./FullscreenMediaViewer";
+import { VoiceRecorder } from "./VoiceRecorder";
 import { useCall } from "@/contexts/CallContext";
 
 const EMOJIS = ["😀", "😂", "❤️", "👍", "🔥", "🎉", "😢", "😮", "💯", "✨", "🙌", "👏"];
