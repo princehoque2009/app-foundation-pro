@@ -105,6 +105,7 @@ const App = () => {
           <BrowserRouter>
             <AuthProvider>
               <SessionManager />
+              <NotificationsManager />
               <AppSettingsProvider>
                 <RolesProvider>
                   <CallProvider>
