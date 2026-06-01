@@ -227,11 +227,23 @@ export const useWebRTC = () => {
       setIsConnecting(true);
       pendingCandidatesRef.current = [];
 
+      // FORCE UI to appear instantly with a provisional call object
+      const provisionalId = `call_${Date.now()}_${user.id}`;
+      setCurrentCall({
+        id: provisionalId,
+        callerId: user.id,
+        receiverId,
+        type,
+        status: "ringing",
+        timestamp: Date.now(),
+      });
+      setCallStatus("calling");
+
       try {
-        // Generate call ID first
-        const tempCallId = `call_${Date.now()}_${user.id}`;
+        const tempCallId = provisionalId;
         
         const pc = await initializePeerConnection(type, tempCallId);
+
         
         // Create offer with proper constraints
         const offerOptions: RTCOfferOptions = {

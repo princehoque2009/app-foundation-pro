@@ -36,6 +36,8 @@ const queryClient = new QueryClient({
 });
 
 const SessionManager = () => { useSessionTimeout(); return null; };
+import { useBrowserNotifications } from "@/hooks/useBrowserNotifications";
+const NotificationsManager = () => { useBrowserNotifications(); return null; };
 
 // Secondary pages stay lazy
 const Create = lazy(() => import("./pages/Create"));
@@ -103,6 +105,7 @@ const App = () => {
           <BrowserRouter>
             <AuthProvider>
               <SessionManager />
+              <NotificationsManager />
               <AppSettingsProvider>
                 <RolesProvider>
                   <CallProvider>
