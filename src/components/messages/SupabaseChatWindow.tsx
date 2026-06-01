@@ -458,16 +458,25 @@ export const SupabaseChatWindow = ({ friendProfile, onBack }: SupabaseChatWindow
               <Send className="h-4 w-4" />
             </Button>
           ) : (
-            <Button
-              onClick={() => fileInputRef.current?.click()}
-              variant="ghost"
-              size="icon"
-              className="h-9 w-9 rounded-full shrink-0"
-              disabled={uploading}
-            >
-              {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ImageIcon className="h-5 w-5" />}
-            </Button>
+            <>
+              <Button
+                onClick={() => fileInputRef.current?.click()}
+                variant="ghost"
+                size="icon"
+                className="h-9 w-9 rounded-full shrink-0"
+                disabled={uploading}
+              >
+                {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ImageIcon className="h-5 w-5" />}
+              </Button>
+              <VoiceRecorder
+                onSend={async (blob) => {
+                  const file = new File([blob], `voice_${Date.now()}.webm`, { type: "audio/webm" });
+                  await sendMedia(file);
+                }}
+              />
+            </>
           )}
+
         </div>
       </div>
 
