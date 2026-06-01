@@ -1,14 +1,7 @@
-import { rtdb } from "@/lib/firebase";
-import {
-  ref,
-  push,
-  set,
-  get,
-  update,
-  onValue,
-  off,
-  remove,
-} from "firebase/database";
+// Calling signaling over Supabase Realtime (replaces Firebase RTDB which was permission-denied).
+// Uses broadcast channels per-user (for ringing) and per-call (for offer/answer/ICE exchange).
+import { supabase } from "@/integrations/supabase/client";
+import type { RealtimeChannel } from "@supabase/supabase-js";
 
 export interface Call {
   id?: string;
@@ -28,217 +21,173 @@ export interface IceCandidate {
   sdpMLineIndex: number | null;
 }
 
-// ICE servers for WebRTC
 export const iceServers: RTCConfiguration = {
   iceServers: [
     { urls: "stun:stun.l.google.com:19302" },
     { urls: "stun:stun1.l.google.com:19302" },
     { urls: "stun:stun2.l.google.com:19302" },
+    { urls: "stun:stun3.l.google.com:19302" },
+    { urls: "stun:stun4.l.google.com:19302" },
   ],
 };
 
-// Start a call
+/* ---------------- channel registry ---------------- */
+const callChannels = new Map<string, RealtimeChannel>();
+const userChannels = new Map<string, RealtimeChannel>();
+const callMemory = new Map<string, Call>();
+
+const userChan = (userId: string) => `user-calls:${userId}`;
+const callChan = (callId: string) => `call:${callId}`;
+
+const ensureCallChannel = (callId: string): RealtimeChannel => {
+  let ch = callChannels.get(callId);
+  if (ch) return ch;
+  ch = supabase.channel(callChan(callId), { config: { broadcast: { self: false } } });
+  callChannels.set(callId, ch);
+  ch.subscribe();
+  return ch;
+};
+
+const ensureUserChannel = (userId: string): RealtimeChannel => {
+  let ch = userChannels.get(userId);
+  if (ch) return ch;
+  ch = supabase.channel(userChan(userId), { config: { broadcast: { self: false } } });
+  userChannels.set(userId, ch);
+  return ch;
+};
+
+/* ---------------- API ---------------- */
+
 export const startCall = async (
   callerId: string,
   receiverId: string,
   type: "audio" | "video",
   offer: RTCSessionDescriptionInit
 ): Promise<string> => {
-  // Check if receiver is busy
-  const receiverStatusRef = ref(rtdb, `status/${receiverId}`);
-  const statusSnapshot = await get(receiverStatusRef);
-  const status = statusSnapshot.val();
-  
-  if (status?.inCall) {
-    throw new Error("User is busy");
-  }
-  
-  const callsRef = ref(rtdb, "calls");
-  const newCallRef = push(callsRef);
-  
-  const call: Call = {
-    callerId,
-    receiverId,
-    type,
-    offer,
-    status: "ringing",
-    timestamp: Date.now(),
-  };
-  
-  await set(newCallRef, call);
-  
-  // Mark caller as in call
-  await update(ref(rtdb, `status/${callerId}`), { 
-    inCall: true,
-    callId: newCallRef.key 
+  const callId = `call_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
+  const call: Call = { id: callId, callerId, receiverId, type, offer, status: "ringing", timestamp: Date.now() };
+  callMemory.set(callId, call);
+
+  // Open the per-call channel
+  ensureCallChannel(callId);
+
+  // Notify receiver via their personal channel
+  const receiverCh = supabase.channel(userChan(receiverId));
+  await new Promise<void>((resolve) => {
+    receiverCh.subscribe((status) => {
+      if (status === "SUBSCRIBED") resolve();
+    });
+    setTimeout(() => resolve(), 1500);
   });
-  
-  console.log("[CallingService] Call started with ID:", newCallRef.key);
-  
-  return newCallRef.key!;
+  await receiverCh.send({ type: "broadcast", event: "incoming_call", payload: call });
+  supabase.removeChannel(receiverCh);
+
+  console.log("[CallingService] startCall sent ring to", receiverId, "callId", callId);
+  return callId;
 };
 
-// Accept a call
-export const acceptCall = async (
-  callId: string,
-  answer: RTCSessionDescriptionInit
-): Promise<void> => {
-  await update(ref(rtdb, `calls/${callId}`), {
-    answer,
-    status: "accepted",
-  });
-  
-  // Get call details to mark receiver as in call
-  const callRef = ref(rtdb, `calls/${callId}`);
-  const callSnapshot = await get(callRef);
-  const call = callSnapshot.val();
-  
-  if (call) {
-    await update(ref(rtdb, `status/${call.receiverId}`), { inCall: true });
+export const acceptCall = async (callId: string, answer: RTCSessionDescriptionInit): Promise<void> => {
+  const ch = ensureCallChannel(callId);
+  const stored = callMemory.get(callId);
+  if (stored) {
+    stored.answer = answer;
+    stored.status = "accepted";
   }
+  await ch.send({ type: "broadcast", event: "answer", payload: { callId, answer, status: "accepted" } });
 };
 
-// Reject a call
 export const rejectCall = async (callId: string): Promise<void> => {
-  const callRef = ref(rtdb, `calls/${callId}`);
-  const callSnapshot = await get(callRef);
-  const call = callSnapshot.val();
-  
-  await update(callRef, { status: "rejected" });
-  
-  // Clear in-call status
-  if (call) {
-    await update(ref(rtdb, `status/${call.callerId}`), { inCall: false });
-  }
+  const ch = ensureCallChannel(callId);
+  await ch.send({ type: "broadcast", event: "status", payload: { callId, status: "rejected" } });
+  const stored = callMemory.get(callId);
+  if (stored) stored.status = "rejected";
 };
 
-// End a call
 export const endCall = async (callId: string, duration?: number): Promise<void> => {
-  const callRef = ref(rtdb, `calls/${callId}`);
-  const callSnapshot = await get(callRef);
-  const call = callSnapshot.val();
-  
-  await update(callRef, { 
-    status: "ended",
-    ...(duration && { duration }),
-  });
-  
-  // Clear in-call status for both users
-  if (call) {
-    await update(ref(rtdb, `status/${call.callerId}`), { inCall: false });
-    await update(ref(rtdb, `status/${call.receiverId}`), { inCall: false });
+  const ch = ensureCallChannel(callId);
+  await ch.send({ type: "broadcast", event: "status", payload: { callId, status: "ended", duration } });
+  const stored = callMemory.get(callId);
+  if (stored) {
+    stored.status = "ended";
+    stored.duration = duration;
   }
-  
-  // Store in call history
-  if (call) {
-    await saveCallHistory(call.callerId, call.receiverId, call.type, duration || 0, "completed");
-    await saveCallHistory(call.receiverId, call.callerId, call.type, duration || 0, "completed");
-  }
+  // teardown
+  setTimeout(() => {
+    const c = callChannels.get(callId);
+    if (c) {
+      supabase.removeChannel(c);
+      callChannels.delete(callId);
+    }
+    callMemory.delete(callId);
+  }, 2000);
 };
 
-// Save call to history
-const saveCallHistory = async (
-  userId: string,
-  otherUserId: string,
-  type: "audio" | "video",
-  duration: number,
-  status: string
-) => {
-  const historyRef = ref(rtdb, `callHistory/${userId}`);
-  const newHistoryRef = push(historyRef);
-  
-  await set(newHistoryRef, {
-    otherUserId,
-    type,
-    duration,
-    status,
-    timestamp: Date.now(),
-  });
-};
-
-// Send ICE candidate
 export const sendIceCandidate = async (
   callId: string,
   senderId: string,
   candidate: RTCIceCandidate
 ): Promise<void> => {
-  const candidatesRef = ref(rtdb, `calls/${callId}/iceCandidates/${senderId}`);
-  const newCandidateRef = push(candidatesRef);
-  
-  await set(newCandidateRef, {
-    candidate: candidate.candidate,
-    sdpMid: candidate.sdpMid,
-    sdpMLineIndex: candidate.sdpMLineIndex,
+  const ch = ensureCallChannel(callId);
+  await ch.send({
+    type: "broadcast",
+    event: "ice",
+    payload: {
+      callId,
+      senderId,
+      candidate: { candidate: candidate.candidate, sdpMid: candidate.sdpMid, sdpMLineIndex: candidate.sdpMLineIndex },
+    },
   });
 };
 
-// Listen to call updates
-export const listenToCallUpdates = (
-  callId: string,
-  callback: (call: Call | null) => void
-): (() => void) => {
-  const callRef = ref(rtdb, `calls/${callId}`);
-  
-  const unsubscribe = onValue(callRef, (snapshot) => {
-    if (snapshot.exists()) {
-      callback({ id: snapshot.key, ...snapshot.val() });
-    } else {
-      callback(null);
-    }
-  });
-  
-  return () => off(callRef);
+export const listenToCallUpdates = (callId: string, callback: (call: Call | null) => void): (() => void) => {
+  const ch = ensureCallChannel(callId);
+  const handler = (payload: any) => {
+    const p = payload.payload;
+    const stored = callMemory.get(callId) || ({ id: callId } as Call);
+    const merged: Call = { ...stored, ...p, id: callId };
+    callMemory.set(callId, merged);
+    callback(merged);
+  };
+  ch.on("broadcast", { event: "answer" }, handler);
+  ch.on("broadcast", { event: "status" }, handler);
+  return () => {
+    // Channel removed by endCall
+  };
 };
 
-// Listen for incoming calls
 export const listenForIncomingCalls = (
   userId: string,
   callback: (call: Call | null) => void
 ): (() => void) => {
-  const callsRef = ref(rtdb, "calls");
-  
-  const unsubscribe = onValue(callsRef, (snapshot) => {
-    let incomingCall: Call | null = null;
-    
-    snapshot.forEach((child) => {
-      const call = child.val();
-      if (call.receiverId === userId && call.status === "ringing") {
-        incomingCall = { id: child.key, ...call };
-      }
-    });
-    
-    callback(incomingCall);
+  const ch = ensureUserChannel(userId);
+  ch.on("broadcast", { event: "incoming_call" }, (payload: any) => {
+    const call = payload.payload as Call;
+    callMemory.set(call.id!, call);
+    // Open per-call channel so we can receive ICE candidates from caller right away
+    ensureCallChannel(call.id!);
+    callback(call);
   });
-  
-  return () => off(callsRef);
+  ch.subscribe();
+  return () => {
+    const c = userChannels.get(userId);
+    if (c) {
+      supabase.removeChannel(c);
+      userChannels.delete(userId);
+    }
+  };
 };
 
-// Listen to ICE candidates
 export const listenToIceCandidates = (
   callId: string,
   otherUserId: string,
   callback: (candidate: IceCandidate) => void
 ): (() => void) => {
-  const candidatesRef = ref(rtdb, `calls/${callId}/iceCandidates/${otherUserId}`);
-  
-  const unsubscribe = onValue(candidatesRef, (snapshot) => {
-    snapshot.forEach((child) => {
-      callback(child.val());
-    });
+  const ch = ensureCallChannel(callId);
+  ch.on("broadcast", { event: "ice" }, (payload: any) => {
+    const p = payload.payload;
+    if (p.senderId === otherUserId && p.candidate) {
+      callback(p.candidate);
+    }
   });
-  
-  return () => off(candidatesRef);
-};
-
-// Get call history
-export const getCallHistory = async (userId: string): Promise<any[]> => {
-  const historyRef = ref(rtdb, `callHistory/${userId}`);
-  const snapshot = await get(historyRef);
-  
-  const history: any[] = [];
-  snapshot.forEach((child) => {
-    history.push({ id: child.key, ...child.val() });
-  });
-  
-  return history.sort((a, b) => b.timestamp - a.timestamp);
+  return () => {};
 };
