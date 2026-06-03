@@ -100,28 +100,31 @@ export const CallInterface = ({ profile }: CallInterfaceProps) => {
     }
   }, [localStream]);
 
-  // Set up remote video/audio stream
+  // Set up remote video/audio stream — re-attach on every change
   useEffect(() => {
-    if (remoteStream) {
-      console.log("[CallInterface] Setting remote stream, tracks:", 
-        remoteStream.getTracks().map(t => `${t.kind}: ${t.enabled}`)
-      );
-      
-      if (remoteVideoRef.current && currentCall?.type === "video") {
-        remoteVideoRef.current.srcObject = remoteStream;
-        remoteVideoRef.current.play().catch(err => {
-          console.error("[CallInterface] Error playing remote video:", err);
-        });
-      }
-      
-      if (remoteAudioRef.current) {
-        remoteAudioRef.current.srcObject = remoteStream;
-        remoteAudioRef.current.play().catch(err => {
-          console.error("[CallInterface] Error playing remote audio:", err);
-        });
-      }
+    if (!remoteStream) return;
+    console.log(
+      "[CallInterface] Attaching remote stream, tracks:",
+      remoteStream.getTracks().map((t) => `${t.kind}:${t.enabled}`)
+    );
+
+    const vEl = remoteVideoRef.current;
+    if (vEl && currentCall?.type === "video") {
+      if (vEl.srcObject !== remoteStream) vEl.srcObject = remoteStream;
+      vEl.muted = false;
+      vEl.playsInline = true;
+      vEl.autoplay = true;
+      const p = vEl.play();
+      if (p && typeof p.catch === "function") p.catch((e) => console.warn("[CallInterface] remote video play failed", e));
     }
-  }, [remoteStream, currentCall?.type]);
+
+    const aEl = remoteAudioRef.current;
+    if (aEl) {
+      if (aEl.srcObject !== remoteStream) aEl.srcObject = remoteStream;
+      aEl.play().catch((e) => console.warn("[CallInterface] remote audio play failed", e));
+    }
+  }, [remoteStream, currentCall?.type, callStatus]);
+
 
   const formatDuration = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
