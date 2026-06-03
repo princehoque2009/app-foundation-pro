@@ -212,8 +212,9 @@ export const SupabaseChatWindow = ({ friendProfile, onBack }: SupabaseChatWindow
       </div>
 
       {/* Messages */}
-      <ScrollArea className="flex-1">
-        <div ref={scrollRef} className="p-4 space-y-1.5 min-h-full">
+      <ScrollArea className="flex-1 min-w-0">
+        <div ref={scrollRef} className="p-3 sm:p-4 space-y-1.5 min-h-full min-w-0">
+
           {(loading || convoLoading) && visibleMessages.length === 0 ? (
             <div className="flex items-center justify-center py-20">
               <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
