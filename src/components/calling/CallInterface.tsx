@@ -603,11 +603,9 @@ export const CallInterface = ({ profile }: CallInterfaceProps) => {
                   <PhoneOff className="h-7 w-7" />
                 </button>
               </div>
-
-                </div>
-              </div>
             </div>
           </div>
+
         )}
       </div>
     );
