@@ -559,60 +559,51 @@ export const CallInterface = ({ profile }: CallInterfaceProps) => {
               )}
             </div>
 
-            {/* Controls - fixed at bottom with safe padding */}
-            <div className="bg-background/95 backdrop-blur-sm border-t border-border px-4 py-6">
-              <div className="flex justify-center gap-4 max-w-md mx-auto">
-                <div className="flex flex-col items-center gap-1">
+            {/* Controls — mobile-optimised, prominent hangup */}
+            <div className="bg-background/95 backdrop-blur-sm border-t border-border px-4 py-5">
+              <div className="flex flex-col items-center gap-5 max-w-md mx-auto">
+                <div className="flex justify-center items-center gap-4 flex-wrap">
                   <Button
                     variant={isMuted ? "destructive" : "secondary"}
-                    size="lg"
-                    className="h-14 w-14 rounded-full"
+                    size="icon"
+                    className="h-13 w-13 h-12 w-12 rounded-full"
                     onClick={handleToggleAudio}
+                    aria-label={isMuted ? "Unmute" : "Mute"}
                   >
-                    {isMuted ? <MicOff className="h-6 w-6" /> : <Mic className="h-6 w-6" />}
+                    {isMuted ? <MicOff className="h-5 w-5" /> : <Mic className="h-5 w-5" />}
                   </Button>
-                  <span className="text-xs text-muted-foreground">
-                    {isMuted ? "Unmute" : "Mute"}
-                  </span>
-                </div>
 
-                <div className="flex flex-col items-center gap-1">
                   <Button
                     variant="secondary"
-                    size="lg"
-                    className="h-14 w-14 rounded-full"
+                    size="icon"
+                    className="h-12 w-12 rounded-full"
                     onClick={() => fileInputRef.current?.click()}
                     disabled={isUploadingMedia || callStatus !== "connected"}
+                    aria-label="Share media"
                   >
-                    <Image className="h-6 w-6" />
+                    <Image className="h-5 w-5" />
                   </Button>
-                  <span className="text-xs text-muted-foreground">Share</span>
-                </div>
 
-                <div className="flex flex-col items-center gap-1">
                   <Button
                     variant={isSpeakerOff ? "destructive" : "secondary"}
-                    size="lg"
-                    className="h-14 w-14 rounded-full"
+                    size="icon"
+                    className="h-12 w-12 rounded-full"
                     onClick={handleToggleSpeaker}
+                    aria-label="Toggle speaker"
                   >
-                    {isSpeakerOff ? <VolumeX className="h-6 w-6" /> : <Volume2 className="h-6 w-6" />}
+                    {isSpeakerOff ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
                   </Button>
-                  <span className="text-xs text-muted-foreground">
-                    {isSpeakerOff ? "Speaker Off" : "Speaker"}
-                  </span>
                 </div>
 
-                <div className="flex flex-col items-center gap-1">
-                  <Button
-                    variant="destructive"
-                    size="lg"
-                    className="h-14 w-14 rounded-full"
-                    onClick={hangUp}
-                  >
-                    <PhoneOff className="h-6 w-6" />
-                  </Button>
-                  <span className="text-xs text-muted-foreground">End</span>
+                <button
+                  onClick={hangUp}
+                  aria-label="End call"
+                  className="h-16 w-16 rounded-full bg-destructive text-destructive-foreground shadow-2xl shadow-destructive/40 flex items-center justify-center active:scale-95 transition-transform"
+                >
+                  <PhoneOff className="h-7 w-7" />
+                </button>
+              </div>
+
                 </div>
               </div>
             </div>
