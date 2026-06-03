@@ -280,14 +280,16 @@ export const SupabaseChatWindow = ({ friendProfile, onBack }: SupabaseChatWindow
               reactions.forEach((r) => { grouped[r.reaction] = (grouped[r.reaction] || 0) + 1; });
               const myReaction = reactions.find((r) => r.user_id === user?.id)?.reaction;
 
-              // Double-tap to heart
-              const lastTapRef = { current: 0 };
+              // Double-tap to heart (persisted via module-level map)
               const handleDoubleTap = () => {
                 const now = Date.now();
-                if (now - lastTapRef.current < 300) {
+                const last = lastTapMap.get(m.id) || 0;
+                if (now - last < 300) {
                   react(m.id, "❤️");
+                  lastTapMap.set(m.id, 0);
+                } else {
+                  lastTapMap.set(m.id, now);
                 }
-                lastTapRef.current = now;
               };
 
               return (
