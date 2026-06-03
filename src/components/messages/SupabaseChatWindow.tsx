@@ -18,6 +18,7 @@ import { VoiceRecorder } from "./VoiceRecorder";
 import { useCall } from "@/contexts/CallContext";
 
 const EMOJIS = ["😀", "😂", "❤️", "👍", "🔥", "🎉", "😢", "😮", "💯", "✨", "🙌", "👏"];
+const lastTapMap = new Map<string, number>();
 
 interface Profile {
   id: string;
@@ -154,7 +155,7 @@ export const SupabaseChatWindow = ({ friendProfile, onBack }: SupabaseChatWindow
   };
 
   return (
-    <div className="flex-1 flex flex-col h-full bg-background">
+    <div className="flex-1 flex flex-col h-full bg-background min-w-0 overflow-hidden">
       {/* Header */}
       <div className="sticky top-0 z-10 px-3 py-2.5 flex items-center gap-3 border-b bg-card/80 backdrop-blur-md">
         {onBack && (
@@ -211,8 +212,9 @@ export const SupabaseChatWindow = ({ friendProfile, onBack }: SupabaseChatWindow
       </div>
 
       {/* Messages */}
-      <ScrollArea className="flex-1">
-        <div ref={scrollRef} className="p-4 space-y-1.5 min-h-full">
+      <ScrollArea className="flex-1 min-w-0">
+        <div ref={scrollRef} className="p-3 sm:p-4 space-y-1.5 min-h-full min-w-0">
+
           {(loading || convoLoading) && visibleMessages.length === 0 ? (
             <div className="flex items-center justify-center py-20">
               <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
@@ -279,14 +281,26 @@ export const SupabaseChatWindow = ({ friendProfile, onBack }: SupabaseChatWindow
               reactions.forEach((r) => { grouped[r.reaction] = (grouped[r.reaction] || 0) + 1; });
               const myReaction = reactions.find((r) => r.user_id === user?.id)?.reaction;
 
+              // Double-tap to heart (persisted via module-level map)
+              const handleDoubleTap = () => {
+                const now = Date.now();
+                const last = lastTapMap.get(m.id) || 0;
+                if (now - last < 300) {
+                  react(m.id, "❤️");
+                  lastTapMap.set(m.id, 0);
+                } else {
+                  lastTapMap.set(m.id, now);
+                }
+              };
+
               return (
                 <div
                   key={m.id}
                   className={cn("flex w-full group", isOwn ? "justify-end" : "justify-start")}
                 >
-                  <div className={cn("max-w-[78%] flex flex-col", isOwn ? "items-end" : "items-start")}>
-                    <div className={cn("flex items-end gap-1", isOwn ? "flex-row-reverse" : "flex-row")}>
-                      <div className={cn("flex flex-col", isOwn ? "items-end" : "items-start")}>
+                  <div className={cn("max-w-[85%] sm:max-w-[78%] min-w-0 flex flex-col", isOwn ? "items-end" : "items-start")}>
+                    <div className={cn("flex items-end gap-1 min-w-0", isOwn ? "flex-row-reverse" : "flex-row")}>
+                      <div className={cn("flex flex-col min-w-0", isOwn ? "items-end" : "items-start")}>
                         {m.media_url && m.media_type === "image" && (
                           <button onClick={() => openViewer(m.id)}>
                             <img
@@ -305,10 +319,10 @@ export const SupabaseChatWindow = ({ friendProfile, onBack }: SupabaseChatWindow
                           />
                         )}
                         {m.media_url && m.media_type === "audio" && (
-                          <audio src={m.media_url} controls className="mb-0.5" />
+                          <audio src={m.media_url} controls className="mb-0.5 max-w-[240px]" />
                         )}
                         {m.content && (
-                          <div className={cn("flex flex-col", isOwn ? "items-end" : "items-start")}>
+                          <div className={cn("flex flex-col min-w-0", isOwn ? "items-end" : "items-start")}>
                             {m.reply_to_story_id && (
                               <div className={cn(
                                 "text-[11px] mb-1 px-2 py-1 rounded-full border",
@@ -318,19 +332,22 @@ export const SupabaseChatWindow = ({ friendProfile, onBack }: SupabaseChatWindow
                               </div>
                             )}
                             <div
+                              onClick={handleDoubleTap}
                               className={cn(
-                                "px-3.5 py-2 text-[15px] leading-snug break-words",
+                                "px-3.5 py-2 text-[15px] leading-snug whitespace-pre-wrap break-words overflow-wrap-anywhere select-none cursor-pointer",
                                 radius,
                                 isOwn
                                   ? "bg-coral-gradient text-white"
                                   : "bg-muted text-foreground"
                               )}
+                              style={{ wordBreak: "break-word", overflowWrap: "anywhere" }}
                             >
                               {m.content}
                             </div>
                           </div>
                         )}
                       </div>
+
 
                       <Popover>
                         <PopoverTrigger asChild>

@@ -100,28 +100,32 @@ export const CallInterface = ({ profile }: CallInterfaceProps) => {
     }
   }, [localStream]);
 
-  // Set up remote video/audio stream
+  // Set up remote video/audio stream — re-attach on every change
   useEffect(() => {
-    if (remoteStream) {
-      console.log("[CallInterface] Setting remote stream, tracks:", 
-        remoteStream.getTracks().map(t => `${t.kind}: ${t.enabled}`)
-      );
-      
-      if (remoteVideoRef.current && currentCall?.type === "video") {
-        remoteVideoRef.current.srcObject = remoteStream;
-        remoteVideoRef.current.play().catch(err => {
-          console.error("[CallInterface] Error playing remote video:", err);
-        });
-      }
-      
-      if (remoteAudioRef.current) {
-        remoteAudioRef.current.srcObject = remoteStream;
-        remoteAudioRef.current.play().catch(err => {
-          console.error("[CallInterface] Error playing remote audio:", err);
-        });
-      }
+    if (!remoteStream) return;
+    console.log(
+      "[CallInterface] Attaching remote stream, tracks:",
+      remoteStream.getTracks().map((t) => `${t.kind}:${t.enabled}`)
+    );
+
+    const vEl = remoteVideoRef.current;
+    if (vEl && currentCall?.type === "video") {
+      if (vEl.srcObject !== remoteStream) vEl.srcObject = remoteStream;
+      vEl.muted = false;
+      vEl.playsInline = true;
+      vEl.autoplay = true;
+      const p = vEl.play();
+      if (p && typeof p.catch === "function") p.catch((e) => console.warn("[CallInterface] remote video play failed", e));
     }
-  }, [remoteStream, currentCall?.type]);
+
+    const aEl = remoteAudioRef.current;
+    if (aEl && currentCall?.type !== "video") {
+      if (aEl.srcObject !== remoteStream) aEl.srcObject = remoteStream;
+      aEl.play().catch((e) => console.warn("[CallInterface] remote audio play failed", e));
+    }
+  }, [remoteStream, currentCall?.type, callStatus]);
+
+
 
   const formatDuration = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -440,75 +444,63 @@ export const CallInterface = ({ profile }: CallInterfaceProps) => {
               {showMediaPanel && <MediaPanel />}
             </div>
 
-            {/* Controls - fixed at bottom with safe padding */}
-            <div className="bg-background/95 backdrop-blur-sm border-t border-border px-4 py-4">
-              <div className="flex justify-center items-center gap-3 max-w-md mx-auto">
-                <Button
-                  variant={isMuted ? "destructive" : "secondary"}
-                  size="lg"
-                  className="h-12 w-12 rounded-full"
-                  onClick={handleToggleAudio}
-                >
-                  {isMuted ? <MicOff className="h-5 w-5" /> : <Mic className="h-5 w-5" />}
-                </Button>
+            {/* Controls - mobile-optimised, prominent hangup */}
+            <div className="bg-gradient-to-t from-black/70 to-transparent px-4 pt-8 pb-4 absolute bottom-0 left-0 right-0 z-20">
+              <div className="flex flex-col items-center gap-4 max-w-md mx-auto">
+                {/* Secondary controls */}
+                <div className="flex justify-center items-center gap-3 flex-wrap">
+                  <Button
+                    variant="secondary"
+                    size="icon"
+                    className={cn("h-12 w-12 rounded-full backdrop-blur-md", isMuted ? "bg-destructive text-destructive-foreground" : "bg-white/15 text-white hover:bg-white/25")}
+                    onClick={handleToggleAudio}
+                    aria-label={isMuted ? "Unmute" : "Mute"}
+                  >
+                    {isMuted ? <MicOff className="h-5 w-5" /> : <Mic className="h-5 w-5" />}
+                  </Button>
 
-                <Button
-                  variant={isVideoOff ? "destructive" : "secondary"}
-                  size="lg"
-                  className="h-12 w-12 rounded-full"
-                  onClick={handleToggleVideo}
-                >
-                  {isVideoOff ? <VideoOff className="h-5 w-5" /> : <Video className="h-5 w-5" />}
-                </Button>
+                  <Button
+                    variant="secondary"
+                    size="icon"
+                    className={cn("h-12 w-12 rounded-full backdrop-blur-md", isVideoOff ? "bg-destructive text-destructive-foreground" : "bg-white/15 text-white hover:bg-white/25")}
+                    onClick={handleToggleVideo}
+                    aria-label={isVideoOff ? "Turn on video" : "Turn off video"}
+                  >
+                    {isVideoOff ? <VideoOff className="h-5 w-5" /> : <Video className="h-5 w-5" />}
+                  </Button>
 
-                <Button
-                  variant="secondary"
-                  size="lg"
-                  className="h-12 w-12 rounded-full"
-                  onClick={switchCamera}
-                  title="Switch camera"
-                >
-                  ⇅
-                </Button>
+                  <Button
+                    variant="secondary"
+                    size="icon"
+                    className="h-12 w-12 rounded-full bg-white/15 text-white hover:bg-white/25 backdrop-blur-md"
+                    onClick={switchCamera}
+                    aria-label="Switch camera"
+                  >
+                    <Video className="h-5 w-5" />
+                  </Button>
 
-                <Button
-                  variant="secondary"
-                  size="lg"
-                  className="h-12 w-12 rounded-full"
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={isUploadingMedia || callStatus !== "connected"}
-                >
-                  <Image className="h-5 w-5" />
-                </Button>
+                  <Button
+                    variant="secondary"
+                    size="icon"
+                    className={cn("h-12 w-12 rounded-full backdrop-blur-md", isSpeakerOff ? "bg-destructive text-destructive-foreground" : "bg-white/15 text-white hover:bg-white/25")}
+                    onClick={handleToggleSpeaker}
+                    aria-label="Toggle speaker"
+                  >
+                    {isSpeakerOff ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
+                  </Button>
+                </div>
 
-                <Button
-                  variant="secondary"
-                  size="lg"
-                  className="h-12 w-12 rounded-full"
-                  onClick={() => setShowMediaPanel(!showMediaPanel)}
-                >
-                  <Paperclip className="h-5 w-5" />
-                </Button>
-
-                <Button
-                  variant={isSpeakerOff ? "destructive" : "secondary"}
-                  size="lg"
-                  className="h-12 w-12 rounded-full"
-                  onClick={handleToggleSpeaker}
-                >
-                  {isSpeakerOff ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
-                </Button>
-
-                <Button
-                  variant="destructive"
-                  size="lg"
-                  className="h-12 w-12 rounded-full"
+                {/* Prominent hang-up button */}
+                <button
                   onClick={hangUp}
+                  aria-label="End call"
+                  className="h-16 w-16 rounded-full bg-destructive text-destructive-foreground shadow-2xl shadow-destructive/40 flex items-center justify-center active:scale-95 transition-transform"
                 >
-                  <PhoneOff className="h-5 w-5" />
-                </Button>
+                  <PhoneOff className="h-7 w-7" />
+                </button>
               </div>
             </div>
+
           </div>
         ) : (
           // Audio call UI
@@ -567,64 +559,53 @@ export const CallInterface = ({ profile }: CallInterfaceProps) => {
               )}
             </div>
 
-            {/* Controls - fixed at bottom with safe padding */}
-            <div className="bg-background/95 backdrop-blur-sm border-t border-border px-4 py-6">
-              <div className="flex justify-center gap-4 max-w-md mx-auto">
-                <div className="flex flex-col items-center gap-1">
+            {/* Controls — mobile-optimised, prominent hangup */}
+            <div className="bg-background/95 backdrop-blur-sm border-t border-border px-4 py-5">
+              <div className="flex flex-col items-center gap-5 max-w-md mx-auto">
+                <div className="flex justify-center items-center gap-4 flex-wrap">
                   <Button
                     variant={isMuted ? "destructive" : "secondary"}
-                    size="lg"
-                    className="h-14 w-14 rounded-full"
+                    size="icon"
+                    className="h-13 w-13 h-12 w-12 rounded-full"
                     onClick={handleToggleAudio}
+                    aria-label={isMuted ? "Unmute" : "Mute"}
                   >
-                    {isMuted ? <MicOff className="h-6 w-6" /> : <Mic className="h-6 w-6" />}
+                    {isMuted ? <MicOff className="h-5 w-5" /> : <Mic className="h-5 w-5" />}
                   </Button>
-                  <span className="text-xs text-muted-foreground">
-                    {isMuted ? "Unmute" : "Mute"}
-                  </span>
-                </div>
 
-                <div className="flex flex-col items-center gap-1">
                   <Button
                     variant="secondary"
-                    size="lg"
-                    className="h-14 w-14 rounded-full"
+                    size="icon"
+                    className="h-12 w-12 rounded-full"
                     onClick={() => fileInputRef.current?.click()}
                     disabled={isUploadingMedia || callStatus !== "connected"}
+                    aria-label="Share media"
                   >
-                    <Image className="h-6 w-6" />
+                    <Image className="h-5 w-5" />
                   </Button>
-                  <span className="text-xs text-muted-foreground">Share</span>
-                </div>
 
-                <div className="flex flex-col items-center gap-1">
                   <Button
                     variant={isSpeakerOff ? "destructive" : "secondary"}
-                    size="lg"
-                    className="h-14 w-14 rounded-full"
+                    size="icon"
+                    className="h-12 w-12 rounded-full"
                     onClick={handleToggleSpeaker}
+                    aria-label="Toggle speaker"
                   >
-                    {isSpeakerOff ? <VolumeX className="h-6 w-6" /> : <Volume2 className="h-6 w-6" />}
+                    {isSpeakerOff ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
                   </Button>
-                  <span className="text-xs text-muted-foreground">
-                    {isSpeakerOff ? "Speaker Off" : "Speaker"}
-                  </span>
                 </div>
 
-                <div className="flex flex-col items-center gap-1">
-                  <Button
-                    variant="destructive"
-                    size="lg"
-                    className="h-14 w-14 rounded-full"
-                    onClick={hangUp}
-                  >
-                    <PhoneOff className="h-6 w-6" />
-                  </Button>
-                  <span className="text-xs text-muted-foreground">End</span>
-                </div>
+                <button
+                  onClick={hangUp}
+                  aria-label="End call"
+                  className="h-16 w-16 rounded-full bg-destructive text-destructive-foreground shadow-2xl shadow-destructive/40 flex items-center justify-center active:scale-95 transition-transform"
+                >
+                  <PhoneOff className="h-7 w-7" />
+                </button>
               </div>
             </div>
           </div>
+
         )}
       </div>
     );
