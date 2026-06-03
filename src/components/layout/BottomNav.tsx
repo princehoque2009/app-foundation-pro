@@ -1,7 +1,6 @@
-import { Home, Clapperboard, Plus, CircleDot, CircleUserRound, ImagePlus, Film, X } from "lucide-react";
+import { Home, Clapperboard, Plus, CircleDot, CircleUserRound } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
-import { useState } from "react";
+import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
 
 const ACTIVE = "#FF5A5F";
@@ -10,7 +9,6 @@ const INACTIVE = "#B0B0B0";
 export const BottomNav = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const [showCreate, setShowCreate] = useState(false);
   const { t } = useTranslation();
 
   const navItems = [
@@ -18,23 +16,6 @@ export const BottomNav = () => {
     { icon: Clapperboard, label: t("nav.reels"), path: "/reels" },
     { icon: CircleDot, label: t("nav.circles"), path: "/circles" },
     { icon: CircleUserRound, label: t("nav.profile"), path: "/profile" },
-  ];
-
-  const createOptions = [
-    {
-      icon: ImagePlus,
-      label: t("create.title"),
-      desc: t("create.addPhoto"),
-      path: "/create",
-      gradient: "from-[#FF5A5F] to-[#FF8A5C]",
-    },
-    {
-      icon: Film,
-      label: t("nav.reels"),
-      desc: t("create.addVideo"),
-      path: "/create",
-      gradient: "from-[#7C3AED] to-[#EC4899]",
-    },
   ];
 
   return (
