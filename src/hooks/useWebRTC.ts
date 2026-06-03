@@ -136,25 +136,27 @@ export const useWebRTC = () => {
 
     pc.ontrack = (event) => {
       console.log("[WebRTC] Received remote track:", event.track.kind, event.track.label);
-      
-      // Add track to remote stream
-      remoteMediaStream.addTrack(event.track);
-      
-      // Force state update
-      setRemoteStream(new MediaStream(remoteMediaStream.getTracks()));
-      
-      event.track.onended = () => {
-        console.log("[WebRTC] Remote track ended:", event.track.kind);
-      };
-      
-      event.track.onmute = () => {
-        console.log("[WebRTC] Remote track muted:", event.track.kind);
-      };
-      
-      event.track.onunmute = () => {
-        console.log("[WebRTC] Remote track unmuted:", event.track.kind);
-      };
+
+      // Prefer the event.streams[0] when present (keeps stable identity across track add)
+      const incoming = event.streams && event.streams[0];
+      if (incoming) {
+        incoming.getTracks().forEach((t) => {
+          if (!remoteMediaStream.getTracks().find((existing) => existing.id === t.id)) {
+            remoteMediaStream.addTrack(t);
+          }
+        });
+      } else if (!remoteMediaStream.getTracks().find((t) => t.id === event.track.id)) {
+        remoteMediaStream.addTrack(event.track);
+      }
+
+      // Trigger a render without replacing the stream object (keeps video.srcObject stable)
+      setRemoteStream(remoteMediaStream);
+
+      event.track.onended = () => console.log("[WebRTC] Remote track ended:", event.track.kind);
+      event.track.onmute = () => console.log("[WebRTC] Remote track muted:", event.track.kind);
+      event.track.onunmute = () => console.log("[WebRTC] Remote track unmuted:", event.track.kind);
     };
+
 
     // Handle ICE candidates
     pc.onicecandidate = async (event) => {
