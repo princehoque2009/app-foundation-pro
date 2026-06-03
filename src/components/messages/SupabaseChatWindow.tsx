@@ -279,14 +279,24 @@ export const SupabaseChatWindow = ({ friendProfile, onBack }: SupabaseChatWindow
               reactions.forEach((r) => { grouped[r.reaction] = (grouped[r.reaction] || 0) + 1; });
               const myReaction = reactions.find((r) => r.user_id === user?.id)?.reaction;
 
+              // Double-tap to heart
+              const lastTapRef = { current: 0 };
+              const handleDoubleTap = () => {
+                const now = Date.now();
+                if (now - lastTapRef.current < 300) {
+                  react(m.id, "❤️");
+                }
+                lastTapRef.current = now;
+              };
+
               return (
                 <div
                   key={m.id}
                   className={cn("flex w-full group", isOwn ? "justify-end" : "justify-start")}
                 >
-                  <div className={cn("max-w-[78%] flex flex-col", isOwn ? "items-end" : "items-start")}>
-                    <div className={cn("flex items-end gap-1", isOwn ? "flex-row-reverse" : "flex-row")}>
-                      <div className={cn("flex flex-col", isOwn ? "items-end" : "items-start")}>
+                  <div className={cn("max-w-[85%] sm:max-w-[78%] min-w-0 flex flex-col", isOwn ? "items-end" : "items-start")}>
+                    <div className={cn("flex items-end gap-1 min-w-0", isOwn ? "flex-row-reverse" : "flex-row")}>
+                      <div className={cn("flex flex-col min-w-0", isOwn ? "items-end" : "items-start")}>
                         {m.media_url && m.media_type === "image" && (
                           <button onClick={() => openViewer(m.id)}>
                             <img
@@ -305,10 +315,10 @@ export const SupabaseChatWindow = ({ friendProfile, onBack }: SupabaseChatWindow
                           />
                         )}
                         {m.media_url && m.media_type === "audio" && (
-                          <audio src={m.media_url} controls className="mb-0.5" />
+                          <audio src={m.media_url} controls className="mb-0.5 max-w-[240px]" />
                         )}
                         {m.content && (
-                          <div className={cn("flex flex-col", isOwn ? "items-end" : "items-start")}>
+                          <div className={cn("flex flex-col min-w-0", isOwn ? "items-end" : "items-start")}>
                             {m.reply_to_story_id && (
                               <div className={cn(
                                 "text-[11px] mb-1 px-2 py-1 rounded-full border",
@@ -318,19 +328,22 @@ export const SupabaseChatWindow = ({ friendProfile, onBack }: SupabaseChatWindow
                               </div>
                             )}
                             <div
+                              onClick={handleDoubleTap}
                               className={cn(
-                                "px-3.5 py-2 text-[15px] leading-snug break-words",
+                                "px-3.5 py-2 text-[15px] leading-snug whitespace-pre-wrap break-words overflow-wrap-anywhere select-none cursor-pointer",
                                 radius,
                                 isOwn
                                   ? "bg-coral-gradient text-white"
                                   : "bg-muted text-foreground"
                               )}
+                              style={{ wordBreak: "break-word", overflowWrap: "anywhere" }}
                             >
                               {m.content}
                             </div>
                           </div>
                         )}
                       </div>
+
 
                       <Popover>
                         <PopoverTrigger asChild>
