@@ -119,11 +119,12 @@ export const CallInterface = ({ profile }: CallInterfaceProps) => {
     }
 
     const aEl = remoteAudioRef.current;
-    if (aEl) {
+    if (aEl && currentCall?.type !== "video") {
       if (aEl.srcObject !== remoteStream) aEl.srcObject = remoteStream;
       aEl.play().catch((e) => console.warn("[CallInterface] remote audio play failed", e));
     }
   }, [remoteStream, currentCall?.type, callStatus]);
+
 
 
   const formatDuration = (seconds: number) => {
