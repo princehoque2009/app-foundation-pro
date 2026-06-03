@@ -18,6 +18,7 @@ import { VoiceRecorder } from "./VoiceRecorder";
 import { useCall } from "@/contexts/CallContext";
 
 const EMOJIS = ["😀", "😂", "❤️", "👍", "🔥", "🎉", "😢", "😮", "💯", "✨", "🙌", "👏"];
+const lastTapMap = new Map<string, number>();
 
 interface Profile {
   id: string;
