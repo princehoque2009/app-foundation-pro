@@ -9,13 +9,16 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { VerifiedBadge } from "@/components/ui/VerifiedBadge";
-import { ArrowLeft, Send, Image as ImageIcon, Smile, Loader2, Check, CheckCheck, Info, Phone, Video, PhoneMissed, PhoneOff } from "lucide-react";
+import { ArrowLeft, Send, Image as ImageIcon, Smile, Loader2, Check, CheckCheck, Info, Phone, Video, PhoneMissed, Pin, PinOff, Palette, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format, isToday, isYesterday } from "date-fns";
 import { ChatInfoPanel } from "./ChatInfoPanel";
 import { FullscreenMediaViewer, type ViewerItem } from "./FullscreenMediaViewer";
 import { VoiceRecorder } from "./VoiceRecorder";
+import { VoiceMessagePlayer } from "./VoiceMessagePlayer";
 import { useCall } from "@/contexts/CallContext";
+import { useChatPreferences, usePinnedMessage, CHAT_THEMES, themeGradient } from "@/hooks/useChatPreferences";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 const EMOJIS = ["😀", "😂", "❤️", "👍", "🔥", "🎉", "😢", "😮", "💯", "✨", "🙌", "👏"];
 const lastTapMap = new Map<string, number>();
@@ -48,6 +51,17 @@ export const SupabaseChatWindow = ({ friendProfile, onBack }: SupabaseChatWindow
   const status = presence[friendProfile.id];
   const online = isUserOnline(status);
   const { startAudioCall, startVideoCall, setCallProfile } = useCall();
+  const { prefs, update: updatePrefs } = useChatPreferences(conversationId);
+  const { pinnedId, pin } = usePinnedMessage(conversationId);
+  const [customizeOpen, setCustomizeOpen] = useState(false);
+  const [nicknameDraft, setNicknameDraft] = useState("");
+
+  const displayName = prefs.nickname?.trim() || friendProfile.display_name || friendProfile.username;
+  const ownBubbleStyle = { background: themeGradient(prefs.theme) };
+
+  useEffect(() => {
+    setNicknameDraft(prefs.nickname || "");
+  }, [prefs.nickname]);
 
   // Keep call UI synced with current friend profile
   useEffect(() => {
