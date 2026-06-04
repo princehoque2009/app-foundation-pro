@@ -339,7 +339,8 @@ export const SupabaseChatWindow = ({ friendProfile, onBack }: SupabaseChatWindow
               return (
                 <div
                   key={m.id}
-                  className={cn("flex w-full group", isOwn ? "justify-end" : "justify-start")}
+                  id={`msg-${m.id}`}
+                  className={cn("flex w-full group rounded-xl transition-shadow", isOwn ? "justify-end" : "justify-start", pinnedId === m.id && "ring-1 ring-primary/40")}
                 >
                   <div className={cn("max-w-[85%] sm:max-w-[78%] min-w-0 flex flex-col", isOwn ? "items-end" : "items-start")}>
                     <div className={cn("flex items-end gap-1 min-w-0", isOwn ? "flex-row-reverse" : "flex-row")}>
@@ -362,7 +363,15 @@ export const SupabaseChatWindow = ({ friendProfile, onBack }: SupabaseChatWindow
                           />
                         )}
                         {m.media_url && m.media_type === "audio" && (
-                          <audio src={m.media_url} controls className="mb-0.5 max-w-[240px]" />
+                          <div className="mb-0.5" style={isOwn ? ownBubbleStyle : undefined}>
+                            {isOwn ? (
+                              <div className={cn(radius, "overflow-hidden")} style={ownBubbleStyle}>
+                                <VoiceMessagePlayer src={m.media_url} isOwn />
+                              </div>
+                            ) : (
+                              <VoiceMessagePlayer src={m.media_url} />
+                            )}
+                          </div>
                         )}
                         {m.content && (
                           <div className={cn("flex flex-col min-w-0", isOwn ? "items-end" : "items-start")}>
@@ -377,13 +386,11 @@ export const SupabaseChatWindow = ({ friendProfile, onBack }: SupabaseChatWindow
                             <div
                               onClick={handleDoubleTap}
                               className={cn(
-                                "px-3.5 py-2 text-[15px] leading-snug whitespace-pre-wrap break-words overflow-wrap-anywhere select-none cursor-pointer",
+                                "px-3.5 py-2 text-[15px] leading-snug whitespace-pre-wrap break-words overflow-wrap-anywhere select-none cursor-pointer shadow-sm",
                                 radius,
-                                isOwn
-                                  ? "bg-coral-gradient text-white"
-                                  : "bg-muted text-foreground"
+                                isOwn ? "text-white" : "bg-muted text-foreground"
                               )}
-                              style={{ wordBreak: "break-word", overflowWrap: "anywhere" }}
+                              style={{ wordBreak: "break-word", overflowWrap: "anywhere", ...(isOwn ? ownBubbleStyle : {}) }}
                             >
                               {m.content}
                             </div>
@@ -401,8 +408,8 @@ export const SupabaseChatWindow = ({ friendProfile, onBack }: SupabaseChatWindow
                             <Smile className="h-3.5 w-3.5" />
                           </button>
                         </PopoverTrigger>
-                        <PopoverContent side="top" className="w-auto p-1.5 rounded-full">
-                          <div className="flex gap-0.5">
+                        <PopoverContent side="top" className="w-auto p-1.5 rounded-2xl">
+                          <div className="flex items-center gap-0.5">
                             {REACTION_OPTIONS.map((e) => (
                               <button
                                 key={e}
@@ -415,6 +422,15 @@ export const SupabaseChatWindow = ({ friendProfile, onBack }: SupabaseChatWindow
                                 {e}
                               </button>
                             ))}
+                            <div className="w-px h-6 bg-border mx-1" />
+                            <button
+                              onClick={() => pin(pinnedId === m.id ? null : m.id)}
+                              className="h-9 w-9 rounded-full hover:bg-muted flex items-center justify-center"
+                              aria-label={pinnedId === m.id ? "Unpin" : "Pin"}
+                              title={pinnedId === m.id ? "Unpin message" : "Pin message"}
+                            >
+                              {pinnedId === m.id ? <PinOff className="h-4 w-4" /> : <Pin className="h-4 w-4" />}
+                            </button>
                           </div>
                         </PopoverContent>
                       </Popover>
