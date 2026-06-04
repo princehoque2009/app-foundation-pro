@@ -421,9 +421,6 @@
 
   .shadow-coral { box-shadow: var(--shadow-coral); }
 
-  .bg-coral-gradient {
-    background: var(--gradient-coral);
-  }
 
   /* Soft top-to-bottom page entrance, applied to <main> */
   .page-enter {
