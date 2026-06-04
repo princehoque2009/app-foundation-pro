@@ -18,9 +18,10 @@ export const TopHeader = () => {
   }, [conversations]);
 
   return (
-    <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-xl border-b border-border/50">
+    <header className="sticky top-0 z-40 glass border-b border-border/40">
       <div className="flex items-center justify-between h-14 px-4 max-w-screen-xl mx-auto">
-        <Link to="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
+        <Link to="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity active:scale-95">
+          <span className="absolute -inset-2 rounded-full bg-coral-gradient opacity-0 group-hover:opacity-10 blur-xl transition-opacity" />
           <img 
             src={prangonLogo} 
             alt="Prangon" 
