@@ -41,7 +41,7 @@
     --input: 0 0% 83%;
     --ring: 355 72.5322% 54.3137%;
 
-    --radius: 0.625rem;
+    --radius: 1rem;
 
     /* Prangon Theme Colors - Electric Coral #FF4F5A */
     --electric-coral: 355 100% 65%;
@@ -61,10 +61,11 @@
     --sidebar-accent-foreground: 0 0% 98%;
     --sidebar-border: 0 0% 83%;
     --sidebar-ring: 161 93% 30%;
-    --shadow-sm: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 1px 2px -1px hsl(0 0% 0% / 0.1);
-    --shadow: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 1px 2px -1px hsl(0 0% 0% / 0.1);
-    --shadow-md: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 2px 4px -1px hsl(0 0% 0% / 0.1);
-    --shadow-lg: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 4px 6px -1px hsl(0 0% 0% / 0.1);
+    --shadow-sm: 0 2px 6px -2px hsl(0 0% 0% / 0.06), 0 1px 2px hsl(0 0% 0% / 0.04);
+    --shadow: 0 4px 12px -3px hsl(0 0% 0% / 0.08), 0 2px 4px -1px hsl(0 0% 0% / 0.05);
+    --shadow-md: 0 8px 20px -6px hsl(0 0% 0% / 0.10), 0 3px 6px -2px hsl(0 0% 0% / 0.06);
+    --shadow-lg: 0 16px 40px -12px hsl(0 0% 0% / 0.14), 0 6px 12px -4px hsl(0 0% 0% / 0.08);
+    --shadow-coral: 0 10px 30px -6px hsl(355 100% 65% / 0.35), 0 4px 10px -2px hsl(355 100% 65% / 0.25);
     --chart-1: 0 84.127% 62.9412%;
     --chart-2: 0 69.0909% 56.8627%;
     --chart-3: 0 97.1831% 72.1569%;
@@ -131,11 +132,12 @@
     --sidebar-accent-foreground: 5 100% 75%;
     --sidebar-border: 0 0% 20%;
     --sidebar-ring: 5 100% 69%;
-    --radius: 0.625rem;
-    --shadow-sm: 0 1px 3px 0px hsl(0 0% 0% / 0.3), 0 1px 2px -1px hsl(0 0% 0% / 0.3);
-    --shadow: 0 1px 3px 0px hsl(0 0% 0% / 0.3), 0 1px 2px -1px hsl(0 0% 0% / 0.3);
-    --shadow-md: 0 1px 3px 0px hsl(0 0% 0% / 0.3), 0 2px 4px -1px hsl(0 0% 0% / 0.3);
-    --shadow-lg: 0 1px 3px 0px hsl(0 0% 0% / 0.3), 0 4px 6px -1px hsl(0 0% 0% / 0.3);
+    --radius: 1rem;
+    --shadow-sm: 0 2px 6px -2px hsl(0 0% 0% / 0.4), 0 1px 2px hsl(0 0% 0% / 0.3);
+    --shadow: 0 4px 12px -3px hsl(0 0% 0% / 0.45), 0 2px 4px -1px hsl(0 0% 0% / 0.3);
+    --shadow-md: 0 8px 20px -6px hsl(0 0% 0% / 0.5), 0 3px 6px -2px hsl(0 0% 0% / 0.35);
+    --shadow-lg: 0 16px 40px -12px hsl(0 0% 0% / 0.55), 0 6px 12px -4px hsl(0 0% 0% / 0.4);
+    --shadow-coral: 0 10px 30px -6px hsl(5 100% 69% / 0.45), 0 4px 10px -2px hsl(5 100% 69% / 0.3);
     --chart-1: 5 100% 69%;
     --chart-2: 15 100% 65%;
     --chart-3: 25 100% 70%;
@@ -403,9 +405,26 @@
 
   /* Glass morphism */
   .glass {
-    background: hsl(var(--background) / 0.8);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
+    background: hsl(var(--background) / 0.72);
+    backdrop-filter: blur(18px) saturate(180%);
+    -webkit-backdrop-filter: blur(18px) saturate(180%);
+    border: 1px solid hsl(var(--border) / 0.5);
+  }
+
+  .glass-card {
+    background: hsl(var(--card) / 0.85);
+    backdrop-filter: blur(20px) saturate(160%);
+    -webkit-backdrop-filter: blur(20px) saturate(160%);
+    border: 1px solid hsl(var(--border) / 0.6);
+    box-shadow: var(--shadow-md);
+  }
+
+  .shadow-coral { box-shadow: var(--shadow-coral); }
+
+
+  /* Soft top-to-bottom page entrance, applied to <main> */
+  .page-enter {
+    animation: pageEnter 0.35s cubic-bezier(0.22, 1, 0.36, 1);
   }
 
   /* Floating nav animation */

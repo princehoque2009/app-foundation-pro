@@ -9,13 +9,16 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { VerifiedBadge } from "@/components/ui/VerifiedBadge";
-import { ArrowLeft, Send, Image as ImageIcon, Smile, Loader2, Check, CheckCheck, Info, Phone, Video, PhoneMissed, PhoneOff } from "lucide-react";
+import { ArrowLeft, Send, Image as ImageIcon, Smile, Loader2, Check, CheckCheck, Info, Phone, Video, PhoneMissed, Pin, PinOff, Palette, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format, isToday, isYesterday } from "date-fns";
 import { ChatInfoPanel } from "./ChatInfoPanel";
 import { FullscreenMediaViewer, type ViewerItem } from "./FullscreenMediaViewer";
 import { VoiceRecorder } from "./VoiceRecorder";
+import { VoiceMessagePlayer } from "./VoiceMessagePlayer";
 import { useCall } from "@/contexts/CallContext";
+import { useChatPreferences, usePinnedMessage, CHAT_THEMES, themeGradient } from "@/hooks/useChatPreferences";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 const EMOJIS = ["😀", "😂", "❤️", "👍", "🔥", "🎉", "😢", "😮", "💯", "✨", "🙌", "👏"];
 const lastTapMap = new Map<string, number>();
@@ -48,6 +51,17 @@ export const SupabaseChatWindow = ({ friendProfile, onBack }: SupabaseChatWindow
   const status = presence[friendProfile.id];
   const online = isUserOnline(status);
   const { startAudioCall, startVideoCall, setCallProfile } = useCall();
+  const { prefs, update: updatePrefs } = useChatPreferences(conversationId);
+  const { pinnedId, pin } = usePinnedMessage(conversationId);
+  const [customizeOpen, setCustomizeOpen] = useState(false);
+  const [nicknameDraft, setNicknameDraft] = useState("");
+
+  const displayName = prefs.nickname?.trim() || friendProfile.display_name || friendProfile.username;
+  const ownBubbleStyle = { background: themeGradient(prefs.theme) };
+
+  useEffect(() => {
+    setNicknameDraft(prefs.nickname || "");
+  }, [prefs.nickname]);
 
   // Keep call UI synced with current friend profile
   useEffect(() => {
@@ -180,7 +194,7 @@ export const SupabaseChatWindow = ({ friendProfile, onBack }: SupabaseChatWindow
         >
           <div className="flex items-center gap-1">
             <h3 className="font-semibold text-[15px] truncate">
-              {friendProfile.display_name || friendProfile.username}
+              {displayName}
             </h3>
             {friendProfile.is_verified && <VerifiedBadge size="sm" />}
           </div>
@@ -206,10 +220,39 @@ export const SupabaseChatWindow = ({ friendProfile, onBack }: SupabaseChatWindow
         >
           <Video className="h-5 w-5" />
         </Button>
+        <Button variant="ghost" size="icon" onClick={() => setCustomizeOpen(true)} className="shrink-0" aria-label="Customize chat">
+          <Palette className="h-5 w-5" />
+        </Button>
         <Button variant="ghost" size="icon" onClick={() => setInfoOpen(true)} className="shrink-0">
           <Info className="h-5 w-5" />
         </Button>
       </div>
+
+      {/* Pinned message banner */}
+      {pinnedId && (() => {
+        const pm = visibleMessages.find((x) => x.id === pinnedId);
+        if (!pm) return null;
+        return (
+          <div className="flex items-center gap-2 px-3 py-2 bg-primary/10 border-b border-primary/20 text-xs">
+            <Pin className="h-3.5 w-3.5 text-primary shrink-0" />
+            <button
+              onClick={() => {
+                const el = document.getElementById(`msg-${pm.id}`);
+                el?.scrollIntoView({ behavior: "smooth", block: "center" });
+                el?.classList.add("ring-2", "ring-primary");
+                setTimeout(() => el?.classList.remove("ring-2", "ring-primary"), 1500);
+              }}
+              className="flex-1 min-w-0 text-left truncate font-medium"
+            >
+              <span className="text-primary mr-1">Pinned:</span>
+              {pm.content || (pm.media_type ? `Sent ${pm.media_type}` : "Message")}
+            </button>
+            <button onClick={() => pin(null)} className="shrink-0 text-muted-foreground hover:text-foreground" aria-label="Unpin">
+              <X className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        );
+      })()}
 
       {/* Messages */}
       <ScrollArea className="flex-1 min-w-0">
@@ -296,7 +339,8 @@ export const SupabaseChatWindow = ({ friendProfile, onBack }: SupabaseChatWindow
               return (
                 <div
                   key={m.id}
-                  className={cn("flex w-full group", isOwn ? "justify-end" : "justify-start")}
+                  id={`msg-${m.id}`}
+                  className={cn("flex w-full group rounded-xl transition-shadow", isOwn ? "justify-end" : "justify-start", pinnedId === m.id && "ring-1 ring-primary/40")}
                 >
                   <div className={cn("max-w-[85%] sm:max-w-[78%] min-w-0 flex flex-col", isOwn ? "items-end" : "items-start")}>
                     <div className={cn("flex items-end gap-1 min-w-0", isOwn ? "flex-row-reverse" : "flex-row")}>
@@ -319,7 +363,15 @@ export const SupabaseChatWindow = ({ friendProfile, onBack }: SupabaseChatWindow
                           />
                         )}
                         {m.media_url && m.media_type === "audio" && (
-                          <audio src={m.media_url} controls className="mb-0.5 max-w-[240px]" />
+                          <div className="mb-0.5" style={isOwn ? ownBubbleStyle : undefined}>
+                            {isOwn ? (
+                              <div className={cn(radius, "overflow-hidden")} style={ownBubbleStyle}>
+                                <VoiceMessagePlayer src={m.media_url} isOwn />
+                              </div>
+                            ) : (
+                              <VoiceMessagePlayer src={m.media_url} />
+                            )}
+                          </div>
                         )}
                         {m.content && (
                           <div className={cn("flex flex-col min-w-0", isOwn ? "items-end" : "items-start")}>
@@ -334,13 +386,11 @@ export const SupabaseChatWindow = ({ friendProfile, onBack }: SupabaseChatWindow
                             <div
                               onClick={handleDoubleTap}
                               className={cn(
-                                "px-3.5 py-2 text-[15px] leading-snug whitespace-pre-wrap break-words overflow-wrap-anywhere select-none cursor-pointer",
+                                "px-3.5 py-2 text-[15px] leading-snug whitespace-pre-wrap break-words overflow-wrap-anywhere select-none cursor-pointer shadow-sm",
                                 radius,
-                                isOwn
-                                  ? "bg-coral-gradient text-white"
-                                  : "bg-muted text-foreground"
+                                isOwn ? "text-white" : "bg-muted text-foreground"
                               )}
-                              style={{ wordBreak: "break-word", overflowWrap: "anywhere" }}
+                              style={{ wordBreak: "break-word", overflowWrap: "anywhere", ...(isOwn ? ownBubbleStyle : {}) }}
                             >
                               {m.content}
                             </div>
@@ -358,8 +408,8 @@ export const SupabaseChatWindow = ({ friendProfile, onBack }: SupabaseChatWindow
                             <Smile className="h-3.5 w-3.5" />
                           </button>
                         </PopoverTrigger>
-                        <PopoverContent side="top" className="w-auto p-1.5 rounded-full">
-                          <div className="flex gap-0.5">
+                        <PopoverContent side="top" className="w-auto p-1.5 rounded-2xl">
+                          <div className="flex items-center gap-0.5">
                             {REACTION_OPTIONS.map((e) => (
                               <button
                                 key={e}
@@ -372,6 +422,15 @@ export const SupabaseChatWindow = ({ friendProfile, onBack }: SupabaseChatWindow
                                 {e}
                               </button>
                             ))}
+                            <div className="w-px h-6 bg-border mx-1" />
+                            <button
+                              onClick={() => pin(pinnedId === m.id ? null : m.id)}
+                              className="h-9 w-9 rounded-full hover:bg-muted flex items-center justify-center"
+                              aria-label={pinnedId === m.id ? "Unpin" : "Pin"}
+                              title={pinnedId === m.id ? "Unpin message" : "Pin message"}
+                            >
+                              {pinnedId === m.id ? <PinOff className="h-4 w-4" /> : <Pin className="h-4 w-4" />}
+                            </button>
                           </div>
                         </PopoverContent>
                       </Popover>
@@ -516,6 +575,56 @@ export const SupabaseChatWindow = ({ friendProfile, onBack }: SupabaseChatWindow
         items={mediaItems}
         startId={viewerStartId}
       />
+
+      <Dialog open={customizeOpen} onOpenChange={setCustomizeOpen}>
+        <DialogContent className="max-w-sm rounded-3xl">
+          <DialogHeader>
+            <DialogTitle>Customize chat</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-5">
+            <div>
+              <label className="text-xs font-medium text-muted-foreground mb-2 block">
+                Nickname for {friendProfile.display_name || friendProfile.username}
+              </label>
+              <div className="flex gap-2">
+                <Input
+                  value={nicknameDraft}
+                  onChange={(e) => setNicknameDraft(e.target.value)}
+                  placeholder={friendProfile.display_name || friendProfile.username}
+                  maxLength={40}
+                  className="rounded-full"
+                />
+                <Button
+                  onClick={() => updatePrefs({ nickname: nicknameDraft.trim() || null })}
+                  className="rounded-full"
+                >
+                  Save
+                </Button>
+              </div>
+              <p className="text-[11px] text-muted-foreground mt-1">Only visible to you.</p>
+            </div>
+
+            <div>
+              <label className="text-xs font-medium text-muted-foreground mb-2 block">Bubble theme</label>
+              <div className="grid grid-cols-3 gap-2">
+                {CHAT_THEMES.map((t) => (
+                  <button
+                    key={t.id}
+                    onClick={() => updatePrefs({ theme: t.id })}
+                    className={cn(
+                      "h-14 rounded-2xl text-white text-xs font-semibold flex items-end justify-start p-2 transition-all",
+                      prefs.theme === t.id ? "ring-2 ring-foreground scale-[1.02]" : "hover:scale-[1.02]"
+                    )}
+                    style={{ background: t.gradient }}
+                  >
+                    {t.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

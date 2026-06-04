@@ -323,6 +323,36 @@ export type Database = {
         }
         Relationships: []
       }
+      chat_preferences: {
+        Row: {
+          conversation_id: string
+          created_at: string
+          id: string
+          nickname: string | null
+          theme: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          conversation_id: string
+          created_at?: string
+          id?: string
+          nickname?: string | null
+          theme?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          conversation_id?: string
+          created_at?: string
+          id?: string
+          nickname?: string | null
+          theme?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       circle_invitations: {
         Row: {
           circle_id: string
@@ -683,16 +713,19 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          pinned_message_id: string | null
           updated_at: string
         }
         Insert: {
           created_at?: string
           id?: string
+          pinned_message_id?: string | null
           updated_at?: string
         }
         Update: {
           created_at?: string
           id?: string
+          pinned_message_id?: string | null
           updated_at?: string
         }
         Relationships: []

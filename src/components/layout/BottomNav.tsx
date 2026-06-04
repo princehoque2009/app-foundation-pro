@@ -20,23 +20,25 @@ export const BottomNav = () => {
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 safe-area-bottom">
-      <div className="relative max-w-screen-xl mx-auto">
-        {/* Floating Create Button — direct nav to /create with coral gradient */}
-        <div className="absolute left-1/2 -translate-x-1/2 -top-6 z-10">
+      <div className="relative max-w-screen-xl mx-auto px-2 pb-2">
+        {/* Floating Create Button — coral gradient with glow */}
+        <div className="absolute left-1/2 -translate-x-1/2 -top-7 z-10">
           <motion.button
-            whileTap={{ scale: 0.9 }}
-            transition={{ type: "spring", stiffness: 300, damping: 20 }}
+            whileTap={{ scale: 0.88 }}
+            whileHover={{ scale: 1.05 }}
+            transition={{ type: "spring", stiffness: 320, damping: 18 }}
             onClick={() => navigate("/create")}
             aria-label="Create"
-            className="flex items-center justify-center w-[52px] h-[52px] rounded-full shadow-lg shadow-[#FF5A5F]/30 bg-coral-gradient"
+            className="relative flex items-center justify-center w-[58px] h-[58px] rounded-full bg-coral-gradient shadow-coral ring-4 ring-background"
           >
-            <Plus className="h-6 w-6 text-white" strokeWidth={2.5} />
+            <span className="absolute inset-0 rounded-full bg-coral-gradient blur-md opacity-50 -z-10" />
+            <Plus className="h-7 w-7 text-white" strokeWidth={2.6} />
           </motion.button>
         </div>
 
-        {/* Bar */}
-        <div className="bg-background rounded-t-[22px] shadow-[0_-2px_16px_rgba(0,0,0,0.06)] border-t border-border/30">
-          <div className="grid grid-cols-5 h-[66px] items-center">
+        {/* Glass Bar */}
+        <div className="glass-card rounded-3xl overflow-hidden">
+          <div className="grid grid-cols-5 h-[64px] items-center">
             {navItems.map(({ icon: Icon, label, path }, index) => {
               const isActive = location.pathname === path;
               const col = index >= 2 ? index + 1 : index;
