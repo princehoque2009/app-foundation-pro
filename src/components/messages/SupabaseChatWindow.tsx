@@ -575,6 +575,56 @@ export const SupabaseChatWindow = ({ friendProfile, onBack }: SupabaseChatWindow
         items={mediaItems}
         startId={viewerStartId}
       />
+
+      <Dialog open={customizeOpen} onOpenChange={setCustomizeOpen}>
+        <DialogContent className="max-w-sm rounded-3xl">
+          <DialogHeader>
+            <DialogTitle>Customize chat</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-5">
+            <div>
+              <label className="text-xs font-medium text-muted-foreground mb-2 block">
+                Nickname for {friendProfile.display_name || friendProfile.username}
+              </label>
+              <div className="flex gap-2">
+                <Input
+                  value={nicknameDraft}
+                  onChange={(e) => setNicknameDraft(e.target.value)}
+                  placeholder={friendProfile.display_name || friendProfile.username}
+                  maxLength={40}
+                  className="rounded-full"
+                />
+                <Button
+                  onClick={() => updatePrefs({ nickname: nicknameDraft.trim() || null })}
+                  className="rounded-full"
+                >
+                  Save
+                </Button>
+              </div>
+              <p className="text-[11px] text-muted-foreground mt-1">Only visible to you.</p>
+            </div>
+
+            <div>
+              <label className="text-xs font-medium text-muted-foreground mb-2 block">Bubble theme</label>
+              <div className="grid grid-cols-3 gap-2">
+                {CHAT_THEMES.map((t) => (
+                  <button
+                    key={t.id}
+                    onClick={() => updatePrefs({ theme: t.id })}
+                    className={cn(
+                      "h-14 rounded-2xl text-white text-xs font-semibold flex items-end justify-start p-2 transition-all",
+                      prefs.theme === t.id ? "ring-2 ring-foreground scale-[1.02]" : "hover:scale-[1.02]"
+                    )}
+                    style={{ background: t.gradient }}
+                  >
+                    {t.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
