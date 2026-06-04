@@ -194,7 +194,7 @@ export const SupabaseChatWindow = ({ friendProfile, onBack }: SupabaseChatWindow
         >
           <div className="flex items-center gap-1">
             <h3 className="font-semibold text-[15px] truncate">
-              {friendProfile.display_name || friendProfile.username}
+              {displayName}
             </h3>
             {friendProfile.is_verified && <VerifiedBadge size="sm" />}
           </div>
@@ -220,10 +220,39 @@ export const SupabaseChatWindow = ({ friendProfile, onBack }: SupabaseChatWindow
         >
           <Video className="h-5 w-5" />
         </Button>
+        <Button variant="ghost" size="icon" onClick={() => setCustomizeOpen(true)} className="shrink-0" aria-label="Customize chat">
+          <Palette className="h-5 w-5" />
+        </Button>
         <Button variant="ghost" size="icon" onClick={() => setInfoOpen(true)} className="shrink-0">
           <Info className="h-5 w-5" />
         </Button>
       </div>
+
+      {/* Pinned message banner */}
+      {pinnedId && (() => {
+        const pm = visibleMessages.find((x) => x.id === pinnedId);
+        if (!pm) return null;
+        return (
+          <div className="flex items-center gap-2 px-3 py-2 bg-primary/10 border-b border-primary/20 text-xs">
+            <Pin className="h-3.5 w-3.5 text-primary shrink-0" />
+            <button
+              onClick={() => {
+                const el = document.getElementById(`msg-${pm.id}`);
+                el?.scrollIntoView({ behavior: "smooth", block: "center" });
+                el?.classList.add("ring-2", "ring-primary");
+                setTimeout(() => el?.classList.remove("ring-2", "ring-primary"), 1500);
+              }}
+              className="flex-1 min-w-0 text-left truncate font-medium"
+            >
+              <span className="text-primary mr-1">Pinned:</span>
+              {pm.content || (pm.media_type ? `Sent ${pm.media_type}` : "Message")}
+            </button>
+            <button onClick={() => pin(null)} className="shrink-0 text-muted-foreground hover:text-foreground" aria-label="Unpin">
+              <X className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        );
+      })()}
 
       {/* Messages */}
       <ScrollArea className="flex-1 min-w-0">
