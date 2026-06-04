@@ -1,6 +1,7 @@
 import { ReactNode } from "react";
 import { TopHeader } from "./TopHeader";
 import { BottomNav } from "./BottomNav";
+import { cn } from "@/lib/utils";
 
 interface MainLayoutProps {
   children: ReactNode;
@@ -16,7 +17,7 @@ export const MainLayout = ({
   return (
     <div className="min-h-screen bg-background">
       {showHeader && <TopHeader />}
-      <main className={showBottomNav ? "pb-16" : ""}>
+      <main key={typeof window !== "undefined" ? window.location.pathname : ""} className={cn("page-enter", showBottomNav && "pb-20")}>
         {children}
       </main>
       {showBottomNav && <BottomNav />}
