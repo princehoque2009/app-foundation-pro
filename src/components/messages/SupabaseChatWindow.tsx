@@ -372,9 +372,33 @@ export const SupabaseChatWindow = ({ friendProfile, onBack }: SupabaseChatWindow
                 <div
                   key={m.id}
                   id={`msg-${m.id}`}
+                  onTouchStart={() => startLongPress(m)}
+                  onTouchEnd={cancelLongPress}
+                  onTouchMove={cancelLongPress}
+                  onTouchCancel={cancelLongPress}
+                  onContextMenu={(e) => { e.preventDefault(); setActionsTarget(m); }}
                   className={cn("flex w-full group rounded-xl transition-shadow", isOwn ? "justify-end" : "justify-start", pinnedId === m.id && "ring-1 ring-primary/40")}
                 >
                   <div className={cn("max-w-[85%] sm:max-w-[78%] min-w-0 flex flex-col", isOwn ? "items-end" : "items-start")}>
+                    {replyTarget && (
+                      <button
+                        onClick={() => {
+                          const el = document.getElementById(`msg-${replyTarget.id}`);
+                          el?.scrollIntoView({ behavior: "smooth", block: "center" });
+                        }}
+                        className={cn(
+                          "max-w-full mb-1 text-left px-3 py-1.5 rounded-2xl text-[12px] border-l-2 bg-muted/60 truncate",
+                          isOwn ? "border-primary" : "border-muted-foreground/40"
+                        )}
+                      >
+                        <span className="font-medium opacity-80">
+                          {replyTarget.sender_id === user?.id ? "You" : (friendProfile.display_name || friendProfile.username)}
+                        </span>
+                        <span className="opacity-70 ml-2 truncate">
+                          {replyTarget.content || (replyTarget.media_type ? `${replyTarget.media_type}` : "message")}
+                        </span>
+                      </button>
+                    )}
                     <div className={cn("flex items-end gap-1 min-w-0", isOwn ? "flex-row-reverse" : "flex-row")}>
                       <div className={cn("flex flex-col min-w-0", isOwn ? "items-end" : "items-start")}>
                         {m.media_url && m.media_type === "image" && (
