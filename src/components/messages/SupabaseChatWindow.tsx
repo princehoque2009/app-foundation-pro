@@ -50,22 +50,18 @@ const formatBubbleTime = (iso: string) => {
 export const SupabaseChatWindow = ({ friendProfile, onBack }: SupabaseChatWindowProps) => {
   const { user } = useAuth();
   const { conversationId, loading: convoLoading } = useDirectConversation(friendProfile.id);
-  const { messages, loading, sendText, sendMedia } = useChat(conversationId);
+  const { messages, loading, sendText, sendMedia, deleteMessage, forwardMessage } = useChat(conversationId);
   const presence = usePresence([friendProfile.id]);
   const status = presence[friendProfile.id];
   const online = isUserOnline(status);
   const { startAudioCall, startVideoCall, setCallProfile } = useCall();
-  const { prefs, update: updatePrefs } = useChatPreferences(conversationId);
+  const { prefs } = useChatPreferences(conversationId);
   const { pinnedId, pin } = usePinnedMessage(conversationId);
   const [customizeOpen, setCustomizeOpen] = useState(false);
-  const [nicknameDraft, setNicknameDraft] = useState("");
 
   const displayName = prefs.nickname?.trim() || friendProfile.display_name || friendProfile.username;
   const ownBubbleStyle = { background: themeGradient(prefs.theme) };
-
-  useEffect(() => {
-    setNicknameDraft(prefs.nickname || "");
-  }, [prefs.nickname]);
+  const quickReactions = prefs.quick_reactions?.length ? prefs.quick_reactions : DEFAULT_QUICK_REACTIONS;
 
   // Keep call UI synced with current friend profile
   useEffect(() => {
@@ -77,12 +73,16 @@ export const SupabaseChatWindow = ({ friendProfile, onBack }: SupabaseChatWindow
   const [infoOpen, setInfoOpen] = useState(false);
   const [viewerOpen, setViewerOpen] = useState(false);
   const [viewerStartId, setViewerStartId] = useState<string | undefined>();
+  const [actionsTarget, setActionsTarget] = useState<ChatMessage | null>(null);
+  const [forwardTarget, setForwardTarget] = useState<ChatMessage | null>(null);
+  const [replyTo, setReplyTo] = useState<ChatMessage | null>(null);
   const [clearedAt, setClearedAt] = useState<string | null>(() =>
     conversationId && user?.id ? localStorage.getItem(`chat_cleared_${conversationId}_${user.id}`) : null
   );
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const typingTimeoutRef = useRef<number | null>(null);
+  const longPressTimer = useRef<number | null>(null);
 
   // Re-read cleared timestamp when chat changes
   useEffect(() => {
