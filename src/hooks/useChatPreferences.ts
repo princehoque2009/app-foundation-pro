@@ -5,7 +5,10 @@ import { useAuth } from "@/contexts/AuthContext";
 export interface ChatPrefs {
   nickname?: string | null;
   theme?: string | null;
+  quick_reactions?: string[] | null;
 }
+
+export const DEFAULT_QUICK_REACTIONS = ["❤️", "😂", "😮", "😢", "👍", "🔥"];
 
 export const CHAT_THEMES: { id: string; label: string; gradient: string }[] = [
   { id: "coral", label: "Coral", gradient: "linear-gradient(135deg,#FF4F5A,#FF8A3D)" },
@@ -14,6 +17,12 @@ export const CHAT_THEMES: { id: string; label: string; gradient: string }[] = [
   { id: "sunset", label: "Sunset", gradient: "linear-gradient(135deg,#f97316,#eab308)" },
   { id: "forest", label: "Forest", gradient: "linear-gradient(135deg,#059669,#84cc16)" },
   { id: "noir", label: "Noir", gradient: "linear-gradient(135deg,#27272a,#52525b)" },
+  { id: "rose", label: "Rose", gradient: "linear-gradient(135deg,#f43f5e,#fb7185)" },
+  { id: "sky", label: "Sky", gradient: "linear-gradient(135deg,#0ea5e9,#38bdf8)" },
+  { id: "emerald", label: "Emerald", gradient: "linear-gradient(135deg,#10b981,#34d399)" },
+  { id: "lava", label: "Lava", gradient: "linear-gradient(135deg,#dc2626,#f59e0b)" },
+  { id: "grape", label: "Grape", gradient: "linear-gradient(135deg,#6d28d9,#a855f7)" },
+  { id: "mint", label: "Mint", gradient: "linear-gradient(135deg,#14b8a6,#86efac)" },
 ];
 
 export const themeGradient = (id?: string | null) =>
