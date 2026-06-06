@@ -11,11 +11,13 @@ export interface ChatMessage {
   media_type: string | null;
   created_at: string;
   is_read: boolean | null;
+  reply_to_id?: string | null;
   reply_to_story_id?: string | null;
   message_type?: string | null;
   call_type?: "audio" | "video" | null;
   call_status?: "started" | "missed" | "declined" | "ended" | null;
   call_duration?: number | null;
+  is_deleted?: boolean | null;
 }
 
 /** Find or create a 1:1 conversation between current user and otherUserId. */
