@@ -326,6 +326,17 @@ export const SupabaseChatWindow = ({ friendProfile, onBack }: SupabaseChatWindow
                 );
               }
 
+              // Deleted message placeholder
+              if (m.is_deleted) {
+                return (
+                  <div key={m.id} className={cn("flex w-full", isOwn ? "justify-end" : "justify-start")}>
+                    <div className="px-3.5 py-2 text-[13px] italic text-muted-foreground bg-muted/50 rounded-2xl max-w-[80%]">
+                      Message deleted
+                    </div>
+                  </div>
+                );
+              }
+
               const prev = visibleMessages[i - 1];
               const next = visibleMessages[i + 1];
               const sameAsPrev = prev?.sender_id === m.sender_id && prev?.message_type !== "call_log" &&
@@ -342,6 +353,8 @@ export const SupabaseChatWindow = ({ friendProfile, onBack }: SupabaseChatWindow
               const grouped: Record<string, number> = {};
               reactions.forEach((r) => { grouped[r.reaction] = (grouped[r.reaction] || 0) + 1; });
               const myReaction = reactions.find((r) => r.user_id === user?.id)?.reaction;
+
+              const replyTarget = m.reply_to_id ? visibleMessages.find((x) => x.id === m.reply_to_id) : null;
 
               // Double-tap to heart (persisted via module-level map)
               const handleDoubleTap = () => {
