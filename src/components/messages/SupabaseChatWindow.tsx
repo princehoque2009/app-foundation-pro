@@ -510,6 +510,22 @@ export const SupabaseChatWindow = ({ friendProfile, onBack }: SupabaseChatWindow
 
       {/* Composer */}
       <div className="border-t p-3 bg-card">
+        {replyTo && (
+          <div className="flex items-center gap-2 mb-2 px-3 py-2 rounded-2xl bg-muted/60 border-l-2 border-primary">
+            <ReplyIcon className="h-4 w-4 text-primary shrink-0" />
+            <div className="flex-1 min-w-0">
+              <p className="text-[11px] font-medium text-primary">
+                Replying to {replyTo.sender_id === user?.id ? "yourself" : (friendProfile.display_name || friendProfile.username)}
+              </p>
+              <p className="text-xs text-muted-foreground truncate">
+                {replyTo.content || (replyTo.media_type ? `${replyTo.media_type}` : "message")}
+              </p>
+            </div>
+            <button onClick={() => setReplyTo(null)} className="shrink-0 text-muted-foreground hover:text-foreground">
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        )}
         <div className="flex items-center gap-2 rounded-full bg-muted/60 px-3 py-1.5">
           <Popover>
             <PopoverTrigger asChild>
