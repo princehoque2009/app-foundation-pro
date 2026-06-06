@@ -30,6 +30,10 @@ interface Props {
   conversationId: string | null;
   status?: PresenceStatus;
   onCleared?: () => void;
+  onCustomize?: () => void;
+  pinnedPreview?: { id: string; label: string } | null;
+  onUnpin?: () => void;
+  onJumpToPinned?: () => void;
 }
 
 interface MediaMsg {
