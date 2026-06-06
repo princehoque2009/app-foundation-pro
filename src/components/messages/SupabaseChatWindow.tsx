@@ -156,19 +156,37 @@ export const SupabaseChatWindow = ({ friendProfile, onBack }: SupabaseChatWindow
   const handleSend = async () => {
     if (!text.trim()) return;
     const value = text;
+    const rid = replyTo?.id;
     setText("");
-    await sendText(value);
+    setReplyTo(null);
+    await sendText(value, rid);
   };
 
   const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     setUploading(true);
+    const rid = replyTo?.id;
+    setReplyTo(null);
     try {
-      await sendMedia(file);
+      await sendMedia(file, rid);
     } finally {
       setUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
+
+  const startLongPress = (m: ChatMessage) => {
+    if (longPressTimer.current) window.clearTimeout(longPressTimer.current);
+    longPressTimer.current = window.setTimeout(() => {
+      setActionsTarget(m);
+      if (navigator.vibrate) navigator.vibrate(20);
+    }, 450);
+  };
+  const cancelLongPress = () => {
+    if (longPressTimer.current) {
+      window.clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
     }
   };
 
