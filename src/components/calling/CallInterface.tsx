@@ -90,16 +90,31 @@ export const CallInterface = ({ profile }: CallInterfaceProps) => {
     }
   }, [incomingCall, currentCall]);
 
-  // Set up local video stream
+  // Set up local video stream — reattach whenever stream or tracks change
   useEffect(() => {
-    if (localVideoRef.current && localStream) {
-      console.log("[CallInterface] Setting local video stream");
-      localVideoRef.current.srcObject = localStream;
-      localVideoRef.current.play().catch(err => {
-        console.error("[CallInterface] Error playing local video:", err);
-      });
+    const vEl = localVideoRef.current;
+    if (!vEl || !localStream) return;
+    if (vEl.srcObject !== localStream) {
+      vEl.srcObject = localStream;
     }
-  }, [localStream]);
+    vEl.muted = true;
+    vEl.playsInline = true;
+    vEl.autoplay = true;
+    const tryPlay = () => vEl.play().catch((e) => console.warn("[CallInterface] local play failed", e));
+    tryPlay();
+    vEl.onloadedmetadata = tryPlay;
+    // Also reattach when tracks change (e.g. switchCamera replaces track)
+    const tracks = localStream.getVideoTracks();
+    const handlers: Array<() => void> = [];
+    tracks.forEach((t) => {
+      const onEnd = () => tryPlay();
+      t.addEventListener("ended", onEnd);
+      handlers.push(() => t.removeEventListener("ended", onEnd));
+    });
+    return () => {
+      handlers.forEach((h) => h());
+    };
+  }, [localStream, currentCall?.type, callStatus, isVideoOff]);
 
   // Set up remote video/audio stream — re-attach on every change
   useEffect(() => {
