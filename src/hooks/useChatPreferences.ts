@@ -43,7 +43,7 @@ export const useChatPreferences = (conversationId: string | null) => {
     (async () => {
       const { data } = await supabase
         .from("chat_preferences" as any)
-        .select("nickname, theme")
+        .select("nickname, theme, quick_reactions")
         .eq("user_id", user.id)
         .eq("conversation_id", conversationId)
         .maybeSingle();
@@ -68,6 +68,7 @@ export const useChatPreferences = (conversationId: string | null) => {
           conversation_id: conversationId,
           nickname: next.nickname ?? null,
           theme: next.theme ?? null,
+          quick_reactions: next.quick_reactions ?? null,
         },
         { onConflict: "user_id,conversation_id" } as any
       );
