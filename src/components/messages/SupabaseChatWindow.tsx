@@ -9,16 +9,20 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { VerifiedBadge } from "@/components/ui/VerifiedBadge";
-import { ArrowLeft, Send, Image as ImageIcon, Smile, Loader2, Check, CheckCheck, Info, Phone, Video, PhoneMissed, Pin, PinOff, Palette, X } from "lucide-react";
+import { ArrowLeft, Send, Image as ImageIcon, Smile, Loader2, Check, CheckCheck, Info, Phone, Video, PhoneMissed, Pin, X, Reply as ReplyIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format, isToday, isYesterday } from "date-fns";
 import { ChatInfoPanel } from "./ChatInfoPanel";
 import { FullscreenMediaViewer, type ViewerItem } from "./FullscreenMediaViewer";
 import { VoiceRecorder } from "./VoiceRecorder";
 import { VoiceMessagePlayer } from "./VoiceMessagePlayer";
+import { MessageActionsSheet } from "./MessageActionsSheet";
+import { ForwardMessageDialog } from "./ForwardMessageDialog";
+import { ChatCustomizeDialog } from "./ChatCustomizeDialog";
 import { useCall } from "@/contexts/CallContext";
-import { useChatPreferences, usePinnedMessage, CHAT_THEMES, themeGradient } from "@/hooks/useChatPreferences";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { useChatPreferences, usePinnedMessage, themeGradient, DEFAULT_QUICK_REACTIONS } from "@/hooks/useChatPreferences";
+import { toast } from "sonner";
+import type { ChatMessage } from "@/hooks/useChat";
 
 const EMOJIS = ["😀", "😂", "❤️", "👍", "🔥", "🎉", "😢", "😮", "💯", "✨", "🙌", "👏"];
 const lastTapMap = new Map<string, number>();
@@ -46,22 +50,18 @@ const formatBubbleTime = (iso: string) => {
 export const SupabaseChatWindow = ({ friendProfile, onBack }: SupabaseChatWindowProps) => {
   const { user } = useAuth();
   const { conversationId, loading: convoLoading } = useDirectConversation(friendProfile.id);
-  const { messages, loading, sendText, sendMedia } = useChat(conversationId);
+  const { messages, loading, sendText, sendMedia, deleteMessage, forwardMessage } = useChat(conversationId);
   const presence = usePresence([friendProfile.id]);
   const status = presence[friendProfile.id];
   const online = isUserOnline(status);
   const { startAudioCall, startVideoCall, setCallProfile } = useCall();
-  const { prefs, update: updatePrefs } = useChatPreferences(conversationId);
+  const { prefs } = useChatPreferences(conversationId);
   const { pinnedId, pin } = usePinnedMessage(conversationId);
   const [customizeOpen, setCustomizeOpen] = useState(false);
-  const [nicknameDraft, setNicknameDraft] = useState("");
 
   const displayName = prefs.nickname?.trim() || friendProfile.display_name || friendProfile.username;
   const ownBubbleStyle = { background: themeGradient(prefs.theme) };
-
-  useEffect(() => {
-    setNicknameDraft(prefs.nickname || "");
-  }, [prefs.nickname]);
+  const quickReactions = prefs.quick_reactions?.length ? prefs.quick_reactions : DEFAULT_QUICK_REACTIONS;
 
   // Keep call UI synced with current friend profile
   useEffect(() => {
@@ -73,12 +73,16 @@ export const SupabaseChatWindow = ({ friendProfile, onBack }: SupabaseChatWindow
   const [infoOpen, setInfoOpen] = useState(false);
   const [viewerOpen, setViewerOpen] = useState(false);
   const [viewerStartId, setViewerStartId] = useState<string | undefined>();
+  const [actionsTarget, setActionsTarget] = useState<ChatMessage | null>(null);
+  const [forwardTarget, setForwardTarget] = useState<ChatMessage | null>(null);
+  const [replyTo, setReplyTo] = useState<ChatMessage | null>(null);
   const [clearedAt, setClearedAt] = useState<string | null>(() =>
     conversationId && user?.id ? localStorage.getItem(`chat_cleared_${conversationId}_${user.id}`) : null
   );
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const typingTimeoutRef = useRef<number | null>(null);
+  const longPressTimer = useRef<number | null>(null);
 
   // Re-read cleared timestamp when chat changes
   useEffect(() => {
@@ -152,19 +156,37 @@ export const SupabaseChatWindow = ({ friendProfile, onBack }: SupabaseChatWindow
   const handleSend = async () => {
     if (!text.trim()) return;
     const value = text;
+    const rid = replyTo?.id;
     setText("");
-    await sendText(value);
+    setReplyTo(null);
+    await sendText(value, rid);
   };
 
   const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     setUploading(true);
+    const rid = replyTo?.id;
+    setReplyTo(null);
     try {
-      await sendMedia(file);
+      await sendMedia(file, rid);
     } finally {
       setUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
+
+  const startLongPress = (m: ChatMessage) => {
+    if (longPressTimer.current) window.clearTimeout(longPressTimer.current);
+    longPressTimer.current = window.setTimeout(() => {
+      setActionsTarget(m);
+      if (navigator.vibrate) navigator.vibrate(20);
+    }, 450);
+  };
+  const cancelLongPress = () => {
+    if (longPressTimer.current) {
+      window.clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
     }
   };
 
@@ -219,9 +241,6 @@ export const SupabaseChatWindow = ({ friendProfile, onBack }: SupabaseChatWindow
           aria-label="Video call"
         >
           <Video className="h-5 w-5" />
-        </Button>
-        <Button variant="ghost" size="icon" onClick={() => setCustomizeOpen(true)} className="shrink-0" aria-label="Customize chat">
-          <Palette className="h-5 w-5" />
         </Button>
         <Button variant="ghost" size="icon" onClick={() => setInfoOpen(true)} className="shrink-0">
           <Info className="h-5 w-5" />
@@ -307,6 +326,17 @@ export const SupabaseChatWindow = ({ friendProfile, onBack }: SupabaseChatWindow
                 );
               }
 
+              // Deleted message placeholder
+              if (m.is_deleted) {
+                return (
+                  <div key={m.id} className={cn("flex w-full", isOwn ? "justify-end" : "justify-start")}>
+                    <div className="px-3.5 py-2 text-[13px] italic text-muted-foreground bg-muted/50 rounded-2xl max-w-[80%]">
+                      Message deleted
+                    </div>
+                  </div>
+                );
+              }
+
               const prev = visibleMessages[i - 1];
               const next = visibleMessages[i + 1];
               const sameAsPrev = prev?.sender_id === m.sender_id && prev?.message_type !== "call_log" &&
@@ -324,6 +354,8 @@ export const SupabaseChatWindow = ({ friendProfile, onBack }: SupabaseChatWindow
               reactions.forEach((r) => { grouped[r.reaction] = (grouped[r.reaction] || 0) + 1; });
               const myReaction = reactions.find((r) => r.user_id === user?.id)?.reaction;
 
+              const replyTarget = m.reply_to_id ? visibleMessages.find((x) => x.id === m.reply_to_id) : null;
+
               // Double-tap to heart (persisted via module-level map)
               const handleDoubleTap = () => {
                 const now = Date.now();
@@ -340,9 +372,33 @@ export const SupabaseChatWindow = ({ friendProfile, onBack }: SupabaseChatWindow
                 <div
                   key={m.id}
                   id={`msg-${m.id}`}
+                  onTouchStart={() => startLongPress(m)}
+                  onTouchEnd={cancelLongPress}
+                  onTouchMove={cancelLongPress}
+                  onTouchCancel={cancelLongPress}
+                  onContextMenu={(e) => { e.preventDefault(); setActionsTarget(m); }}
                   className={cn("flex w-full group rounded-xl transition-shadow", isOwn ? "justify-end" : "justify-start", pinnedId === m.id && "ring-1 ring-primary/40")}
                 >
                   <div className={cn("max-w-[85%] sm:max-w-[78%] min-w-0 flex flex-col", isOwn ? "items-end" : "items-start")}>
+                    {replyTarget && (
+                      <button
+                        onClick={() => {
+                          const el = document.getElementById(`msg-${replyTarget.id}`);
+                          el?.scrollIntoView({ behavior: "smooth", block: "center" });
+                        }}
+                        className={cn(
+                          "max-w-full mb-1 text-left px-3 py-1.5 rounded-2xl text-[12px] border-l-2 bg-muted/60 truncate",
+                          isOwn ? "border-primary" : "border-muted-foreground/40"
+                        )}
+                      >
+                        <span className="font-medium opacity-80">
+                          {replyTarget.sender_id === user?.id ? "You" : (friendProfile.display_name || friendProfile.username)}
+                        </span>
+                        <span className="opacity-70 ml-2 truncate">
+                          {replyTarget.content || (replyTarget.media_type ? `${replyTarget.media_type}` : "message")}
+                        </span>
+                      </button>
+                    )}
                     <div className={cn("flex items-end gap-1 min-w-0", isOwn ? "flex-row-reverse" : "flex-row")}>
                       <div className={cn("flex flex-col min-w-0", isOwn ? "items-end" : "items-start")}>
                         {m.media_url && m.media_type === "image" && (
@@ -399,41 +455,13 @@ export const SupabaseChatWindow = ({ friendProfile, onBack }: SupabaseChatWindow
                       </div>
 
 
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <button
-                            className="opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity h-7 w-7 rounded-full bg-muted hover:bg-accent flex items-center justify-center"
-                            aria-label="React"
-                          >
-                            <Smile className="h-3.5 w-3.5" />
-                          </button>
-                        </PopoverTrigger>
-                        <PopoverContent side="top" className="w-auto p-1.5 rounded-2xl">
-                          <div className="flex items-center gap-0.5">
-                            {REACTION_OPTIONS.map((e) => (
-                              <button
-                                key={e}
-                                onClick={() => react(m.id, e)}
-                                className={cn(
-                                  "text-xl p-1.5 rounded-full hover:bg-muted transition",
-                                  myReaction === e && "bg-coral-gradient/20"
-                                )}
-                              >
-                                {e}
-                              </button>
-                            ))}
-                            <div className="w-px h-6 bg-border mx-1" />
-                            <button
-                              onClick={() => pin(pinnedId === m.id ? null : m.id)}
-                              className="h-9 w-9 rounded-full hover:bg-muted flex items-center justify-center"
-                              aria-label={pinnedId === m.id ? "Unpin" : "Pin"}
-                              title={pinnedId === m.id ? "Unpin message" : "Pin message"}
-                            >
-                              {pinnedId === m.id ? <PinOff className="h-4 w-4" /> : <Pin className="h-4 w-4" />}
-                            </button>
-                          </div>
-                        </PopoverContent>
-                      </Popover>
+                      <button
+                        onClick={() => setActionsTarget(m)}
+                        className="opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity h-7 w-7 rounded-full bg-muted hover:bg-accent flex items-center justify-center"
+                        aria-label="Message actions"
+                      >
+                        <Smile className="h-3.5 w-3.5" />
+                      </button>
                     </div>
 
                     {Object.keys(grouped).length > 0 && (
@@ -482,6 +510,22 @@ export const SupabaseChatWindow = ({ friendProfile, onBack }: SupabaseChatWindow
 
       {/* Composer */}
       <div className="border-t p-3 bg-card">
+        {replyTo && (
+          <div className="flex items-center gap-2 mb-2 px-3 py-2 rounded-2xl bg-muted/60 border-l-2 border-primary">
+            <ReplyIcon className="h-4 w-4 text-primary shrink-0" />
+            <div className="flex-1 min-w-0">
+              <p className="text-[11px] font-medium text-primary">
+                Replying to {replyTo.sender_id === user?.id ? "yourself" : (friendProfile.display_name || friendProfile.username)}
+              </p>
+              <p className="text-xs text-muted-foreground truncate">
+                {replyTo.content || (replyTo.media_type ? `${replyTo.media_type}` : "message")}
+              </p>
+            </div>
+            <button onClick={() => setReplyTo(null)} className="shrink-0 text-muted-foreground hover:text-foreground">
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        )}
         <div className="flex items-center gap-2 rounded-full bg-muted/60 px-3 py-1.5">
           <Popover>
             <PopoverTrigger asChild>
@@ -567,6 +611,18 @@ export const SupabaseChatWindow = ({ friendProfile, onBack }: SupabaseChatWindow
             setClearedAt(localStorage.getItem(`chat_cleared_${conversationId}_${user.id}`));
           }
         }}
+        onCustomize={() => { setInfoOpen(false); setTimeout(() => setCustomizeOpen(true), 150); }}
+        pinnedPreview={(() => {
+          if (!pinnedId) return null;
+          const pm = visibleMessages.find((x) => x.id === pinnedId);
+          if (!pm) return null;
+          return { id: pm.id, label: pm.content || (pm.media_type ? `Sent ${pm.media_type}` : "Message") };
+        })()}
+        onUnpin={() => pin(null)}
+        onJumpToPinned={() => {
+          const el = document.getElementById(`msg-${pinnedId}`);
+          el?.scrollIntoView({ behavior: "smooth", block: "center" });
+        }}
       />
 
       <FullscreenMediaViewer
@@ -576,55 +632,50 @@ export const SupabaseChatWindow = ({ friendProfile, onBack }: SupabaseChatWindow
         startId={viewerStartId}
       />
 
-      <Dialog open={customizeOpen} onOpenChange={setCustomizeOpen}>
-        <DialogContent className="max-w-sm rounded-3xl">
-          <DialogHeader>
-            <DialogTitle>Customize chat</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-5">
-            <div>
-              <label className="text-xs font-medium text-muted-foreground mb-2 block">
-                Nickname for {friendProfile.display_name || friendProfile.username}
-              </label>
-              <div className="flex gap-2">
-                <Input
-                  value={nicknameDraft}
-                  onChange={(e) => setNicknameDraft(e.target.value)}
-                  placeholder={friendProfile.display_name || friendProfile.username}
-                  maxLength={40}
-                  className="rounded-full"
-                />
-                <Button
-                  onClick={() => updatePrefs({ nickname: nicknameDraft.trim() || null })}
-                  className="rounded-full"
-                >
-                  Save
-                </Button>
-              </div>
-              <p className="text-[11px] text-muted-foreground mt-1">Only visible to you.</p>
-            </div>
+      <ChatCustomizeDialog
+        open={customizeOpen}
+        onOpenChange={setCustomizeOpen}
+        conversationId={conversationId}
+        friendLabel={friendProfile.display_name || friendProfile.username}
+      />
 
-            <div>
-              <label className="text-xs font-medium text-muted-foreground mb-2 block">Bubble theme</label>
-              <div className="grid grid-cols-3 gap-2">
-                {CHAT_THEMES.map((t) => (
-                  <button
-                    key={t.id}
-                    onClick={() => updatePrefs({ theme: t.id })}
-                    className={cn(
-                      "h-14 rounded-2xl text-white text-xs font-semibold flex items-end justify-start p-2 transition-all",
-                      prefs.theme === t.id ? "ring-2 ring-foreground scale-[1.02]" : "hover:scale-[1.02]"
-                    )}
-                    style={{ background: t.gradient }}
-                  >
-                    {t.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <MessageActionsSheet
+        open={!!actionsTarget}
+        onOpenChange={(v) => !v && setActionsTarget(null)}
+        message={actionsTarget}
+        isOwn={actionsTarget?.sender_id === user?.id}
+        isPinned={!!actionsTarget && pinnedId === actionsTarget.id}
+        quickReactions={quickReactions}
+        onReact={(emoji) => actionsTarget && react(actionsTarget.id, emoji)}
+        onReply={() => actionsTarget && setReplyTo(actionsTarget)}
+        onForward={() => actionsTarget && setForwardTarget(actionsTarget)}
+        onPin={() => actionsTarget && pin(pinnedId === actionsTarget.id ? null : actionsTarget.id)}
+        onCopy={() => {
+          if (actionsTarget?.content) {
+            navigator.clipboard.writeText(actionsTarget.content);
+            toast.success("Copied");
+          }
+        }}
+        onDelete={() => actionsTarget && deleteMessage(actionsTarget.id)}
+        onReport={async () => {
+          if (!actionsTarget || !user?.id) return;
+          const { supabase } = await import("@/integrations/supabase/client");
+          await supabase.from("reports").insert({
+            reporter_id: user.id,
+            reported_user_id: actionsTarget.sender_id,
+            report_type: "message",
+            description: `Reported message ${actionsTarget.id}`,
+          });
+          toast.success("Reported");
+        }}
+      />
+
+      <ForwardMessageDialog
+        open={!!forwardTarget}
+        onOpenChange={(v) => !v && setForwardTarget(null)}
+        message={forwardTarget}
+        forward={forwardMessage}
+      />
     </div>
   );
 };
