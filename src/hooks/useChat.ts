@@ -114,7 +114,7 @@ export const useChat = (conversationId: string | null) => {
   }, [conversationId]);
 
   const sendText = useCallback(
-    async (text: string) => {
+    async (text: string, replyToId?: string | null) => {
       if (!conversationId || !user?.id || !text.trim()) return;
       const tempId = `temp-${Date.now()}`;
       const optimistic: ChatMessage = {
@@ -126,6 +126,7 @@ export const useChat = (conversationId: string | null) => {
         media_type: null,
         created_at: new Date().toISOString(),
         is_read: false,
+        reply_to_id: replyToId || null,
       };
       setMessages((prev) => [...prev, optimistic]);
 
@@ -135,6 +136,7 @@ export const useChat = (conversationId: string | null) => {
           conversation_id: conversationId,
           sender_id: user.id,
           content: text.trim(),
+          reply_to_id: replyToId || null,
         })
         .select()
         .single();
@@ -153,7 +155,7 @@ export const useChat = (conversationId: string | null) => {
   );
 
   const sendMedia = useCallback(
-    async (file: File) => {
+    async (file: File, replyToId?: string | null) => {
       if (!conversationId || !user?.id) return;
       const ext = file.name.split(".").pop();
       const path = `${user.id}/${Date.now()}.${ext}`;
@@ -172,6 +174,7 @@ export const useChat = (conversationId: string | null) => {
         sender_id: user.id,
         media_url: urlData.publicUrl,
         media_type: mediaType,
+        reply_to_id: replyToId || null,
       });
       await supabase
         .from("conversations" as any)
@@ -181,7 +184,38 @@ export const useChat = (conversationId: string | null) => {
     [conversationId, user?.id]
   );
 
-  return { messages, loading, sendText, sendMedia };
+  const deleteMessage = useCallback(
+    async (messageId: string) => {
+      setMessages((prev) =>
+        prev.map((m) => (m.id === messageId ? { ...m, is_deleted: true, content: null, media_url: null } : m))
+      );
+      await supabase
+        .from("messages" as any)
+        .update({ is_deleted: true, content: null, media_url: null })
+        .eq("id", messageId);
+    },
+    []
+  );
+
+  const forwardMessage = useCallback(
+    async (msg: ChatMessage, toConversationId: string) => {
+      if (!user?.id || !toConversationId) return;
+      await supabase.from("messages" as any).insert({
+        conversation_id: toConversationId,
+        sender_id: user.id,
+        content: msg.content,
+        media_url: msg.media_url,
+        media_type: msg.media_type,
+      });
+      await supabase
+        .from("conversations" as any)
+        .update({ updated_at: new Date().toISOString() })
+        .eq("id", toConversationId);
+    },
+    [user?.id]
+  );
+
+  return { messages, loading, sendText, sendMedia, deleteMessage, forwardMessage };
 };
 
 /** Build a map of friendId -> {lastMessage, lastTime, unread} via one query. */
