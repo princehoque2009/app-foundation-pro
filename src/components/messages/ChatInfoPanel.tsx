@@ -46,7 +46,7 @@ interface MediaMsg {
 
 const URL_RE = /(https?:\/\/[^\s]+)/gi;
 
-export const ChatInfoPanel = ({ open, onOpenChange, friend, conversationId, status, onCleared }: Props) => {
+export const ChatInfoPanel = ({ open, onOpenChange, friend, conversationId, status, onCleared, onCustomize, pinnedPreview, onUnpin, onJumpToPinned }: Props) => {
   const { user } = useAuth();
   const { isChatMuted, muteChat, unmuteChat } = useMessengerSettings();
   const [media, setMedia] = useState<MediaMsg[]>([]);
