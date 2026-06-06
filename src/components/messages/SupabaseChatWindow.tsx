@@ -624,6 +624,3 @@ export const SupabaseChatWindow = ({ friendProfile, onBack }: SupabaseChatWindow
     </div>
   );
 };
-    </div>
-  );
-};
