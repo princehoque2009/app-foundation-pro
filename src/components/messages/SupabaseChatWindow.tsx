@@ -595,6 +595,18 @@ export const SupabaseChatWindow = ({ friendProfile, onBack }: SupabaseChatWindow
             setClearedAt(localStorage.getItem(`chat_cleared_${conversationId}_${user.id}`));
           }
         }}
+        onCustomize={() => { setInfoOpen(false); setTimeout(() => setCustomizeOpen(true), 150); }}
+        pinnedPreview={(() => {
+          if (!pinnedId) return null;
+          const pm = visibleMessages.find((x) => x.id === pinnedId);
+          if (!pm) return null;
+          return { id: pm.id, label: pm.content || (pm.media_type ? `Sent ${pm.media_type}` : "Message") };
+        })()}
+        onUnpin={() => pin(null)}
+        onJumpToPinned={() => {
+          const el = document.getElementById(`msg-${pinnedId}`);
+          el?.scrollIntoView({ behavior: "smooth", block: "center" });
+        }}
       />
 
       <FullscreenMediaViewer
