@@ -492,7 +492,7 @@ export const CallInterface = ({ profile }: CallInterfaceProps) => {
                     onClick={switchCamera}
                     aria-label="Switch camera"
                   >
-                    <Video className="h-5 w-5" />
+                    <SwitchCamera className="h-5 w-5" />
                   </Button>
 
                   <Button
