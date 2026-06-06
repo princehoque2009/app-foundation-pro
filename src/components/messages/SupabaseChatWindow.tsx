@@ -224,9 +224,6 @@ export const SupabaseChatWindow = ({ friendProfile, onBack }: SupabaseChatWindow
         >
           <Video className="h-5 w-5" />
         </Button>
-        <Button variant="ghost" size="icon" onClick={() => setCustomizeOpen(true)} className="shrink-0" aria-label="Customize chat">
-          <Palette className="h-5 w-5" />
-        </Button>
         <Button variant="ghost" size="icon" onClick={() => setInfoOpen(true)} className="shrink-0">
           <Info className="h-5 w-5" />
         </Button>
