@@ -329,6 +329,7 @@ export type Database = {
           created_at: string
           id: string
           nickname: string | null
+          quick_reactions: string[] | null
           theme: string | null
           updated_at: string
           user_id: string
@@ -338,6 +339,7 @@ export type Database = {
           created_at?: string
           id?: string
           nickname?: string | null
+          quick_reactions?: string[] | null
           theme?: string | null
           updated_at?: string
           user_id: string
@@ -347,6 +349,7 @@ export type Database = {
           created_at?: string
           id?: string
           nickname?: string | null
+          quick_reactions?: string[] | null
           theme?: string | null
           updated_at?: string
           user_id?: string
@@ -892,6 +895,7 @@ export type Database = {
           conversation_id: string
           created_at: string
           id: string
+          is_deleted: boolean | null
           is_pinned: boolean | null
           is_read: boolean | null
           media_type: string | null
@@ -909,6 +913,7 @@ export type Database = {
           conversation_id: string
           created_at?: string
           id?: string
+          is_deleted?: boolean | null
           is_pinned?: boolean | null
           is_read?: boolean | null
           media_type?: string | null
@@ -926,6 +931,7 @@ export type Database = {
           conversation_id?: string
           created_at?: string
           id?: string
+          is_deleted?: boolean | null
           is_pinned?: boolean | null
           is_read?: boolean | null
           media_type?: string | null

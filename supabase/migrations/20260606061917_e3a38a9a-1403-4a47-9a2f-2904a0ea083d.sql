@@ -1,0 +1,2 @@
+ALTER TABLE public.messages ADD COLUMN IF NOT EXISTS is_deleted boolean DEFAULT false;
+ALTER TABLE public.chat_preferences ADD COLUMN IF NOT EXISTS quick_reactions text[] DEFAULT ARRAY['❤️','😂','😮','😢','👍','🔥'];
