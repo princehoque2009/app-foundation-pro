@@ -186,6 +186,35 @@ export const ChatInfoPanel = ({ open, onOpenChange, friend, conversationId, stat
           </div>
 
           <div className="px-5 space-y-1">
+            {onCustomize && (
+              <button
+                onClick={onCustomize}
+                className="w-full flex items-center gap-3 py-3 border-b text-left"
+              >
+                <Palette className="h-5 w-5" />
+                <span className="text-sm font-medium">Customize chat</span>
+                <span className="ml-auto text-[11px] text-muted-foreground">Theme · Nickname · Reactions</span>
+              </button>
+            )}
+
+            {pinnedPreview && (
+              <div className="w-full flex items-center gap-3 py-3 border-b">
+                <Pin className="h-5 w-5 text-primary" />
+                <button
+                  onClick={() => { onJumpToPinned?.(); onOpenChange(false); }}
+                  className="flex-1 min-w-0 text-left"
+                >
+                  <p className="text-xs text-muted-foreground">Pinned message</p>
+                  <p className="text-sm font-medium truncate">{pinnedPreview.label}</p>
+                </button>
+                {onUnpin && (
+                  <button onClick={onUnpin} className="text-xs text-muted-foreground hover:text-foreground">
+                    Unpin
+                  </button>
+                )}
+              </div>
+            )}
+
             <button
               onClick={toggleMute}
               className="w-full flex items-center justify-between py-3 border-b"
