@@ -400,41 +400,13 @@ export const SupabaseChatWindow = ({ friendProfile, onBack }: SupabaseChatWindow
                       </div>
 
 
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <button
-                            className="opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity h-7 w-7 rounded-full bg-muted hover:bg-accent flex items-center justify-center"
-                            aria-label="React"
-                          >
-                            <Smile className="h-3.5 w-3.5" />
-                          </button>
-                        </PopoverTrigger>
-                        <PopoverContent side="top" className="w-auto p-1.5 rounded-2xl">
-                          <div className="flex items-center gap-0.5">
-                            {REACTION_OPTIONS.map((e) => (
-                              <button
-                                key={e}
-                                onClick={() => react(m.id, e)}
-                                className={cn(
-                                  "text-xl p-1.5 rounded-full hover:bg-muted transition",
-                                  myReaction === e && "bg-coral-gradient/20"
-                                )}
-                              >
-                                {e}
-                              </button>
-                            ))}
-                            <div className="w-px h-6 bg-border mx-1" />
-                            <button
-                              onClick={() => pin(pinnedId === m.id ? null : m.id)}
-                              className="h-9 w-9 rounded-full hover:bg-muted flex items-center justify-center"
-                              aria-label={pinnedId === m.id ? "Unpin" : "Pin"}
-                              title={pinnedId === m.id ? "Unpin message" : "Pin message"}
-                            >
-                              {pinnedId === m.id ? <PinOff className="h-4 w-4" /> : <Pin className="h-4 w-4" />}
-                            </button>
-                          </div>
-                        </PopoverContent>
-                      </Popover>
+                      <button
+                        onClick={() => setActionsTarget(m)}
+                        className="opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity h-7 w-7 rounded-full bg-muted hover:bg-accent flex items-center justify-center"
+                        aria-label="Message actions"
+                      >
+                        <Smile className="h-3.5 w-3.5" />
+                      </button>
                     </div>
 
                     {Object.keys(grouped).length > 0 && (
