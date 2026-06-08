@@ -125,7 +125,7 @@ const Messages = () => {
 
   return (
     <MainLayout showBottomNav={false}>
-      <div className="h-[calc(100vh-8rem)] md:h-[calc(100vh-4rem)] flex">
+      <div className="h-[calc(100dvh-3.5rem)] flex">
         {/* Chat list */}
         <div
           className={cn(
