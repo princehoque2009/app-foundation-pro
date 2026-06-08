@@ -526,7 +526,7 @@ export const SupabaseChatWindow = ({ friendProfile, onBack }: SupabaseChatWindow
             </button>
           </div>
         )}
-        <div className="flex items-center gap-2 rounded-full bg-muted/60 px-3 py-1.5">
+        <div className="relative flex items-center gap-2 rounded-full bg-muted/60 px-3 py-1.5 min-w-0">
           <Popover>
             <PopoverTrigger asChild>
               <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full shrink-0">
