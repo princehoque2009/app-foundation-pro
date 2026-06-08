@@ -419,14 +419,11 @@ export const SupabaseChatWindow = ({ friendProfile, onBack }: SupabaseChatWindow
                           />
                         )}
                         {m.media_url && m.media_type === "audio" && (
-                          <div className="mb-0.5" style={isOwn ? ownBubbleStyle : undefined}>
-                            {isOwn ? (
-                              <div className={cn(radius, "overflow-hidden")} style={ownBubbleStyle}>
-                                <VoiceMessagePlayer src={m.media_url} isOwn />
-                              </div>
-                            ) : (
-                              <VoiceMessagePlayer src={m.media_url} />
-                            )}
+                          <div
+                            className={cn("mb-0.5 rounded-full overflow-hidden", !isOwn && "")}
+                            style={isOwn ? ownBubbleStyle : undefined}
+                          >
+                            <VoiceMessagePlayer src={m.media_url} isOwn={isOwn} />
                           </div>
                         )}
                         {m.content && (
@@ -526,7 +523,7 @@ export const SupabaseChatWindow = ({ friendProfile, onBack }: SupabaseChatWindow
             </button>
           </div>
         )}
-        <div className="flex items-center gap-2 rounded-full bg-muted/60 px-3 py-1.5">
+        <div className="relative flex items-center gap-2 rounded-full bg-muted/60 px-3 py-1.5 min-w-0">
           <Popover>
             <PopoverTrigger asChild>
               <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full shrink-0">

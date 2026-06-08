@@ -33,35 +33,43 @@ export const useChatPreferences = (conversationId: string | null) => {
   const [prefs, setPrefs] = useState<ChatPrefs>({});
   const [loading, setLoading] = useState(false);
 
+  const fetchPrefs = useCallback(async () => {
+    if (!user?.id || !conversationId) return;
+    const { data } = await supabase
+      .from("chat_preferences" as any)
+      .select("nickname, theme, quick_reactions")
+      .eq("user_id", user.id)
+      .eq("conversation_id", conversationId)
+      .maybeSingle();
+    setPrefs(((data as any) || {}) as ChatPrefs);
+  }, [user?.id, conversationId]);
+
   useEffect(() => {
     if (!user?.id || !conversationId) {
       setPrefs({});
       return;
     }
-    let cancelled = false;
     setLoading(true);
-    (async () => {
-      const { data } = await supabase
-        .from("chat_preferences" as any)
-        .select("nickname, theme, quick_reactions")
-        .eq("user_id", user.id)
-        .eq("conversation_id", conversationId)
-        .maybeSingle();
-      if (!cancelled) {
-        setPrefs(((data as any) || {}) as ChatPrefs);
-        setLoading(false);
-      }
-    })();
-    return () => {
-      cancelled = true;
+    fetchPrefs().finally(() => setLoading(false));
+
+    const eventName = `chat_prefs_${user.id}_${conversationId}`;
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent).detail as ChatPrefs;
+      if (detail) setPrefs((p) => ({ ...p, ...detail }));
     };
-  }, [user?.id, conversationId]);
+    window.addEventListener(eventName, handler);
+    return () => window.removeEventListener(eventName, handler);
+  }, [user?.id, conversationId, fetchPrefs]);
 
   const update = useCallback(
     async (patch: ChatPrefs) => {
       if (!user?.id || !conversationId) return;
       const next = { ...prefs, ...patch };
       setPrefs(next);
+      // Broadcast within tab so all consumers update instantly
+      window.dispatchEvent(
+        new CustomEvent(`chat_prefs_${user.id}_${conversationId}`, { detail: next })
+      );
       await supabase.from("chat_preferences" as any).upsert(
         {
           user_id: user.id,

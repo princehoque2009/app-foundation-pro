@@ -62,7 +62,7 @@ const Search = () => {
   const clearRecentSearches = () => setRecentSearches([]);
 
   return (
-    <MainLayout>
+    <MainLayout showBottomNav={false}>
       <div className="max-w-screen-xl mx-auto px-4 py-6 page-transition">
         {/* Title */}
         <h1 className="text-2xl font-bold text-foreground text-center mb-5">Explore</h1>
