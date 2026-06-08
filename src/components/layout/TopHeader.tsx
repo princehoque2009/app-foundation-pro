@@ -1,5 +1,5 @@
-import { Search, Bell, Users, Menu as MenuIcon, MessageSquareText } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
+import { Search, Bell, Users, Menu as MenuIcon, MessageSquareText, ArrowLeft } from "lucide-react";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useNotifications } from "@/hooks/useNotifications";
 import { useConversations } from "@/hooks/useConversations";
 import { Badge } from "@/components/ui/badge";
@@ -11,6 +11,8 @@ export const TopHeader = () => {
   const { unreadCount } = useNotifications();
   const { conversations } = useConversations();
   const navigate = useNavigate();
+  const location = useLocation();
+  const isHome = location.pathname === "/";
 
   const unreadMessages = useMemo(() => {
     if (!conversations) return 0;
@@ -19,20 +21,30 @@ export const TopHeader = () => {
 
   return (
     <header className="sticky top-0 z-40 bg-background/95 border-b border-border/40 backdrop-blur-sm">
-      <div className="flex items-center justify-between h-14 px-4 max-w-screen-xl mx-auto">
-        <Link to="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity active:scale-95">
-          <span className="absolute -inset-2 rounded-full bg-coral-gradient opacity-0 group-hover:opacity-10 blur-xl transition-opacity" />
-          <img 
-            src={prangonLogo} 
-            alt="Prangon" 
-            className="h-8 object-contain pointer-events-none select-none"
-            width="126"
-            height="32"
-            decoding="async"
-            draggable={false}
-            onContextMenu={(e) => e.preventDefault()}
-          />
-        </Link>
+      <div className="flex items-center justify-between h-14 px-2 sm:px-4 max-w-screen-xl mx-auto gap-1">
+        <div className="flex items-center gap-1 min-w-0">
+          {!isHome && (
+            <button
+              onClick={() => (window.history.length > 1 ? navigate(-1) : navigate("/"))}
+              aria-label="Back"
+              className="p-2 rounded-full text-foreground hover:bg-muted/80 transition-all active:scale-95 shrink-0"
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </button>
+          )}
+          <Link to="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity active:scale-95 shrink-0">
+            <img
+              src={prangonLogo}
+              alt="Prangon"
+              className="h-8 object-contain pointer-events-none select-none"
+              width="126"
+              height="32"
+              decoding="async"
+              draggable={false}
+              onContextMenu={(e) => e.preventDefault()}
+            />
+          </Link>
+        </div>
         <div className="flex items-center gap-1">
           <Link
             to="/search"
