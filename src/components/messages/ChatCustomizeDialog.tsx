@@ -56,6 +56,22 @@ export const ChatCustomizeDialog = ({ open, onOpenChange, conversationId, friend
         </DialogHeader>
         <ScrollArea className="max-h-[70vh]">
           <div className="px-5 pb-5 space-y-5">
+            {/* Live preview */}
+            <div className="rounded-2xl bg-muted/50 p-3">
+              <p className="text-[11px] uppercase tracking-wide text-muted-foreground mb-2">Preview</p>
+              <div className="flex flex-col gap-1.5">
+                <div className="self-start max-w-[70%] rounded-2xl bg-background border px-3 py-1.5 text-sm">
+                  Hey {prefs.nickname?.trim() || friendLabel} 👋
+                </div>
+                <div
+                  className="self-end max-w-[70%] rounded-2xl px-3 py-1.5 text-sm text-white shadow-sm"
+                  style={{ background: (CHAT_THEMES.find(t=>t.id===prefs.theme)?.gradient) || CHAT_THEMES[0].gradient }}
+                >
+                  Looks great!
+                </div>
+              </div>
+            </div>
+
             {/* Nickname */}
             <div>
               <label className="text-xs font-medium text-muted-foreground mb-2 block">
