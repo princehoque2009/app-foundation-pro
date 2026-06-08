@@ -419,14 +419,11 @@ export const SupabaseChatWindow = ({ friendProfile, onBack }: SupabaseChatWindow
                           />
                         )}
                         {m.media_url && m.media_type === "audio" && (
-                          <div className="mb-0.5" style={isOwn ? ownBubbleStyle : undefined}>
-                            {isOwn ? (
-                              <div className={cn(radius, "overflow-hidden")} style={ownBubbleStyle}>
-                                <VoiceMessagePlayer src={m.media_url} isOwn />
-                              </div>
-                            ) : (
-                              <VoiceMessagePlayer src={m.media_url} />
-                            )}
+                          <div
+                            className={cn("mb-0.5 rounded-full overflow-hidden", !isOwn && "")}
+                            style={isOwn ? ownBubbleStyle : undefined}
+                          >
+                            <VoiceMessagePlayer src={m.media_url} isOwn={isOwn} />
                           </div>
                         )}
                         {m.content && (
