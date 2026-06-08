@@ -7,16 +7,15 @@ interface Props {
   isOwn?: boolean;
 }
 
-const BAR_COUNT = 32;
+const BAR_COUNT = 28;
 
-// Deterministic pseudo-random bars from URL (stable per message)
 const generateBars = (seed: string) => {
   let h = 0;
   for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) & 0xffffffff;
   const bars: number[] = [];
   for (let i = 0; i < BAR_COUNT; i++) {
     h = (h * 1664525 + 1013904223) & 0xffffffff;
-    bars.push(0.25 + (Math.abs(h) % 100) / 130);
+    bars.push(0.3 + (Math.abs(h) % 100) / 140);
   }
   return bars;
 };
@@ -72,33 +71,32 @@ export const VoiceMessagePlayer = ({ src, isOwn }: Props) => {
   };
 
   return (
-    <div className={cn(
-      "flex items-center gap-3 px-3 py-2 rounded-2xl min-w-[220px] max-w-[280px]",
-      isOwn ? "bg-white/15 backdrop-blur" : "bg-card border"
-    )}>
+    <div
+      className={cn(
+        "flex items-center gap-2.5 px-3 py-2 rounded-full w-[230px] max-w-full",
+        isOwn ? "text-white" : "bg-muted text-foreground"
+      )}
+    >
       <audio ref={audioRef} src={src} preload="metadata" />
       <button
         onClick={toggle}
         className={cn(
-          "h-9 w-9 rounded-full flex items-center justify-center shrink-0 transition",
-          isOwn ? "bg-white text-foreground" : "bg-coral-gradient text-white"
+          "h-8 w-8 rounded-full flex items-center justify-center shrink-0 transition",
+          isOwn ? "bg-white/25 hover:bg-white/35 text-white" : "bg-background text-foreground shadow-sm"
         )}
         aria-label={playing ? "Pause" : "Play"}
       >
-        {playing ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4 ml-0.5" />}
+        {playing ? <Pause className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5 ml-0.5" />}
       </button>
       <div className="flex-1 min-w-0">
-        <div
-          onClick={seek}
-          className="flex items-center gap-[2px] h-8 cursor-pointer"
-        >
+        <div onClick={seek} className="flex items-center gap-[2px] h-6 cursor-pointer">
           {bars.map((h, i) => {
             const filled = i / bars.length <= progress;
             return (
               <span
                 key={i}
                 className={cn(
-                  "w-[3px] rounded-full transition-colors",
+                  "w-[2px] rounded-full transition-colors",
                   isOwn
                     ? filled ? "bg-white" : "bg-white/40"
                     : filled ? "bg-primary" : "bg-muted-foreground/30"
@@ -108,10 +106,10 @@ export const VoiceMessagePlayer = ({ src, isOwn }: Props) => {
             );
           })}
         </div>
-        <div className={cn("text-[10px] mt-0.5", isOwn ? "text-white/80" : "text-muted-foreground")}>
-          {fmt(playing || current ? current : duration)}
-        </div>
       </div>
+      <span className={cn("text-[10px] tabular-nums shrink-0", isOwn ? "text-white/90" : "text-muted-foreground")}>
+        {fmt(playing || current ? current : duration)}
+      </span>
     </div>
   );
 };
