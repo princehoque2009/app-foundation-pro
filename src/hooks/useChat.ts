@@ -71,7 +71,7 @@ export const useChat = (conversationId: string | null) => {
     let cancelled = false;
     setLoading(true);
 
-    (async () => {
+    const load = async () => {
       const { data } = await supabase
         .from("messages" as any)
         .select("*")
@@ -82,7 +82,9 @@ export const useChat = (conversationId: string | null) => {
         setMessages(((data as any[]) || []) as ChatMessage[]);
         setLoading(false);
       }
-    })();
+    };
+
+    load();
 
     const channel = supabase
       .channel(`messages-${conversationId}`)
@@ -107,9 +109,17 @@ export const useChat = (conversationId: string | null) => {
       )
       .subscribe();
 
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") load();
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+    window.addEventListener("focus", onVisibility);
+
     return () => {
       cancelled = true;
       supabase.removeChannel(channel);
+      document.removeEventListener("visibilitychange", onVisibility);
+      window.removeEventListener("focus", onVisibility);
     };
   }, [conversationId]);
 
