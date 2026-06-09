@@ -305,11 +305,24 @@ export const useChatPreviews = (friendIds: string[]) => {
         { event: "INSERT", schema: "public", table: "messages" },
         () => load()
       )
+      .on(
+        "postgres_changes" as any,
+        { event: "UPDATE", schema: "public", table: "messages" },
+        () => load()
+      )
       .subscribe();
+
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") load();
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+    window.addEventListener("focus", onVisibility);
 
     return () => {
       cancelled = true;
       supabase.removeChannel(channel);
+      document.removeEventListener("visibilitychange", onVisibility);
+      window.removeEventListener("focus", onVisibility);
     };
   }, [user?.id, friendIds.join(",")]);
 
