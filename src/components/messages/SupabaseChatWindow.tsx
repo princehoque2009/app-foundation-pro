@@ -19,6 +19,7 @@ import { VoiceMessagePlayer } from "./VoiceMessagePlayer";
 import { MessageActionsSheet } from "./MessageActionsSheet";
 import { ForwardMessageDialog } from "./ForwardMessageDialog";
 import { ChatCustomizeDialog } from "./ChatCustomizeDialog";
+import { LinkPreview, extractFirstUrl } from "./LinkPreview";
 import { useCall } from "@/contexts/CallContext";
 import { useChatPreferences, usePinnedMessage, themeGradient, DEFAULT_QUICK_REACTIONS } from "@/hooks/useChatPreferences";
 import { toast } from "sonner";
@@ -446,6 +447,10 @@ export const SupabaseChatWindow = ({ friendProfile, onBack }: SupabaseChatWindow
                               style={{ wordBreak: "break-word", overflowWrap: "anywhere", ...(isOwn ? ownBubbleStyle : {}) }}
                             >
                               {m.content}
+                              {(() => {
+                                const url = extractFirstUrl(m.content);
+                                return url ? <LinkPreview url={url} dark={isOwn} /> : null;
+                              })()}
                             </div>
                           </div>
                         )}
