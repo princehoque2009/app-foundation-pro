@@ -19,6 +19,7 @@ import { VoiceMessagePlayer } from "./VoiceMessagePlayer";
 import { MessageActionsSheet } from "./MessageActionsSheet";
 import { ForwardMessageDialog } from "./ForwardMessageDialog";
 import { ChatCustomizeDialog } from "./ChatCustomizeDialog";
+import { LinkPreview, extractFirstUrl } from "./LinkPreview";
 import { useCall } from "@/contexts/CallContext";
 import { useChatPreferences, usePinnedMessage, themeGradient, DEFAULT_QUICK_REACTIONS } from "@/hooks/useChatPreferences";
 import { toast } from "sonner";
