@@ -446,6 +446,10 @@ export const SupabaseChatWindow = ({ friendProfile, onBack }: SupabaseChatWindow
                               style={{ wordBreak: "break-word", overflowWrap: "anywhere", ...(isOwn ? ownBubbleStyle : {}) }}
                             >
                               {m.content}
+                              {(() => {
+                                const url = extractFirstUrl(m.content);
+                                return url ? <LinkPreview url={url} dark={isOwn} /> : null;
+                              })()}
                             </div>
                           </div>
                         )}
