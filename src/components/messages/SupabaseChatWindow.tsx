@@ -716,8 +716,10 @@ export const SupabaseChatWindow = ({ friendProfile, onBack }: SupabaseChatWindow
         message={actionsTarget}
         isOwn={actionsTarget?.sender_id === user?.id}
         isPinned={!!actionsTarget && pinnedId === actionsTarget.id}
+        isStarred={!!actionsTarget && isStarred(actionsTarget.id)}
         quickReactions={quickReactions}
         onReact={(emoji) => actionsTarget && react(actionsTarget.id, emoji)}
+        onToggleStar={() => actionsTarget && toggleStar(actionsTarget.id)}
         onReply={() => actionsTarget && setReplyTo(actionsTarget)}
         onForward={() => actionsTarget && setForwardTarget(actionsTarget)}
         onPin={() => actionsTarget && pin(pinnedId === actionsTarget.id ? null : actionsTarget.id)}
