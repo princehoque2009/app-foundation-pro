@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { VerifiedBadge } from "@/components/ui/VerifiedBadge";
-import { ArrowLeft, Send, Image as ImageIcon, Smile, Loader2, Check, CheckCheck, Info, Phone, Video, PhoneMissed, Pin, X, Reply as ReplyIcon } from "lucide-react";
+import { ArrowLeft, Send, Image as ImageIcon, Smile, Loader2, Check, CheckCheck, Info, Phone, Video, PhoneMissed, Pin, X, Reply as ReplyIcon, Plus, MapPin, FileText, Timer, Lock, Star } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format, isToday, isYesterday } from "date-fns";
 import { ChatInfoPanel } from "./ChatInfoPanel";
@@ -22,6 +22,7 @@ import { ChatCustomizeDialog } from "./ChatCustomizeDialog";
 import { LinkPreview, extractFirstUrl } from "./LinkPreview";
 import { useCall } from "@/contexts/CallContext";
 import { useChatPreferences, usePinnedMessage, themeGradient, DEFAULT_QUICK_REACTIONS } from "@/hooks/useChatPreferences";
+import { useDisappearingMode, useStarredMessages } from "@/hooks/useDisappearingMode";
 import { toast } from "sonner";
 import type { ChatMessage } from "@/hooks/useChat";
 
@@ -58,6 +59,8 @@ export const SupabaseChatWindow = ({ friendProfile, onBack }: SupabaseChatWindow
   const { startAudioCall, startVideoCall, setCallProfile } = useCall();
   const { prefs } = useChatPreferences(conversationId);
   const { pinnedId, pin } = usePinnedMessage(conversationId);
+  const { seconds: disappearSecs, setDisappearing } = useDisappearingMode(conversationId);
+  const { isStarred, toggleStar } = useStarredMessages(user?.id);
   const [customizeOpen, setCustomizeOpen] = useState(false);
 
   const displayName = prefs.nickname?.trim() || friendProfile.display_name || friendProfile.username;
