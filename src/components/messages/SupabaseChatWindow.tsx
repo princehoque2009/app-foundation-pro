@@ -96,10 +96,25 @@ export const SupabaseChatWindow = ({ friendProfile, onBack }: SupabaseChatWindow
 
   // Filter out cleared messages
   const visibleMessages = useMemo(() => {
-    if (!clearedAt) return messages;
-    const t = new Date(clearedAt).getTime();
-    return messages.filter((m) => new Date(m.created_at).getTime() > t);
-  }, [messages, clearedAt]);
+    let arr = messages;
+    if (clearedAt) {
+      const t = new Date(clearedAt).getTime();
+      arr = arr.filter((m) => new Date(m.created_at).getTime() > t);
+    }
+    if (disappearSecs > 0) {
+      const cutoff = Date.now() - disappearSecs * 1000;
+      arr = arr.filter((m) => new Date(m.created_at).getTime() >= cutoff);
+    }
+    return arr;
+  }, [messages, clearedAt, disappearSecs]);
+
+  // Tick every minute so disappearing messages re-evaluate
+  const [, setTick] = useState(0);
+  useEffect(() => {
+    if (disappearSecs <= 0) return;
+    const id = window.setInterval(() => setTick((n) => n + 1), 60_000);
+    return () => window.clearInterval(id);
+  }, [disappearSecs]);
 
   const messageIds = useMemo(() => visibleMessages.map((m) => m.id), [visibleMessages]);
   const { byMsg: reactionsByMsg, react } = useMessageReactions(messageIds);
