@@ -1,5 +1,5 @@
 import { Sheet, SheetContent } from "@/components/ui/sheet";
-import { Reply, Forward, Pin, PinOff, Copy, Trash2, Flag, Heart } from "lucide-react";
+import { Reply, Forward, Pin, PinOff, Copy, Trash2, Flag, Star, StarOff } from "lucide-react";
 import type { ChatMessage } from "@/hooks/useChat";
 import { cn } from "@/lib/utils";
 
@@ -9,6 +9,7 @@ interface Props {
   message: ChatMessage | null;
   isOwn: boolean;
   isPinned: boolean;
+  isStarred?: boolean;
   quickReactions: string[];
   onReply: () => void;
   onForward: () => void;
@@ -17,6 +18,7 @@ interface Props {
   onDelete: () => void;
   onReport: () => void;
   onReact: (emoji: string) => void;
+  onToggleStar?: () => void;
 }
 
 export const MessageActionsSheet = ({
@@ -25,6 +27,7 @@ export const MessageActionsSheet = ({
   message,
   isOwn,
   isPinned,
+  isStarred,
   quickReactions,
   onReply,
   onForward,
@@ -33,12 +36,14 @@ export const MessageActionsSheet = ({
   onDelete,
   onReport,
   onReact,
+  onToggleStar,
 }: Props) => {
   if (!message) return null;
 
   const items = [
     { icon: Reply, label: "Reply", onClick: onReply, show: true },
     { icon: Forward, label: "Forward", onClick: onForward, show: true },
+    { icon: isStarred ? StarOff : Star, label: isStarred ? "Unstar" : "Star", onClick: onToggleStar || (() => {}), show: !!onToggleStar },
     { icon: isPinned ? PinOff : Pin, label: isPinned ? "Unpin" : "Pin", onClick: onPin, show: true },
     { icon: Copy, label: "Copy", onClick: onCopy, show: !!message.content },
     { icon: Trash2, label: "Delete", onClick: onDelete, show: isOwn, danger: true },
