@@ -7,12 +7,13 @@ import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { VerifiedBadge } from "@/components/ui/VerifiedBadge";
-import { Bell, BellOff, UserX, Flag, Trash2, Image as ImageIcon, Film, Link as LinkIcon, ExternalLink, Palette, Pin } from "lucide-react";
+import { Bell, BellOff, UserX, Flag, Trash2, Image as ImageIcon, Film, Link as LinkIcon, ExternalLink, Palette, Pin, Lock, Timer } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { useMessengerSettings } from "@/hooks/useMessengerSettings";
 import { formatLastSeen, isUserOnline, type PresenceStatus } from "@/hooks/usePresence";
+import { DISAPPEAR_OPTIONS } from "@/hooks/useDisappearingMode";
 
 interface Profile {
   id: string;
@@ -34,6 +35,8 @@ interface Props {
   pinnedPreview?: { id: string; label: string } | null;
   onUnpin?: () => void;
   onJumpToPinned?: () => void;
+  disappearingSeconds?: number;
+  onChangeDisappearing?: (s: number) => void;
 }
 
 interface MediaMsg {
@@ -46,7 +49,7 @@ interface MediaMsg {
 
 const URL_RE = /(https?:\/\/[^\s]+)/gi;
 
-export const ChatInfoPanel = ({ open, onOpenChange, friend, conversationId, status, onCleared, onCustomize, pinnedPreview, onUnpin, onJumpToPinned }: Props) => {
+export const ChatInfoPanel = ({ open, onOpenChange, friend, conversationId, status, onCleared, onCustomize, pinnedPreview, onUnpin, onJumpToPinned, disappearingSeconds = 0, onChangeDisappearing }: Props) => {
   const { user } = useAuth();
   const { isChatMuted, muteChat, unmuteChat } = useMessengerSettings();
   const [media, setMedia] = useState<MediaMsg[]>([]);
