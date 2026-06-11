@@ -301,9 +301,11 @@ export const useChatPreviews = (friendIds: string[]) => {
         const fid = convoToFriend[m.conversation_id];
         if (!fid) return;
         if (!next[fid]) {
+          const encrypted = isEncrypted(m.content);
           next[fid] = {
             conversationId: m.conversation_id,
             lastMessage:
+              encrypted ? "🔒 Encrypted message" :
               m.content || (m.media_type ? `Sent ${m.media_type}` : undefined),
             lastMessageTime: new Date(m.created_at).getTime(),
             unreadCount: 0,
