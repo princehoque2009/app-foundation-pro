@@ -1,6 +1,8 @@
 import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { encryptText, decryptText, isEncrypted } from "@/lib/chatCrypto";
+
 
 export interface ChatMessage {
   id: string;
@@ -78,8 +80,15 @@ export const useChat = (conversationId: string | null) => {
         .eq("conversation_id", conversationId)
         .order("created_at", { ascending: true })
         .limit(200);
+      const rows = ((data as any[]) || []) as ChatMessage[];
+      const decrypted = await Promise.all(
+        rows.map(async (m) => ({
+          ...m,
+          content: m.content ? await decryptText(conversationId, m.content) : m.content,
+        }))
+      );
       if (!cancelled) {
-        setMessages(((data as any[]) || []) as ChatMessage[]);
+        setMessages(decrypted);
         setLoading(false);
       }
     };
@@ -91,20 +100,22 @@ export const useChat = (conversationId: string | null) => {
       .on(
         "postgres_changes" as any,
         { event: "INSERT", schema: "public", table: "messages", filter: `conversation_id=eq.${conversationId}` },
-        (payload: any) => {
+        async (payload: any) => {
+          const row = payload.new as ChatMessage;
+          const content = row.content ? await decryptText(conversationId, row.content) : row.content;
           setMessages((prev) => {
-            if (prev.some((m) => m.id === payload.new.id)) return prev;
-            return [...prev, payload.new as ChatMessage];
+            if (prev.some((m) => m.id === row.id)) return prev;
+            return [...prev, { ...row, content }];
           });
         }
       )
       .on(
         "postgres_changes" as any,
         { event: "UPDATE", schema: "public", table: "messages", filter: `conversation_id=eq.${conversationId}` },
-        (payload: any) => {
-          setMessages((prev) =>
-            prev.map((m) => (m.id === payload.new.id ? (payload.new as ChatMessage) : m))
-          );
+        async (payload: any) => {
+          const row = payload.new as ChatMessage;
+          const content = row.content ? await decryptText(conversationId, row.content) : row.content;
+          setMessages((prev) => prev.map((m) => (m.id === row.id ? { ...row, content } : m)));
         }
       )
       .subscribe();
@@ -126,12 +137,13 @@ export const useChat = (conversationId: string | null) => {
   const sendText = useCallback(
     async (text: string, replyToId?: string | null) => {
       if (!conversationId || !user?.id || !text.trim()) return;
+      const plain = text.trim();
       const tempId = `temp-${Date.now()}`;
       const optimistic: ChatMessage = {
         id: tempId,
         conversation_id: conversationId,
         sender_id: user.id,
-        content: text.trim(),
+        content: plain,
         media_url: null,
         media_type: null,
         created_at: new Date().toISOString(),
@@ -140,12 +152,13 @@ export const useChat = (conversationId: string | null) => {
       };
       setMessages((prev) => [...prev, optimistic]);
 
+      const cipher = await encryptText(conversationId, plain);
       const { data, error } = await supabase
         .from("messages" as any)
         .insert({
           conversation_id: conversationId,
           sender_id: user.id,
-          content: text.trim(),
+          content: cipher,
           reply_to_id: replyToId || null,
         })
         .select()
@@ -155,7 +168,10 @@ export const useChat = (conversationId: string | null) => {
         setMessages((prev) => prev.filter((m) => m.id !== tempId));
         return;
       }
-      setMessages((prev) => prev.map((m) => (m.id === tempId ? (data as unknown as ChatMessage) : m)));
+      const row = data as unknown as ChatMessage;
+      setMessages((prev) =>
+        prev.map((m) => (m.id === tempId ? { ...row, content: plain } : m))
+      );
       await supabase
         .from("conversations" as any)
         .update({ updated_at: new Date().toISOString() })
@@ -210,10 +226,11 @@ export const useChat = (conversationId: string | null) => {
   const forwardMessage = useCallback(
     async (msg: ChatMessage, toConversationId: string) => {
       if (!user?.id || !toConversationId) return;
+      const content = msg.content ? await encryptText(toConversationId, msg.content) : null;
       await supabase.from("messages" as any).insert({
         conversation_id: toConversationId,
         sender_id: user.id,
-        content: msg.content,
+        content,
         media_url: msg.media_url,
         media_type: msg.media_type,
       });
@@ -284,9 +301,11 @@ export const useChatPreviews = (friendIds: string[]) => {
         const fid = convoToFriend[m.conversation_id];
         if (!fid) return;
         if (!next[fid]) {
+          const encrypted = isEncrypted(m.content);
           next[fid] = {
             conversationId: m.conversation_id,
             lastMessage:
+              encrypted ? "🔒 Encrypted message" :
               m.content || (m.media_type ? `Sent ${m.media_type}` : undefined),
             lastMessageTime: new Date(m.created_at).getTime(),
             unreadCount: 0,
@@ -303,6 +322,19 @@ export const useChatPreviews = (friendIds: string[]) => {
           next[fid] = { conversationId: convId, unreadCount: 0 };
         }
       });
+      // Best-effort decrypt the encrypted previews
+      await Promise.all(
+        Object.values(next).map(async (entry) => {
+          if (entry.lastMessage === "🔒 Encrypted message" && entry.conversationId) {
+            const raw = (msgs as any[] | null)?.find(
+              (m) => m.conversation_id === entry.conversationId
+            )?.content;
+            if (raw && isEncrypted(raw)) {
+              try { entry.lastMessage = await decryptText(entry.conversationId, raw); } catch {}
+            }
+          }
+        })
+      );
       if (!cancelled) setPreviews(next);
     };
 

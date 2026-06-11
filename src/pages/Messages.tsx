@@ -207,12 +207,20 @@ const Messages = () => {
             >
               <ArrowLeft className="h-5 w-5" />
             </button>
-            <h1 className="text-[20px] font-bold tracking-tight truncate bg-coral-gradient bg-clip-text text-transparent">
-              Chats
-            </h1>
-            <span className="ml-1 inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
-              <ShieldCheck className="h-3 w-3" /> E2E
-            </span>
+            {/* Branded text logo */}
+            <div className="flex items-center gap-1.5 min-w-0">
+              <div className="h-7 w-7 rounded-xl bg-coral-gradient flex items-center justify-center shadow-sm shrink-0">
+                <span className="text-white font-black text-[15px] leading-none tracking-tight">P</span>
+              </div>
+              <div className="flex flex-col leading-none min-w-0">
+                <span className="text-[17px] font-extrabold tracking-tight bg-coral-gradient bg-clip-text text-transparent">
+                  prangon<span className="text-foreground/70 font-bold">.chat</span>
+                </span>
+                <span className="text-[9px] uppercase tracking-[0.18em] text-muted-foreground inline-flex items-center gap-1">
+                  <ShieldCheck className="h-2.5 w-2.5 text-emerald-500" /> End-to-end encrypted
+                </span>
+              </div>
+            </div>
           </div>
           <div className="flex items-center gap-0.5">
             <Button

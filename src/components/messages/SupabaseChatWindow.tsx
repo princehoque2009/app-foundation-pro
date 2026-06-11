@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { VerifiedBadge } from "@/components/ui/VerifiedBadge";
-import { ArrowLeft, Send, Image as ImageIcon, Smile, Loader2, Check, CheckCheck, Info, Phone, Video, PhoneMissed, Pin, X, Reply as ReplyIcon } from "lucide-react";
+import { ArrowLeft, Send, Image as ImageIcon, Smile, Loader2, Check, CheckCheck, Info, Phone, Video, PhoneMissed, Pin, X, Reply as ReplyIcon, Plus, MapPin, FileText, Timer, Lock, Star } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format, isToday, isYesterday } from "date-fns";
 import { ChatInfoPanel } from "./ChatInfoPanel";
@@ -22,6 +22,7 @@ import { ChatCustomizeDialog } from "./ChatCustomizeDialog";
 import { LinkPreview, extractFirstUrl } from "./LinkPreview";
 import { useCall } from "@/contexts/CallContext";
 import { useChatPreferences, usePinnedMessage, themeGradient, DEFAULT_QUICK_REACTIONS } from "@/hooks/useChatPreferences";
+import { useDisappearingMode, useStarredMessages } from "@/hooks/useDisappearingMode";
 import { toast } from "sonner";
 import type { ChatMessage } from "@/hooks/useChat";
 
@@ -58,6 +59,8 @@ export const SupabaseChatWindow = ({ friendProfile, onBack }: SupabaseChatWindow
   const { startAudioCall, startVideoCall, setCallProfile } = useCall();
   const { prefs } = useChatPreferences(conversationId);
   const { pinnedId, pin } = usePinnedMessage(conversationId);
+  const { seconds: disappearSecs, setDisappearing } = useDisappearingMode(conversationId);
+  const { isStarred, toggleStar } = useStarredMessages(user?.id);
   const [customizeOpen, setCustomizeOpen] = useState(false);
 
   const displayName = prefs.nickname?.trim() || friendProfile.display_name || friendProfile.username;
@@ -93,10 +96,25 @@ export const SupabaseChatWindow = ({ friendProfile, onBack }: SupabaseChatWindow
 
   // Filter out cleared messages
   const visibleMessages = useMemo(() => {
-    if (!clearedAt) return messages;
-    const t = new Date(clearedAt).getTime();
-    return messages.filter((m) => new Date(m.created_at).getTime() > t);
-  }, [messages, clearedAt]);
+    let arr = messages;
+    if (clearedAt) {
+      const t = new Date(clearedAt).getTime();
+      arr = arr.filter((m) => new Date(m.created_at).getTime() > t);
+    }
+    if (disappearSecs > 0) {
+      const cutoff = Date.now() - disappearSecs * 1000;
+      arr = arr.filter((m) => new Date(m.created_at).getTime() >= cutoff);
+    }
+    return arr;
+  }, [messages, clearedAt, disappearSecs]);
+
+  // Tick every minute so disappearing messages re-evaluate
+  const [, setTick] = useState(0);
+  useEffect(() => {
+    if (disappearSecs <= 0) return;
+    const id = window.setInterval(() => setTick((n) => n + 1), 60_000);
+    return () => window.clearInterval(id);
+  }, [disappearSecs]);
 
   const messageIds = useMemo(() => visibleMessages.map((m) => m.id), [visibleMessages]);
   const { byMsg: reactionsByMsg, react } = useMessageReactions(messageIds);
@@ -220,6 +238,8 @@ export const SupabaseChatWindow = ({ friendProfile, onBack }: SupabaseChatWindow
               {displayName}
             </h3>
             {friendProfile.is_verified && <VerifiedBadge size="sm" />}
+            <Lock className="h-3 w-3 text-emerald-500 shrink-0" aria-label="End-to-end encrypted" />
+            {disappearSecs > 0 && <Timer className="h-3 w-3 text-coral-accent shrink-0" aria-label="Disappearing messages on" />}
           </div>
           <p className={cn("text-xs truncate", isFriendTyping ? "text-primary font-medium" : online ? "text-green-500 font-medium" : "text-muted-foreground")}>
             {isFriendTyping ? "typing…" : formatLastSeen(status)}
@@ -566,7 +586,7 @@ export const SupabaseChatWindow = ({ friendProfile, onBack }: SupabaseChatWindow
           <input
             ref={fileInputRef}
             type="file"
-            accept="image/*,video/*,audio/*"
+            accept="*/*"
             onChange={handleFile}
             className="hidden"
           />
@@ -581,15 +601,64 @@ export const SupabaseChatWindow = ({ friendProfile, onBack }: SupabaseChatWindow
             </Button>
           ) : (
             <>
-              <Button
-                onClick={() => fileInputRef.current?.click()}
-                variant="ghost"
-                size="icon"
-                className="h-9 w-9 rounded-full shrink-0"
-                disabled={uploading}
-              >
-                {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ImageIcon className="h-5 w-5" />}
-              </Button>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full shrink-0" disabled={uploading}>
+                    {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-5 w-5" />}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent side="top" align="end" className="w-56 p-2">
+                  <button
+                    onClick={() => fileInputRef.current?.click()}
+                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-muted text-sm text-left"
+                  >
+                    <div className="h-9 w-9 rounded-full bg-coral-accent/15 text-coral-accent flex items-center justify-center">
+                      <ImageIcon className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <p className="font-medium">Photo / Video</p>
+                      <p className="text-[11px] text-muted-foreground">From your device</p>
+                    </div>
+                  </button>
+                  <button
+                    onClick={() => fileInputRef.current?.click()}
+                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-muted text-sm text-left"
+                  >
+                    <div className="h-9 w-9 rounded-full bg-blue-500/15 text-blue-500 flex items-center justify-center">
+                      <FileText className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <p className="font-medium">Document</p>
+                      <p className="text-[11px] text-muted-foreground">PDFs, docs, files</p>
+                    </div>
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (!navigator.geolocation) { toast.error("Location not supported"); return; }
+                      const t = toast.loading("Getting location…");
+                      navigator.geolocation.getCurrentPosition(
+                        async (pos) => {
+                          toast.dismiss(t);
+                          const { latitude, longitude } = pos.coords;
+                          await sendText(`📍 My location: https://maps.google.com/?q=${latitude},${longitude}`);
+                          toast.success("Location shared");
+                        },
+                        () => { toast.dismiss(t); toast.error("Couldn't get location"); },
+                        { enableHighAccuracy: true, timeout: 8000 }
+                      );
+                    }}
+                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-muted text-sm text-left"
+                  >
+                    <div className="h-9 w-9 rounded-full bg-emerald-500/15 text-emerald-500 flex items-center justify-center">
+                      <MapPin className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <p className="font-medium">Location</p>
+                      <p className="text-[11px] text-muted-foreground">Share current location</p>
+                    </div>
+                  </button>
+                </PopoverContent>
+              </Popover>
               <VoiceRecorder
                 onSend={async (blob) => {
                   const file = new File([blob], `voice_${Date.now()}.webm`, { type: "audio/webm" });
@@ -608,6 +677,8 @@ export const SupabaseChatWindow = ({ friendProfile, onBack }: SupabaseChatWindow
         friend={friendProfile}
         conversationId={conversationId}
         status={status}
+        disappearingSeconds={disappearSecs}
+        onChangeDisappearing={setDisappearing}
         onCleared={() => {
           if (conversationId && user?.id) {
             setClearedAt(localStorage.getItem(`chat_cleared_${conversationId}_${user.id}`));
@@ -647,8 +718,10 @@ export const SupabaseChatWindow = ({ friendProfile, onBack }: SupabaseChatWindow
         message={actionsTarget}
         isOwn={actionsTarget?.sender_id === user?.id}
         isPinned={!!actionsTarget && pinnedId === actionsTarget.id}
+        isStarred={!!actionsTarget && isStarred(actionsTarget.id)}
         quickReactions={quickReactions}
         onReact={(emoji) => actionsTarget && react(actionsTarget.id, emoji)}
+        onToggleStar={() => actionsTarget && toggleStar(actionsTarget.id)}
         onReply={() => actionsTarget && setReplyTo(actionsTarget)}
         onForward={() => actionsTarget && setForwardTarget(actionsTarget)}
         onPin={() => actionsTarget && pin(pinnedId === actionsTarget.id ? null : actionsTarget.id)}

@@ -7,12 +7,13 @@ import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { VerifiedBadge } from "@/components/ui/VerifiedBadge";
-import { Bell, BellOff, UserX, Flag, Trash2, Image as ImageIcon, Film, Link as LinkIcon, ExternalLink, Palette, Pin } from "lucide-react";
+import { Bell, BellOff, UserX, Flag, Trash2, Image as ImageIcon, Film, Link as LinkIcon, ExternalLink, Palette, Pin, Lock, Timer } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { useMessengerSettings } from "@/hooks/useMessengerSettings";
 import { formatLastSeen, isUserOnline, type PresenceStatus } from "@/hooks/usePresence";
+import { DISAPPEAR_OPTIONS } from "@/hooks/useDisappearingMode";
 
 interface Profile {
   id: string;
@@ -34,6 +35,8 @@ interface Props {
   pinnedPreview?: { id: string; label: string } | null;
   onUnpin?: () => void;
   onJumpToPinned?: () => void;
+  disappearingSeconds?: number;
+  onChangeDisappearing?: (s: number) => void;
 }
 
 interface MediaMsg {
@@ -46,7 +49,7 @@ interface MediaMsg {
 
 const URL_RE = /(https?:\/\/[^\s]+)/gi;
 
-export const ChatInfoPanel = ({ open, onOpenChange, friend, conversationId, status, onCleared, onCustomize, pinnedPreview, onUnpin, onJumpToPinned }: Props) => {
+export const ChatInfoPanel = ({ open, onOpenChange, friend, conversationId, status, onCleared, onCustomize, pinnedPreview, onUnpin, onJumpToPinned, disappearingSeconds = 0, onChangeDisappearing }: Props) => {
   const { user } = useAuth();
   const { isChatMuted, muteChat, unmuteChat } = useMessengerSettings();
   const [media, setMedia] = useState<MediaMsg[]>([]);
@@ -186,6 +189,52 @@ export const ChatInfoPanel = ({ open, onOpenChange, friend, conversationId, stat
           </div>
 
           <div className="px-5 space-y-1">
+            {/* Encryption banner */}
+            <div className="flex items-start gap-3 py-3 border-b">
+              <div className="h-9 w-9 rounded-full bg-emerald-500/15 text-emerald-500 flex items-center justify-center shrink-0">
+                <Lock className="h-4 w-4" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold">End-to-end encrypted</p>
+                <p className="text-xs text-muted-foreground">
+                  Messages are encrypted on your device. Only you and {friend.display_name || friend.username} can read them.
+                </p>
+              </div>
+            </div>
+
+            {/* Disappearing messages */}
+            {onChangeDisappearing && (
+              <div className="py-3 border-b">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="h-9 w-9 rounded-full bg-coral-accent/15 text-coral-accent flex items-center justify-center shrink-0">
+                    <Timer className="h-4 w-4" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm font-semibold">Disappearing messages</p>
+                    <p className="text-[11px] text-muted-foreground">
+                      Hide messages older than the selected window on this device.
+                    </p>
+                  </div>
+                </div>
+                <div className="flex flex-wrap gap-1.5 pl-12">
+                  {DISAPPEAR_OPTIONS.map((opt) => (
+                    <button
+                      key={opt.value}
+                      onClick={() => onChangeDisappearing(opt.value)}
+                      className={
+                        "text-xs font-semibold px-3 py-1.5 rounded-full transition " +
+                        (disappearingSeconds === opt.value
+                          ? "bg-coral-gradient text-white"
+                          : "bg-muted text-muted-foreground hover:bg-muted/80")
+                      }
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {onCustomize && (
               <button
                 onClick={onCustomize}
