@@ -586,7 +586,7 @@ export const SupabaseChatWindow = ({ friendProfile, onBack }: SupabaseChatWindow
           <input
             ref={fileInputRef}
             type="file"
-            accept="image/*,video/*,audio/*"
+            accept="*/*"
             onChange={handleFile}
             className="hidden"
           />
@@ -601,15 +601,64 @@ export const SupabaseChatWindow = ({ friendProfile, onBack }: SupabaseChatWindow
             </Button>
           ) : (
             <>
-              <Button
-                onClick={() => fileInputRef.current?.click()}
-                variant="ghost"
-                size="icon"
-                className="h-9 w-9 rounded-full shrink-0"
-                disabled={uploading}
-              >
-                {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ImageIcon className="h-5 w-5" />}
-              </Button>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full shrink-0" disabled={uploading}>
+                    {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-5 w-5" />}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent side="top" align="end" className="w-56 p-2">
+                  <button
+                    onClick={() => fileInputRef.current?.click()}
+                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-muted text-sm text-left"
+                  >
+                    <div className="h-9 w-9 rounded-full bg-coral-accent/15 text-coral-accent flex items-center justify-center">
+                      <ImageIcon className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <p className="font-medium">Photo / Video</p>
+                      <p className="text-[11px] text-muted-foreground">From your device</p>
+                    </div>
+                  </button>
+                  <button
+                    onClick={() => fileInputRef.current?.click()}
+                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-muted text-sm text-left"
+                  >
+                    <div className="h-9 w-9 rounded-full bg-blue-500/15 text-blue-500 flex items-center justify-center">
+                      <FileText className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <p className="font-medium">Document</p>
+                      <p className="text-[11px] text-muted-foreground">PDFs, docs, files</p>
+                    </div>
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (!navigator.geolocation) { toast.error("Location not supported"); return; }
+                      const t = toast.loading("Getting location…");
+                      navigator.geolocation.getCurrentPosition(
+                        async (pos) => {
+                          toast.dismiss(t);
+                          const { latitude, longitude } = pos.coords;
+                          await sendText(`📍 My location: https://maps.google.com/?q=${latitude},${longitude}`);
+                          toast.success("Location shared");
+                        },
+                        () => { toast.dismiss(t); toast.error("Couldn't get location"); },
+                        { enableHighAccuracy: true, timeout: 8000 }
+                      );
+                    }}
+                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-muted text-sm text-left"
+                  >
+                    <div className="h-9 w-9 rounded-full bg-emerald-500/15 text-emerald-500 flex items-center justify-center">
+                      <MapPin className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <p className="font-medium">Location</p>
+                      <p className="text-[11px] text-muted-foreground">Share current location</p>
+                    </div>
+                  </button>
+                </PopoverContent>
+              </Popover>
               <VoiceRecorder
                 onSend={async (blob) => {
                   const file = new File([blob], `voice_${Date.now()}.webm`, { type: "audio/webm" });
