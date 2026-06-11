@@ -677,6 +677,8 @@ export const SupabaseChatWindow = ({ friendProfile, onBack }: SupabaseChatWindow
         friend={friendProfile}
         conversationId={conversationId}
         status={status}
+        disappearingSeconds={disappearSecs}
+        onChangeDisappearing={setDisappearing}
         onCleared={() => {
           if (conversationId && user?.id) {
             setClearedAt(localStorage.getItem(`chat_cleared_${conversationId}_${user.id}`));
