@@ -322,6 +322,19 @@ export const useChatPreviews = (friendIds: string[]) => {
           next[fid] = { conversationId: convId, unreadCount: 0 };
         }
       });
+      // Best-effort decrypt the encrypted previews
+      await Promise.all(
+        Object.values(next).map(async (entry) => {
+          if (entry.lastMessage === "🔒 Encrypted message" && entry.conversationId) {
+            const raw = (msgs as any[] | null)?.find(
+              (m) => m.conversation_id === entry.conversationId
+            )?.content;
+            if (raw && isEncrypted(raw)) {
+              try { entry.lastMessage = await decryptText(entry.conversationId, raw); } catch {}
+            }
+          }
+        })
+      );
       if (!cancelled) setPreviews(next);
     };
 
