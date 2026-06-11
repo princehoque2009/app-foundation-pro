@@ -226,10 +226,11 @@ export const useChat = (conversationId: string | null) => {
   const forwardMessage = useCallback(
     async (msg: ChatMessage, toConversationId: string) => {
       if (!user?.id || !toConversationId) return;
+      const content = msg.content ? await encryptText(toConversationId, msg.content) : null;
       await supabase.from("messages" as any).insert({
         conversation_id: toConversationId,
         sender_id: user.id,
-        content: msg.content,
+        content,
         media_url: msg.media_url,
         media_type: msg.media_type,
       });
