@@ -238,6 +238,8 @@ export const SupabaseChatWindow = ({ friendProfile, onBack }: SupabaseChatWindow
               {displayName}
             </h3>
             {friendProfile.is_verified && <VerifiedBadge size="sm" />}
+            <Lock className="h-3 w-3 text-emerald-500 shrink-0" aria-label="End-to-end encrypted" />
+            {disappearSecs > 0 && <Timer className="h-3 w-3 text-coral-accent shrink-0" aria-label="Disappearing messages on" />}
           </div>
           <p className={cn("text-xs truncate", isFriendTyping ? "text-primary font-medium" : online ? "text-green-500 font-medium" : "text-muted-foreground")}>
             {isFriendTyping ? "typing…" : formatLastSeen(status)}
