@@ -3,13 +3,14 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useChat, useDirectConversation } from "@/hooks/useChat";
 import { usePresence, formatLastSeen, setTypingStatus, isUserOnline } from "@/hooks/usePresence";
 import { useMessageReactions, REACTION_OPTIONS } from "@/hooks/useMessageReactions";
+import { useHiddenMessages } from "@/hooks/useHiddenMessages";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { VerifiedBadge } from "@/components/ui/VerifiedBadge";
-import { ArrowLeft, Send, Image as ImageIcon, Smile, Loader2, Check, CheckCheck, Info, Phone, Video, PhoneMissed, Pin, X, Reply as ReplyIcon, Plus, MapPin, FileText, Timer, Lock, Star } from "lucide-react";
+import { ArrowLeft, Send, Image as ImageIcon, Smile, Loader2, Check, CheckCheck, Info, Phone, Video, PhoneMissed, Pin, X, Reply as ReplyIcon, Plus, MapPin, FileText, Timer, Lock, Star, Camera, Search as SearchIcon, Trash2, Forward as ForwardIcon, Copy as CopyIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format, isToday, isYesterday } from "date-fns";
 import { ChatInfoPanel } from "./ChatInfoPanel";
@@ -52,7 +53,7 @@ const formatBubbleTime = (iso: string) => {
 export const SupabaseChatWindow = ({ friendProfile, onBack }: SupabaseChatWindowProps) => {
   const { user } = useAuth();
   const { conversationId, loading: convoLoading } = useDirectConversation(friendProfile.id);
-  const { messages, loading, sendText, sendMedia, deleteMessage, forwardMessage } = useChat(conversationId);
+  const { messages, loading, sendText, sendMedia, deleteMessage, editMessage, forwardMessage } = useChat(conversationId);
   const presence = usePresence([friendProfile.id]);
   const status = presence[friendProfile.id];
   const online = isUserOnline(status);
@@ -61,6 +62,7 @@ export const SupabaseChatWindow = ({ friendProfile, onBack }: SupabaseChatWindow
   const { pinnedId, pin } = usePinnedMessage(conversationId);
   const { seconds: disappearSecs, setDisappearing } = useDisappearingMode(conversationId);
   const { isStarred, toggleStar } = useStarredMessages(user?.id);
+  const { hide: hideMsg, hideMany, isHidden } = useHiddenMessages(user?.id);
   const [customizeOpen, setCustomizeOpen] = useState(false);
 
   const displayName = prefs.nickname?.trim() || friendProfile.display_name || friendProfile.username;
@@ -80,18 +82,30 @@ export const SupabaseChatWindow = ({ friendProfile, onBack }: SupabaseChatWindow
   const [actionsTarget, setActionsTarget] = useState<ChatMessage | null>(null);
   const [forwardTarget, setForwardTarget] = useState<ChatMessage | null>(null);
   const [replyTo, setReplyTo] = useState<ChatMessage | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingText, setEditingText] = useState("");
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const [clearedAt, setClearedAt] = useState<string | null>(() =>
     conversationId && user?.id ? localStorage.getItem(`chat_cleared_${conversationId}_${user.id}`) : null
   );
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
   const typingTimeoutRef = useRef<number | null>(null);
   const longPressTimer = useRef<number | null>(null);
+  const swipeStart = useRef<{ x: number; y: number; id: string } | null>(null);
 
   // Re-read cleared timestamp when chat changes
   useEffect(() => {
     if (!conversationId || !user?.id) return;
     setClearedAt(localStorage.getItem(`chat_cleared_${conversationId}_${user.id}`));
+    setSelectionMode(false);
+    setSelectedIds(new Set());
+    setSearchOpen(false);
+    setSearchQuery("");
   }, [conversationId, user?.id]);
 
   // Filter out cleared messages
