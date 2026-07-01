@@ -763,14 +763,18 @@ export const SupabaseChatWindow = ({ friendProfile, onBack }: SupabaseChatWindow
 
           <Input
             value={text}
-            onChange={(e) => handleTyping(e.target.value)}
+            onChange={(e) => {
+              if (editingId) setEditingText(e.target.value);
+              handleTyping(e.target.value);
+            }}
             onKeyDown={(e) => {
               if (e.key === "Enter" && !e.shiftKey) {
                 e.preventDefault();
                 handleSend();
               }
+              if (e.key === "Escape" && editingId) cancelEdit();
             }}
-            placeholder="Message…"
+            placeholder={editingId ? "Edit message…" : "Message…"}
             className="flex-1 border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 px-1"
           />
 
