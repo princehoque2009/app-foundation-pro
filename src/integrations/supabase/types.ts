@@ -894,6 +894,7 @@ export type Database = {
           content: string | null
           conversation_id: string
           created_at: string
+          edited_at: string | null
           id: string
           is_deleted: boolean | null
           is_pinned: boolean | null
@@ -912,6 +913,7 @@ export type Database = {
           content?: string | null
           conversation_id: string
           created_at?: string
+          edited_at?: string | null
           id?: string
           is_deleted?: boolean | null
           is_pinned?: boolean | null
@@ -930,6 +932,7 @@ export type Database = {
           content?: string | null
           conversation_id?: string
           created_at?: string
+          edited_at?: string | null
           id?: string
           is_deleted?: boolean | null
           is_pinned?: boolean | null
