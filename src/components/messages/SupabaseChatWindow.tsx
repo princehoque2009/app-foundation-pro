@@ -545,17 +545,39 @@ export const SupabaseChatWindow = ({ friendProfile, onBack }: SupabaseChatWindow
                 }
               };
 
+              const isSelected = selectedIds.has(m.id);
+              const isMatch = searchQuery && searchMatches.has(m.id);
+              const rowClick = () => {
+                if (selectionMode) toggleSelected(m.id);
+              };
               return (
                 <div
                   key={m.id}
                   id={`msg-${m.id}`}
-                  onTouchStart={() => startLongPress(m)}
-                  onTouchEnd={cancelLongPress}
-                  onTouchMove={cancelLongPress}
+                  onTouchStart={(e) => onBubbleTouchStart(m, e)}
+                  onTouchEnd={(e) => onBubbleTouchEnd(m, e)}
+                  onTouchMove={onBubbleTouchMove}
                   onTouchCancel={cancelLongPress}
                   onContextMenu={(e) => { e.preventDefault(); setActionsTarget(m); }}
-                  className={cn("flex w-full group rounded-xl transition-shadow", isOwn ? "justify-end" : "justify-start", pinnedId === m.id && "ring-1 ring-primary/40")}
+                  onClick={rowClick}
+                  className={cn(
+                    "flex w-full group rounded-xl transition-all",
+                    isOwn ? "justify-end" : "justify-start",
+                    pinnedId === m.id && "ring-1 ring-primary/40",
+                    isSelected && "bg-primary/10",
+                    isMatch && "ring-2 ring-amber-400/60"
+                  )}
                 >
+                  {selectionMode && (
+                    <div className={cn("flex items-center px-2 shrink-0", isOwn ? "order-2" : "")}>
+                      <span className={cn(
+                        "h-5 w-5 rounded-full border-2 flex items-center justify-center",
+                        isSelected ? "bg-primary border-primary text-primary-foreground" : "border-muted-foreground/40"
+                      )}>
+                        {isSelected && <Check className="h-3 w-3" />}
+                      </span>
+                    </div>
+                  )}
                   <div className={cn("max-w-[85%] sm:max-w-[78%] min-w-0 flex flex-col", isOwn ? "items-end" : "items-start")}>
                     {replyTarget && (
                       <button
