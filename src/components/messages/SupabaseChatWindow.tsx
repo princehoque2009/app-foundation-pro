@@ -194,6 +194,14 @@ export const SupabaseChatWindow = ({ friendProfile, onBack }: SupabaseChatWindow
   const isFriendTyping = status?.typing_in_conversation && status.typing_in_conversation === conversationId;
 
   const handleSend = async () => {
+    if (editingId) {
+      const t = editingText.trim();
+      if (t) await editMessage(editingId, t);
+      setEditingId(null);
+      setEditingText("");
+      setText("");
+      return;
+    }
     if (!text.trim()) return;
     const value = text;
     const rid = replyTo?.id;
@@ -213,6 +221,7 @@ export const SupabaseChatWindow = ({ friendProfile, onBack }: SupabaseChatWindow
     } finally {
       setUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
+      if (cameraInputRef.current) cameraInputRef.current.value = "";
     }
   };
 
@@ -227,6 +236,75 @@ export const SupabaseChatWindow = ({ friendProfile, onBack }: SupabaseChatWindow
     if (longPressTimer.current) {
       window.clearTimeout(longPressTimer.current);
       longPressTimer.current = null;
+    }
+  };
+
+  const toggleSelected = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+  const startSelection = (id: string) => {
+    setSelectionMode(true);
+    setSelectedIds(new Set([id]));
+  };
+  const clearSelection = () => {
+    setSelectionMode(false);
+    setSelectedIds(new Set());
+  };
+  const bulkDeleteForMe = () => {
+    hideMany(Array.from(selectedIds));
+    toast.success(`Deleted ${selectedIds.size} for you`);
+    clearSelection();
+  };
+  const bulkCopy = () => {
+    const parts = visibleMessages
+      .filter((m) => selectedIds.has(m.id) && m.content)
+      .map((m) => m.content as string);
+    if (parts.length) {
+      navigator.clipboard.writeText(parts.join("\n"));
+      toast.success("Copied");
+    }
+    clearSelection();
+  };
+
+  const beginEdit = (m: ChatMessage) => {
+    setEditingId(m.id);
+    setEditingText(m.content || "");
+    setText(m.content || "");
+    setReplyTo(null);
+  };
+  const cancelEdit = () => {
+    setEditingId(null);
+    setEditingText("");
+    setText("");
+  };
+
+  // Swipe-to-reply handlers
+  const onBubbleTouchStart = (m: ChatMessage, e: React.TouchEvent) => {
+    const t = e.touches[0];
+    swipeStart.current = { x: t.clientX, y: t.clientY, id: m.id };
+    startLongPress(m);
+  };
+  const onBubbleTouchMove = (e: React.TouchEvent) => {
+    if (!swipeStart.current) return;
+    const t = e.touches[0];
+    const dx = t.clientX - swipeStart.current.x;
+    const dy = t.clientY - swipeStart.current.y;
+    if (Math.abs(dx) > 8 || Math.abs(dy) > 8) cancelLongPress();
+  };
+  const onBubbleTouchEnd = (m: ChatMessage, e: React.TouchEvent) => {
+    cancelLongPress();
+    if (!swipeStart.current) return;
+    const t = e.changedTouches[0];
+    const dx = t.clientX - swipeStart.current.x;
+    const dy = t.clientY - swipeStart.current.y;
+    swipeStart.current = null;
+    if (Math.abs(dx) > 55 && Math.abs(dy) < 40 && !m.is_deleted && m.message_type !== "call_log") {
+      setReplyTo(m);
+      if (navigator.vibrate) navigator.vibrate(15);
     }
   };
 
