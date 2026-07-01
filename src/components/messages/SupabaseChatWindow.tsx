@@ -119,8 +119,15 @@ export const SupabaseChatWindow = ({ friendProfile, onBack }: SupabaseChatWindow
       const cutoff = Date.now() - disappearSecs * 1000;
       arr = arr.filter((m) => new Date(m.created_at).getTime() >= cutoff);
     }
+    arr = arr.filter((m) => !isHidden(m.id));
     return arr;
-  }, [messages, clearedAt, disappearSecs]);
+  }, [messages, clearedAt, disappearSecs, isHidden]);
+
+  const searchMatches = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return new Set<string>();
+    return new Set(visibleMessages.filter((m) => (m.content || "").toLowerCase().includes(q)).map((m) => m.id));
+  }, [visibleMessages, searchQuery]);
 
   // Tick every minute so disappearing messages re-evaluate
   const [, setTick] = useState(0);
