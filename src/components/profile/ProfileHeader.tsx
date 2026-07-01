@@ -17,6 +17,7 @@ import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 import { toast } from "@/hooks/use-toast";
 import { useActiveEffects } from "@/hooks/useActiveEffects";
+import { CoverPhotoUploader } from "./CoverPhotoUploader";
 
 interface ProfileHeaderProps {
   profile: any;
@@ -87,21 +88,29 @@ export const ProfileHeader = ({
   return (
     <>
       <div className="relative">
-        {/* Hero Layer - Cover Photo (view only, no editing, no fullscreen) */}
+        {/* Hero Layer - Cover Photo (owner can edit inline; instant refresh via React Query) */}
         <div className="relative h-36 sm:h-48 overflow-hidden mx-3 mt-2 rounded-xl">
-          <div className="relative h-36 sm:h-48 w-full overflow-hidden bg-gradient-to-br from-muted to-muted/50">
-            {profile?.cover_photo_url ? (
-              <img
-                src={profile.cover_photo_url}
-                alt="Cover"
-                className="w-full h-full object-cover pointer-events-none select-none"
-                draggable={false}
-                onContextMenu={(e) => e.preventDefault()}
-              />
-            ) : (
-              <div className="absolute inset-0 bg-gradient-to-br from-muted to-muted/50" />
-            )}
-          </div>
+          {isOwner ? (
+            <CoverPhotoUploader
+              userId={userId}
+              currentCoverUrl={profile?.cover_photo_url}
+              isOwner
+            />
+          ) : (
+            <div className="relative h-36 sm:h-48 w-full overflow-hidden bg-gradient-to-br from-muted to-muted/50">
+              {profile?.cover_photo_url ? (
+                <img
+                  src={profile.cover_photo_url}
+                  alt="Cover"
+                  className="w-full h-full object-cover pointer-events-none select-none"
+                  draggable={false}
+                  onContextMenu={(e) => e.preventDefault()}
+                />
+              ) : (
+                <div className="absolute inset-0 bg-gradient-to-br from-muted to-muted/50" />
+              )}
+            </div>
+          )}
           {/* Gradient overlay for contrast */}
           <div className="absolute inset-0 bg-gradient-to-t from-background/60 via-transparent to-transparent pointer-events-none" />
         </div>
