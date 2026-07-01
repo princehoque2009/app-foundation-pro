@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { VerifiedBadge } from "@/components/ui/VerifiedBadge";
-import { ArrowLeft, Send, Image as ImageIcon, Smile, Loader2, Check, CheckCheck, Info, Phone, Video, PhoneMissed, Pin, X, Reply as ReplyIcon, Plus, MapPin, FileText, Timer, Lock, Star, Camera, Search as SearchIcon, Trash2, Forward as ForwardIcon, Copy as CopyIcon } from "lucide-react";
+import { ArrowLeft, Send, Image as ImageIcon, Smile, Loader2, Check, CheckCheck, Info, Phone, Video, PhoneMissed, Pin, X, Reply as ReplyIcon, Plus, MapPin, FileText, Timer, Lock, Star, Camera, Search as SearchIcon, Trash2, Forward as ForwardIcon, Copy as CopyIcon, Pencil } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format, isToday, isYesterday } from "date-fns";
 import { ChatInfoPanel } from "./ChatInfoPanel";
@@ -781,6 +781,26 @@ export const SupabaseChatWindow = ({ friendProfile, onBack }: SupabaseChatWindow
             onChange={handleFile}
             className="hidden"
           />
+          <input
+            ref={cameraInputRef}
+            type="file"
+            accept="image/*,video/*"
+            capture="environment"
+            onChange={handleFile}
+            className="hidden"
+          />
+
+          {!editingId && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => cameraInputRef.current?.click()}
+              className="h-9 w-9 rounded-full shrink-0"
+              aria-label="Camera"
+            >
+              <Camera className="h-5 w-5" />
+            </Button>
+          )}
 
           {text.trim() ? (
             <Button
@@ -922,7 +942,14 @@ export const SupabaseChatWindow = ({ friendProfile, onBack }: SupabaseChatWindow
             toast.success("Copied");
           }
         }}
-        onDelete={() => actionsTarget && deleteMessage(actionsTarget.id)}
+        onEdit={() => actionsTarget && beginEdit(actionsTarget)}
+        onSelect={() => actionsTarget && startSelection(actionsTarget.id)}
+        onDeleteForMe={() => {
+          if (!actionsTarget) return;
+          hideMsg(actionsTarget.id);
+          toast.success("Deleted for you");
+        }}
+        onDeleteForEveryone={() => actionsTarget && deleteMessage(actionsTarget.id)}
         onReport={async () => {
           if (!actionsTarget || !user?.id) return;
           const { supabase } = await import("@/integrations/supabase/client");
