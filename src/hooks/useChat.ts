@@ -20,6 +20,7 @@ export interface ChatMessage {
   call_status?: "started" | "missed" | "declined" | "ended" | null;
   call_duration?: number | null;
   is_deleted?: boolean | null;
+  edited_at?: string | null;
 }
 
 /** Find or create a 1:1 conversation between current user and otherUserId. */
@@ -223,6 +224,22 @@ export const useChat = (conversationId: string | null) => {
     []
   );
 
+  const editMessage = useCallback(
+    async (messageId: string, newText: string) => {
+      if (!conversationId) return;
+      const plain = newText.trim();
+      if (!plain) return;
+      const editedAt = new Date().toISOString();
+      setMessages((prev) => prev.map((m) => (m.id === messageId ? { ...m, content: plain, edited_at: editedAt } : m)));
+      const cipher = await encryptText(conversationId, plain);
+      await supabase
+        .from("messages" as any)
+        .update({ content: cipher, edited_at: editedAt })
+        .eq("id", messageId);
+    },
+    [conversationId]
+  );
+
   const forwardMessage = useCallback(
     async (msg: ChatMessage, toConversationId: string) => {
       if (!user?.id || !toConversationId) return;
@@ -242,7 +259,7 @@ export const useChat = (conversationId: string | null) => {
     [user?.id]
   );
 
-  return { messages, loading, sendText, sendMedia, deleteMessage, forwardMessage };
+  return { messages, loading, sendText, sendMedia, deleteMessage, editMessage, forwardMessage };
 };
 
 /** Build a map of friendId -> {lastMessage, lastTime, unread} via one query. */

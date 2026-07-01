@@ -3,13 +3,14 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useChat, useDirectConversation } from "@/hooks/useChat";
 import { usePresence, formatLastSeen, setTypingStatus, isUserOnline } from "@/hooks/usePresence";
 import { useMessageReactions, REACTION_OPTIONS } from "@/hooks/useMessageReactions";
+import { useHiddenMessages } from "@/hooks/useHiddenMessages";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { VerifiedBadge } from "@/components/ui/VerifiedBadge";
-import { ArrowLeft, Send, Image as ImageIcon, Smile, Loader2, Check, CheckCheck, Info, Phone, Video, PhoneMissed, Pin, X, Reply as ReplyIcon, Plus, MapPin, FileText, Timer, Lock, Star } from "lucide-react";
+import { ArrowLeft, Send, Image as ImageIcon, Smile, Loader2, Check, CheckCheck, Info, Phone, Video, PhoneMissed, Pin, X, Reply as ReplyIcon, Plus, MapPin, FileText, Timer, Lock, Star, Camera, Search as SearchIcon, Trash2, Forward as ForwardIcon, Copy as CopyIcon, Pencil } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format, isToday, isYesterday } from "date-fns";
 import { ChatInfoPanel } from "./ChatInfoPanel";
@@ -52,7 +53,7 @@ const formatBubbleTime = (iso: string) => {
 export const SupabaseChatWindow = ({ friendProfile, onBack }: SupabaseChatWindowProps) => {
   const { user } = useAuth();
   const { conversationId, loading: convoLoading } = useDirectConversation(friendProfile.id);
-  const { messages, loading, sendText, sendMedia, deleteMessage, forwardMessage } = useChat(conversationId);
+  const { messages, loading, sendText, sendMedia, deleteMessage, editMessage, forwardMessage } = useChat(conversationId);
   const presence = usePresence([friendProfile.id]);
   const status = presence[friendProfile.id];
   const online = isUserOnline(status);
@@ -61,6 +62,7 @@ export const SupabaseChatWindow = ({ friendProfile, onBack }: SupabaseChatWindow
   const { pinnedId, pin } = usePinnedMessage(conversationId);
   const { seconds: disappearSecs, setDisappearing } = useDisappearingMode(conversationId);
   const { isStarred, toggleStar } = useStarredMessages(user?.id);
+  const { hide: hideMsg, hideMany, isHidden } = useHiddenMessages(user?.id);
   const [customizeOpen, setCustomizeOpen] = useState(false);
 
   const displayName = prefs.nickname?.trim() || friendProfile.display_name || friendProfile.username;
@@ -80,18 +82,30 @@ export const SupabaseChatWindow = ({ friendProfile, onBack }: SupabaseChatWindow
   const [actionsTarget, setActionsTarget] = useState<ChatMessage | null>(null);
   const [forwardTarget, setForwardTarget] = useState<ChatMessage | null>(null);
   const [replyTo, setReplyTo] = useState<ChatMessage | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingText, setEditingText] = useState("");
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const [clearedAt, setClearedAt] = useState<string | null>(() =>
     conversationId && user?.id ? localStorage.getItem(`chat_cleared_${conversationId}_${user.id}`) : null
   );
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
   const typingTimeoutRef = useRef<number | null>(null);
   const longPressTimer = useRef<number | null>(null);
+  const swipeStart = useRef<{ x: number; y: number; id: string } | null>(null);
 
   // Re-read cleared timestamp when chat changes
   useEffect(() => {
     if (!conversationId || !user?.id) return;
     setClearedAt(localStorage.getItem(`chat_cleared_${conversationId}_${user.id}`));
+    setSelectionMode(false);
+    setSelectedIds(new Set());
+    setSearchOpen(false);
+    setSearchQuery("");
   }, [conversationId, user?.id]);
 
   // Filter out cleared messages
@@ -105,8 +119,15 @@ export const SupabaseChatWindow = ({ friendProfile, onBack }: SupabaseChatWindow
       const cutoff = Date.now() - disappearSecs * 1000;
       arr = arr.filter((m) => new Date(m.created_at).getTime() >= cutoff);
     }
+    arr = arr.filter((m) => !isHidden(m.id));
     return arr;
-  }, [messages, clearedAt, disappearSecs]);
+  }, [messages, clearedAt, disappearSecs, isHidden]);
+
+  const searchMatches = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return new Set<string>();
+    return new Set(visibleMessages.filter((m) => (m.content || "").toLowerCase().includes(q)).map((m) => m.id));
+  }, [visibleMessages, searchQuery]);
 
   // Tick every minute so disappearing messages re-evaluate
   const [, setTick] = useState(0);
@@ -173,6 +194,14 @@ export const SupabaseChatWindow = ({ friendProfile, onBack }: SupabaseChatWindow
   const isFriendTyping = status?.typing_in_conversation && status.typing_in_conversation === conversationId;
 
   const handleSend = async () => {
+    if (editingId) {
+      const t = editingText.trim();
+      if (t) await editMessage(editingId, t);
+      setEditingId(null);
+      setEditingText("");
+      setText("");
+      return;
+    }
     if (!text.trim()) return;
     const value = text;
     const rid = replyTo?.id;
@@ -192,6 +221,7 @@ export const SupabaseChatWindow = ({ friendProfile, onBack }: SupabaseChatWindow
     } finally {
       setUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
+      if (cameraInputRef.current) cameraInputRef.current.value = "";
     }
   };
 
@@ -206,6 +236,75 @@ export const SupabaseChatWindow = ({ friendProfile, onBack }: SupabaseChatWindow
     if (longPressTimer.current) {
       window.clearTimeout(longPressTimer.current);
       longPressTimer.current = null;
+    }
+  };
+
+  const toggleSelected = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+  const startSelection = (id: string) => {
+    setSelectionMode(true);
+    setSelectedIds(new Set([id]));
+  };
+  const clearSelection = () => {
+    setSelectionMode(false);
+    setSelectedIds(new Set());
+  };
+  const bulkDeleteForMe = () => {
+    hideMany(Array.from(selectedIds));
+    toast.success(`Deleted ${selectedIds.size} for you`);
+    clearSelection();
+  };
+  const bulkCopy = () => {
+    const parts = visibleMessages
+      .filter((m) => selectedIds.has(m.id) && m.content)
+      .map((m) => m.content as string);
+    if (parts.length) {
+      navigator.clipboard.writeText(parts.join("\n"));
+      toast.success("Copied");
+    }
+    clearSelection();
+  };
+
+  const beginEdit = (m: ChatMessage) => {
+    setEditingId(m.id);
+    setEditingText(m.content || "");
+    setText(m.content || "");
+    setReplyTo(null);
+  };
+  const cancelEdit = () => {
+    setEditingId(null);
+    setEditingText("");
+    setText("");
+  };
+
+  // Swipe-to-reply handlers
+  const onBubbleTouchStart = (m: ChatMessage, e: React.TouchEvent) => {
+    const t = e.touches[0];
+    swipeStart.current = { x: t.clientX, y: t.clientY, id: m.id };
+    startLongPress(m);
+  };
+  const onBubbleTouchMove = (e: React.TouchEvent) => {
+    if (!swipeStart.current) return;
+    const t = e.touches[0];
+    const dx = t.clientX - swipeStart.current.x;
+    const dy = t.clientY - swipeStart.current.y;
+    if (Math.abs(dx) > 8 || Math.abs(dy) > 8) cancelLongPress();
+  };
+  const onBubbleTouchEnd = (m: ChatMessage, e: React.TouchEvent) => {
+    cancelLongPress();
+    if (!swipeStart.current) return;
+    const t = e.changedTouches[0];
+    const dx = t.clientX - swipeStart.current.x;
+    const dy = t.clientY - swipeStart.current.y;
+    swipeStart.current = null;
+    if (Math.abs(dx) > 55 && Math.abs(dy) < 40 && !m.is_deleted && m.message_type !== "call_log") {
+      setReplyTo(m);
+      if (navigator.vibrate) navigator.vibrate(15);
     }
   };
 
@@ -248,6 +347,15 @@ export const SupabaseChatWindow = ({ friendProfile, onBack }: SupabaseChatWindow
         <Button
           variant="ghost"
           size="icon"
+          onClick={() => setSearchOpen((v) => !v)}
+          className="shrink-0"
+          aria-label="Search in conversation"
+        >
+          <SearchIcon className="h-5 w-5" />
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
           onClick={() => startAudioCall(friendProfile.id, conversationId)}
           className="shrink-0"
           aria-label="Audio call"
@@ -267,6 +375,54 @@ export const SupabaseChatWindow = ({ friendProfile, onBack }: SupabaseChatWindow
           <Info className="h-5 w-5" />
         </Button>
       </div>
+
+      {/* In-chat search bar */}
+      {searchOpen && (
+        <div className="px-3 py-2 border-b bg-card flex items-center gap-2">
+          <SearchIcon className="h-4 w-4 text-muted-foreground shrink-0" />
+          <Input
+            autoFocus
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search in conversation…"
+            className="h-8 border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 px-0"
+          />
+          {searchQuery && (
+            <span className="text-[11px] text-muted-foreground shrink-0">{searchMatches.size} match{searchMatches.size === 1 ? "" : "es"}</span>
+          )}
+          <button onClick={() => { setSearchOpen(false); setSearchQuery(""); }} className="text-muted-foreground shrink-0">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+      )}
+
+      {/* Selection toolbar */}
+      {selectionMode && (
+        <div className="px-3 py-2 border-b bg-primary/10 flex items-center gap-2">
+          <button onClick={clearSelection} className="p-1 rounded-full hover:bg-muted" aria-label="Cancel">
+            <X className="h-4 w-4" />
+          </button>
+          <span className="text-sm font-medium flex-1">{selectedIds.size} selected</span>
+          <Button variant="ghost" size="icon" onClick={bulkCopy} disabled={!selectedIds.size} aria-label="Copy">
+            <CopyIcon className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => {
+              const first = visibleMessages.find((m) => selectedIds.has(m.id));
+              if (first) { setForwardTarget(first); }
+            }}
+            disabled={!selectedIds.size}
+            aria-label="Forward"
+          >
+            <ForwardIcon className="h-4 w-4" />
+          </Button>
+          <Button variant="ghost" size="icon" onClick={bulkDeleteForMe} disabled={!selectedIds.size} className="text-destructive" aria-label="Delete">
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
+      )}
 
       {/* Pinned message banner */}
       {pinnedId && (() => {
@@ -389,17 +545,39 @@ export const SupabaseChatWindow = ({ friendProfile, onBack }: SupabaseChatWindow
                 }
               };
 
+              const isSelected = selectedIds.has(m.id);
+              const isMatch = searchQuery && searchMatches.has(m.id);
+              const rowClick = () => {
+                if (selectionMode) toggleSelected(m.id);
+              };
               return (
                 <div
                   key={m.id}
                   id={`msg-${m.id}`}
-                  onTouchStart={() => startLongPress(m)}
-                  onTouchEnd={cancelLongPress}
-                  onTouchMove={cancelLongPress}
+                  onTouchStart={(e) => onBubbleTouchStart(m, e)}
+                  onTouchEnd={(e) => onBubbleTouchEnd(m, e)}
+                  onTouchMove={onBubbleTouchMove}
                   onTouchCancel={cancelLongPress}
                   onContextMenu={(e) => { e.preventDefault(); setActionsTarget(m); }}
-                  className={cn("flex w-full group rounded-xl transition-shadow", isOwn ? "justify-end" : "justify-start", pinnedId === m.id && "ring-1 ring-primary/40")}
+                  onClick={rowClick}
+                  className={cn(
+                    "flex w-full group rounded-xl transition-all",
+                    isOwn ? "justify-end" : "justify-start",
+                    pinnedId === m.id && "ring-1 ring-primary/40",
+                    isSelected && "bg-primary/10",
+                    isMatch && "ring-2 ring-amber-400/60"
+                  )}
                 >
+                  {selectionMode && (
+                    <div className={cn("flex items-center px-2 shrink-0", isOwn ? "order-2" : "")}>
+                      <span className={cn(
+                        "h-5 w-5 rounded-full border-2 flex items-center justify-center",
+                        isSelected ? "bg-primary border-primary text-primary-foreground" : "border-muted-foreground/40"
+                      )}>
+                        {isSelected && <Check className="h-3 w-3" />}
+                      </span>
+                    </div>
+                  )}
                   <div className={cn("max-w-[85%] sm:max-w-[78%] min-w-0 flex flex-col", isOwn ? "items-end" : "items-start")}>
                     {replyTarget && (
                       <button
@@ -509,6 +687,7 @@ export const SupabaseChatWindow = ({ friendProfile, onBack }: SupabaseChatWindow
 
                     {isLast && (
                       <span className="text-[10px] text-muted-foreground mt-1 px-1 flex items-center gap-1">
+                        {m.edited_at && <span className="italic opacity-70">edited ·</span>}
                         {formatBubbleTime(m.created_at)}
                         {isOwn && (m.is_read ? <CheckCheck className="h-3 w-3 text-primary" /> : <Check className="h-3 w-3" />)}
                       </span>
@@ -532,7 +711,19 @@ export const SupabaseChatWindow = ({ friendProfile, onBack }: SupabaseChatWindow
 
       {/* Composer */}
       <div className="border-t p-3 bg-card">
-        {replyTo && (
+        {editingId && (
+          <div className="flex items-center gap-2 mb-2 px-3 py-2 rounded-2xl bg-amber-500/10 border-l-2 border-amber-500">
+            <Pencil className="h-4 w-4 text-amber-600 shrink-0" />
+            <div className="flex-1 min-w-0">
+              <p className="text-[11px] font-medium text-amber-600">Editing message</p>
+              <p className="text-xs text-muted-foreground truncate">{editingText}</p>
+            </div>
+            <button onClick={cancelEdit} className="shrink-0 text-muted-foreground hover:text-foreground">
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        )}
+        {replyTo && !editingId && (
           <div className="flex items-center gap-2 mb-2 px-3 py-2 rounded-2xl bg-muted/60 border-l-2 border-primary">
             <ReplyIcon className="h-4 w-4 text-primary shrink-0" />
             <div className="flex-1 min-w-0">
@@ -572,14 +763,18 @@ export const SupabaseChatWindow = ({ friendProfile, onBack }: SupabaseChatWindow
 
           <Input
             value={text}
-            onChange={(e) => handleTyping(e.target.value)}
+            onChange={(e) => {
+              if (editingId) setEditingText(e.target.value);
+              handleTyping(e.target.value);
+            }}
             onKeyDown={(e) => {
               if (e.key === "Enter" && !e.shiftKey) {
                 e.preventDefault();
                 handleSend();
               }
+              if (e.key === "Escape" && editingId) cancelEdit();
             }}
-            placeholder="Message…"
+            placeholder={editingId ? "Edit message…" : "Message…"}
             className="flex-1 border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 px-1"
           />
 
@@ -590,6 +785,26 @@ export const SupabaseChatWindow = ({ friendProfile, onBack }: SupabaseChatWindow
             onChange={handleFile}
             className="hidden"
           />
+          <input
+            ref={cameraInputRef}
+            type="file"
+            accept="image/*,video/*"
+            capture="environment"
+            onChange={handleFile}
+            className="hidden"
+          />
+
+          {!editingId && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => cameraInputRef.current?.click()}
+              className="h-9 w-9 rounded-full shrink-0"
+              aria-label="Camera"
+            >
+              <Camera className="h-5 w-5" />
+            </Button>
+          )}
 
           {text.trim() ? (
             <Button
@@ -731,7 +946,14 @@ export const SupabaseChatWindow = ({ friendProfile, onBack }: SupabaseChatWindow
             toast.success("Copied");
           }
         }}
-        onDelete={() => actionsTarget && deleteMessage(actionsTarget.id)}
+        onEdit={() => actionsTarget && beginEdit(actionsTarget)}
+        onSelect={() => actionsTarget && startSelection(actionsTarget.id)}
+        onDeleteForMe={() => {
+          if (!actionsTarget) return;
+          hideMsg(actionsTarget.id);
+          toast.success("Deleted for you");
+        }}
+        onDeleteForEveryone={() => actionsTarget && deleteMessage(actionsTarget.id)}
         onReport={async () => {
           if (!actionsTarget || !user?.id) return;
           const { supabase } = await import("@/integrations/supabase/client");
