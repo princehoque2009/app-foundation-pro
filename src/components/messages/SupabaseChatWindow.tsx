@@ -687,6 +687,7 @@ export const SupabaseChatWindow = ({ friendProfile, onBack }: SupabaseChatWindow
 
                     {isLast && (
                       <span className="text-[10px] text-muted-foreground mt-1 px-1 flex items-center gap-1">
+                        {m.edited_at && <span className="italic opacity-70">edited ·</span>}
                         {formatBubbleTime(m.created_at)}
                         {isOwn && (m.is_read ? <CheckCheck className="h-3 w-3 text-primary" /> : <Check className="h-3 w-3" />)}
                       </span>
@@ -710,7 +711,19 @@ export const SupabaseChatWindow = ({ friendProfile, onBack }: SupabaseChatWindow
 
       {/* Composer */}
       <div className="border-t p-3 bg-card">
-        {replyTo && (
+        {editingId && (
+          <div className="flex items-center gap-2 mb-2 px-3 py-2 rounded-2xl bg-amber-500/10 border-l-2 border-amber-500">
+            <Pencil className="h-4 w-4 text-amber-600 shrink-0" />
+            <div className="flex-1 min-w-0">
+              <p className="text-[11px] font-medium text-amber-600">Editing message</p>
+              <p className="text-xs text-muted-foreground truncate">{editingText}</p>
+            </div>
+            <button onClick={cancelEdit} className="shrink-0 text-muted-foreground hover:text-foreground">
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        )}
+        {replyTo && !editingId && (
           <div className="flex items-center gap-2 mb-2 px-3 py-2 rounded-2xl bg-muted/60 border-l-2 border-primary">
             <ReplyIcon className="h-4 w-4 text-primary shrink-0" />
             <div className="flex-1 min-w-0">
