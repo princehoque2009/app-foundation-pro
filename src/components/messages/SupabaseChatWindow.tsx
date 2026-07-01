@@ -347,6 +347,15 @@ export const SupabaseChatWindow = ({ friendProfile, onBack }: SupabaseChatWindow
         <Button
           variant="ghost"
           size="icon"
+          onClick={() => setSearchOpen((v) => !v)}
+          className="shrink-0"
+          aria-label="Search in conversation"
+        >
+          <SearchIcon className="h-5 w-5" />
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
           onClick={() => startAudioCall(friendProfile.id, conversationId)}
           className="shrink-0"
           aria-label="Audio call"
@@ -366,6 +375,54 @@ export const SupabaseChatWindow = ({ friendProfile, onBack }: SupabaseChatWindow
           <Info className="h-5 w-5" />
         </Button>
       </div>
+
+      {/* In-chat search bar */}
+      {searchOpen && (
+        <div className="px-3 py-2 border-b bg-card flex items-center gap-2">
+          <SearchIcon className="h-4 w-4 text-muted-foreground shrink-0" />
+          <Input
+            autoFocus
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search in conversation…"
+            className="h-8 border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 px-0"
+          />
+          {searchQuery && (
+            <span className="text-[11px] text-muted-foreground shrink-0">{searchMatches.size} match{searchMatches.size === 1 ? "" : "es"}</span>
+          )}
+          <button onClick={() => { setSearchOpen(false); setSearchQuery(""); }} className="text-muted-foreground shrink-0">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+      )}
+
+      {/* Selection toolbar */}
+      {selectionMode && (
+        <div className="px-3 py-2 border-b bg-primary/10 flex items-center gap-2">
+          <button onClick={clearSelection} className="p-1 rounded-full hover:bg-muted" aria-label="Cancel">
+            <X className="h-4 w-4" />
+          </button>
+          <span className="text-sm font-medium flex-1">{selectedIds.size} selected</span>
+          <Button variant="ghost" size="icon" onClick={bulkCopy} disabled={!selectedIds.size} aria-label="Copy">
+            <CopyIcon className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => {
+              const first = visibleMessages.find((m) => selectedIds.has(m.id));
+              if (first) { setForwardTarget(first); }
+            }}
+            disabled={!selectedIds.size}
+            aria-label="Forward"
+          >
+            <ForwardIcon className="h-4 w-4" />
+          </Button>
+          <Button variant="ghost" size="icon" onClick={bulkDeleteForMe} disabled={!selectedIds.size} className="text-destructive" aria-label="Delete">
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
+      )}
 
       {/* Pinned message banner */}
       {pinnedId && (() => {
