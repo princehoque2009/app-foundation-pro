@@ -328,7 +328,9 @@ const UserProfile = () => {
                   accountType={profile?.account_type}
                   displayName={profile?.display_name}
                   username={profile?.username}
+                  socialLinks={(profile as any)?.social_links}
                 />
+
               </div>
             </motion.div>
           )}

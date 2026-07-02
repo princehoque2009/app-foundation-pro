@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { format, formatDistanceToNow } from "date-fns";
 import { getCountryName, getCountryFlag } from "@/lib/countries";
+import { SocialLinksDisplay, type SocialLinksMap } from "./SocialLinks";
 
 interface ProfileAboutSectionProps {
   bio?: string | null;
@@ -16,6 +17,7 @@ interface ProfileAboutSectionProps {
   accountType?: string | null;
   displayName?: string | null;
   username?: string;
+  socialLinks?: SocialLinksMap | null;
 }
 
 export const ProfileAboutSection = ({
@@ -30,6 +32,7 @@ export const ProfileAboutSection = ({
   accountType = "public",
   displayName,
   username,
+  socialLinks,
 }: ProfileAboutSectionProps) => {
   // Calculate account age
   const accountAge = createdAt ? formatDistanceToNow(new Date(createdAt), { addSuffix: false }) : null;
@@ -55,9 +58,17 @@ export const ProfileAboutSection = ({
         {/* Bio */}
         {bio && (
           <div className="space-y-1">
-            <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">{bio}</p>
+            <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap break-words">{bio}</p>
           </div>
         )}
+
+        {/* Social links */}
+        {socialLinks && Object.keys(socialLinks).length > 0 && (
+          <div className="pt-1">
+            <SocialLinksDisplay links={socialLinks} size="md" />
+          </div>
+        )}
+
 
         {/* Stats Row */}
         <div className="grid grid-cols-3 gap-4 py-3 border-y border-border">

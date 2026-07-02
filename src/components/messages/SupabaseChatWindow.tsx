@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { VerifiedBadge } from "@/components/ui/VerifiedBadge";
-import { ArrowLeft, Send, Image as ImageIcon, Smile, Loader2, Check, CheckCheck, Info, Phone, Video, PhoneMissed, Pin, X, Reply as ReplyIcon, Plus, MapPin, FileText, Timer, Lock, Star, Camera, Search as SearchIcon, Trash2, Forward as ForwardIcon, Copy as CopyIcon, Pencil } from "lucide-react";
+import { ArrowLeft, Send, Image as ImageIcon, Smile, Loader2, Check, CheckCheck, Info, Phone, Video, PhoneMissed, Pin, X, Reply as ReplyIcon, Plus, MapPin, FileText, Timer, Lock, Star, Search as SearchIcon, Trash2, Forward as ForwardIcon, Copy as CopyIcon, Pencil } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format, isToday, isYesterday } from "date-fns";
 import { ChatInfoPanel } from "./ChatInfoPanel";
@@ -93,7 +93,7 @@ export const SupabaseChatWindow = ({ friendProfile, onBack }: SupabaseChatWindow
   );
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const cameraInputRef = useRef<HTMLInputElement>(null);
+  
   const typingTimeoutRef = useRef<number | null>(null);
   const longPressTimer = useRef<number | null>(null);
   const swipeStart = useRef<{ x: number; y: number; id: string } | null>(null);
@@ -221,7 +221,7 @@ export const SupabaseChatWindow = ({ friendProfile, onBack }: SupabaseChatWindow
     } finally {
       setUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
-      if (cameraInputRef.current) cameraInputRef.current.value = "";
+      
     }
   };
 
@@ -311,70 +311,86 @@ export const SupabaseChatWindow = ({ friendProfile, onBack }: SupabaseChatWindow
   return (
     <div className="flex-1 flex flex-col h-full bg-background min-w-0 overflow-hidden">
       {/* Header */}
-      <div className="sticky top-0 z-10 px-3 py-2.5 flex items-center gap-3 border-b bg-card/80 backdrop-blur-md">
+      <div className="sticky top-0 z-10 px-2 sm:px-3 py-2 flex items-center gap-2 border-b bg-card/80 backdrop-blur-md min-w-0">
         {onBack && (
-          <Button variant="ghost" size="icon" onClick={onBack} className="md:hidden">
+          <Button variant="ghost" size="icon" onClick={onBack} className="md:hidden h-9 w-9 shrink-0">
             <ArrowLeft className="h-5 w-5" />
           </Button>
         )}
         <div className="relative shrink-0">
           <div className="rounded-full p-[2px] bg-coral-gradient">
-            <Avatar className="h-10 w-10 border-2 border-background">
+            <Avatar className="h-9 w-9 border-2 border-background">
               <AvatarImage src={friendProfile.avatar_url || ""} />
               <AvatarFallback>{friendProfile.display_name?.[0] || friendProfile.username?.[0]}</AvatarFallback>
             </Avatar>
           </div>
           {online && (
-            <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full bg-green-500 border-2 border-card" />
+            <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-green-500 border-2 border-card" />
           )}
         </div>
         <button
           onClick={() => setInfoOpen(true)}
           className="flex-1 min-w-0 text-left"
         >
-          <div className="flex items-center gap-1">
-            <h3 className="font-semibold text-[15px] truncate">
+          <div className="flex items-center gap-1 min-w-0">
+            <h3 className="font-semibold text-[14px] sm:text-[15px] truncate">
               {displayName}
             </h3>
             {friendProfile.is_verified && <VerifiedBadge size="sm" />}
             <Lock className="h-3 w-3 text-emerald-500 shrink-0" aria-label="End-to-end encrypted" />
             {disappearSecs > 0 && <Timer className="h-3 w-3 text-coral-accent shrink-0" aria-label="Disappearing messages on" />}
           </div>
-          <p className={cn("text-xs truncate", isFriendTyping ? "text-primary font-medium" : online ? "text-green-500 font-medium" : "text-muted-foreground")}>
+          <p className={cn("text-[11px] truncate", isFriendTyping ? "text-primary font-medium" : online ? "text-green-500 font-medium" : "text-muted-foreground")}>
             {isFriendTyping ? "typing…" : formatLastSeen(status)}
           </p>
         </button>
         <Button
           variant="ghost"
           size="icon"
-          onClick={() => setSearchOpen((v) => !v)}
-          className="shrink-0"
-          aria-label="Search in conversation"
-        >
-          <SearchIcon className="h-5 w-5" />
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon"
           onClick={() => startAudioCall(friendProfile.id, conversationId)}
-          className="shrink-0"
+          className="shrink-0 h-9 w-9"
           aria-label="Audio call"
         >
-          <Phone className="h-5 w-5" />
+          <Phone className="h-[18px] w-[18px]" />
         </Button>
         <Button
           variant="ghost"
           size="icon"
           onClick={() => startVideoCall(friendProfile.id, conversationId)}
-          className="shrink-0"
+          className="shrink-0 h-9 w-9"
           aria-label="Video call"
         >
-          <Video className="h-5 w-5" />
+          <Video className="h-[18px] w-[18px]" />
         </Button>
-        <Button variant="ghost" size="icon" onClick={() => setInfoOpen(true)} className="shrink-0">
-          <Info className="h-5 w-5" />
-        </Button>
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button variant="ghost" size="icon" className="shrink-0 h-9 w-9" aria-label="More">
+              <Info className="h-[18px] w-[18px]" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent align="end" className="w-52 p-1">
+            <button
+              onClick={() => setInfoOpen(true)}
+              className="w-full flex items-center gap-2 px-3 py-2 rounded-md hover:bg-muted text-sm text-left"
+            >
+              <Info className="h-4 w-4" /> Chat info
+            </button>
+            <button
+              onClick={() => setSearchOpen((v) => !v)}
+              className="w-full flex items-center gap-2 px-3 py-2 rounded-md hover:bg-muted text-sm text-left"
+            >
+              <SearchIcon className="h-4 w-4" /> Search in chat
+            </button>
+            <button
+              onClick={() => setCustomizeOpen(true)}
+              className="w-full flex items-center gap-2 px-3 py-2 rounded-md hover:bg-muted text-sm text-left"
+            >
+              <Star className="h-4 w-4" /> Customize
+            </button>
+          </PopoverContent>
+        </Popover>
       </div>
+
 
       {/* In-chat search bar */}
       {searchOpen && (
@@ -785,26 +801,8 @@ export const SupabaseChatWindow = ({ friendProfile, onBack }: SupabaseChatWindow
             onChange={handleFile}
             className="hidden"
           />
-          <input
-            ref={cameraInputRef}
-            type="file"
-            accept="image/*,video/*"
-            capture="environment"
-            onChange={handleFile}
-            className="hidden"
-          />
 
-          {!editingId && (
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => cameraInputRef.current?.click()}
-              className="h-9 w-9 rounded-full shrink-0"
-              aria-label="Camera"
-            >
-              <Camera className="h-5 w-5" />
-            </Button>
-          )}
+
 
           {text.trim() ? (
             <Button

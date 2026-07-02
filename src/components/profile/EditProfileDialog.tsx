@@ -17,6 +17,8 @@ import { countries, getCountryFlag } from "@/lib/countries";
 import { ImageCropDialog } from "@/components/circles/ImageCropDialog";
 import { validateFileUpload } from "@/lib/validation";
 import { cn } from "@/lib/utils";
+import { SocialLinksEditor } from "./SocialLinksEditor";
+import type { SocialLinksMap } from "./SocialLinks";
 
 interface EditProfileDialogProps {
   profile: any;
@@ -31,6 +33,9 @@ export const EditProfileDialog = ({ profile, open, onOpenChange }: EditProfileDi
   const [username, setUsername] = useState(profile?.username || "");
   const [bio, setBio] = useState(profile?.bio || "");
   const [country, setCountry] = useState(profile?.country || "");
+  const [socialLinks, setSocialLinks] = useState<SocialLinksMap>(
+    (profile?.social_links && typeof profile.social_links === "object") ? profile.social_links : {}
+  );
 
   // Avatar state
   const avatarFileRef = useRef<HTMLInputElement>(null);
@@ -120,6 +125,7 @@ export const EditProfileDialog = ({ profile, open, onOpenChange }: EditProfileDi
           country,
           avatar_url,
           cover_photo_url,
+          social_links: socialLinks as any,
         })
         .eq("id", user?.id);
       if (error) throw error;
@@ -346,6 +352,9 @@ export const EditProfileDialog = ({ profile, open, onOpenChange }: EditProfileDi
                 </SelectContent>
               </Select>
             </div>
+
+            <SocialLinksEditor value={socialLinks} onChange={setSocialLinks} />
+
 
             <div className="flex gap-2 justify-end">
               <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isSaving}>
