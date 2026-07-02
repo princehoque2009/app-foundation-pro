@@ -93,7 +93,7 @@ export const SupabaseChatWindow = ({ friendProfile, onBack }: SupabaseChatWindow
   );
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const cameraInputRef = useRef<HTMLInputElement>(null);
+  
   const typingTimeoutRef = useRef<number | null>(null);
   const longPressTimer = useRef<number | null>(null);
   const swipeStart = useRef<{ x: number; y: number; id: string } | null>(null);
