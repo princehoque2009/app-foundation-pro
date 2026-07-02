@@ -1334,6 +1334,7 @@ export type Database = {
           messaging_disabled: boolean | null
           phone_number: string | null
           posting_disabled: boolean | null
+          social_links: Json
           suspended_until: string | null
           suspension_reason: string | null
           updated_at: string
@@ -1358,6 +1359,7 @@ export type Database = {
           messaging_disabled?: boolean | null
           phone_number?: string | null
           posting_disabled?: boolean | null
+          social_links?: Json
           suspended_until?: string | null
           suspension_reason?: string | null
           updated_at?: string
@@ -1382,6 +1384,7 @@ export type Database = {
           messaging_disabled?: boolean | null
           phone_number?: string | null
           posting_disabled?: boolean | null
+          social_links?: Json
           suspended_until?: string | null
           suspension_reason?: string | null
           updated_at?: string
