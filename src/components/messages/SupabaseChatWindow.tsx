@@ -221,7 +221,7 @@ export const SupabaseChatWindow = ({ friendProfile, onBack }: SupabaseChatWindow
     } finally {
       setUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
-      if (cameraInputRef.current) cameraInputRef.current.value = "";
+      
     }
   };
 
