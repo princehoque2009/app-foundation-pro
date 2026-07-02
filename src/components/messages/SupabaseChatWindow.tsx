@@ -785,26 +785,8 @@ export const SupabaseChatWindow = ({ friendProfile, onBack }: SupabaseChatWindow
             onChange={handleFile}
             className="hidden"
           />
-          <input
-            ref={cameraInputRef}
-            type="file"
-            accept="image/*,video/*"
-            capture="environment"
-            onChange={handleFile}
-            className="hidden"
-          />
 
-          {!editingId && (
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => cameraInputRef.current?.click()}
-              className="h-9 w-9 rounded-full shrink-0"
-              aria-label="Camera"
-            >
-              <Camera className="h-5 w-5" />
-            </Button>
-          )}
+
 
           {text.trim() ? (
             <Button
