@@ -62,12 +62,8 @@ export const ProfileAboutSection = ({
           </div>
         )}
 
-        {/* Social links */}
-        {socialLinks && Object.keys(socialLinks).length > 0 && (
-          <div className="pt-1">
-            <SocialLinksDisplay links={socialLinks} size="md" />
-          </div>
-        )}
+
+
 
 
         {/* Stats Row */}
