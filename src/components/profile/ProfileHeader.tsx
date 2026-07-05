@@ -226,9 +226,15 @@ export const ProfileHeader = ({
             </p>
 
             {profile?.bio && (
-              <p className="text-sm text-foreground leading-relaxed pt-2 max-w-xl">
+              <p className="text-sm text-foreground leading-relaxed pt-2 max-w-xl whitespace-pre-wrap">
                 {profile.bio}
               </p>
+            )}
+
+            {profile?.social_links && Object.keys(profile.social_links).length > 0 && (
+              <div className="pt-2">
+                <SocialLinksInline links={profile.social_links} />
+              </div>
             )}
           </motion.div>
 
