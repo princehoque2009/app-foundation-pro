@@ -18,6 +18,7 @@ import { motion } from "framer-motion";
 import { toast } from "@/hooks/use-toast";
 import { useActiveEffects } from "@/hooks/useActiveEffects";
 import { CoverPhotoUploader } from "./CoverPhotoUploader";
+import { SocialLinksInline } from "./SocialLinks";
 
 interface ProfileHeaderProps {
   profile: any;
