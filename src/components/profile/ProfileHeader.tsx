@@ -19,6 +19,7 @@ import { toast } from "@/hooks/use-toast";
 import { useActiveEffects } from "@/hooks/useActiveEffects";
 import { CoverPhotoUploader } from "./CoverPhotoUploader";
 import { SocialLinksInline } from "./SocialLinks";
+import { optimizeCloudinaryUrl } from "@/lib/cloudinary";
 
 interface ProfileHeaderProps {
   profile: any;
