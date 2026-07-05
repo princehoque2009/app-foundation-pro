@@ -18,6 +18,8 @@ import { motion } from "framer-motion";
 import { toast } from "@/hooks/use-toast";
 import { useActiveEffects } from "@/hooks/useActiveEffects";
 import { CoverPhotoUploader } from "./CoverPhotoUploader";
+import { SocialLinksInline } from "./SocialLinks";
+import { optimizeCloudinaryUrl } from "@/lib/cloudinary";
 
 interface ProfileHeaderProps {
   profile: any;
@@ -100,12 +102,13 @@ export const ProfileHeader = ({
             <div className="relative h-36 sm:h-48 w-full overflow-hidden bg-gradient-to-br from-muted to-muted/50">
               {profile?.cover_photo_url ? (
                 <img
-                  src={profile.cover_photo_url}
+                  src={optimizeCloudinaryUrl(profile.cover_photo_url)}
                   alt="Cover"
                   className="w-full h-full object-cover pointer-events-none select-none"
                   draggable={false}
                   onContextMenu={(e) => e.preventDefault()}
                 />
+
               ) : (
                 <div className="absolute inset-0 bg-gradient-to-br from-muted to-muted/50" />
               )}
@@ -225,9 +228,15 @@ export const ProfileHeader = ({
             </p>
 
             {profile?.bio && (
-              <p className="text-sm text-foreground leading-relaxed pt-2 max-w-xl">
+              <p className="text-sm text-foreground leading-relaxed pt-2 max-w-xl whitespace-pre-wrap">
                 {profile.bio}
               </p>
+            )}
+
+            {profile?.social_links && Object.keys(profile.social_links).length > 0 && (
+              <div className="pt-2">
+                <SocialLinksInline links={profile.social_links} />
+              </div>
             )}
           </motion.div>
 

@@ -7,6 +7,7 @@ import { Camera, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { ImageCropDialog } from "@/components/circles/ImageCropDialog";
+import { uploadToCloudinary, optimizeCloudinaryUrl, isCloudinaryConfigured } from "@/lib/cloudinary";
 
 interface CoverPhotoUploaderProps {
   userId: string;
@@ -29,22 +30,23 @@ export const CoverPhotoUploader = ({
 
   const uploadMutation = useMutation({
     mutationFn: async (blob: Blob) => {
-      const fileName = `${userId}/cover-${Date.now()}.jpg`;
+      if (!isCloudinaryConfigured()) {
+        throw new Error(
+          "Cloudinary is not configured. Add VITE_CLOUDINARY_CLOUD_NAME and VITE_CLOUDINARY_UPLOAD_PRESET to your .env."
+        );
+      }
 
-      const { error: uploadError } = await supabase.storage
-        .from("cover-photos")
-        .upload(fileName, blob, { cacheControl: "3600", upsert: true });
-      if (uploadError) throw uploadError;
+      // 1. Direct browser -> Cloudinary upload (unsigned preset)
+      const result = await uploadToCloudinary(blob, { folder: `prangon/covers/${userId}` });
 
-      const { data: urlData } = supabase.storage.from("cover-photos").getPublicUrl(fileName);
-
+      // 2. Persist the returned secure URL in our existing Supabase profiles table
       const { error: updateError } = await supabase
         .from("profiles")
-        .update({ cover_photo_url: urlData.publicUrl })
+        .update({ cover_photo_url: result.secure_url })
         .eq("id", userId);
       if (updateError) throw updateError;
 
-      return urlData.publicUrl;
+      return result.secure_url;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["profile", userId] });
@@ -65,6 +67,8 @@ export const CoverPhotoUploader = ({
       return;
     }
     setCropSrc(URL.createObjectURL(file));
+    // Reset so selecting the same file again re-triggers change
+    e.target.value = "";
   };
 
   const handleCropComplete = useCallback((blob: Blob) => {
@@ -75,7 +79,9 @@ export const CoverPhotoUploader = ({
     uploadMutation.mutate(blob);
   }, [uploadMutation]);
 
-  const displayUrl = previewUrl || currentCoverUrl;
+  const rawUrl = previewUrl || currentCoverUrl;
+  // Only run Cloudinary optimization on the persisted remote URL, not local blob previews.
+  const displayUrl = previewUrl ? previewUrl : optimizeCloudinaryUrl(currentCoverUrl);
   const isUploading = uploadMutation.isPending;
 
   return (
@@ -96,7 +102,7 @@ export const CoverPhotoUploader = ({
                 alt="Cover"
                 className="w-full h-full object-cover cursor-pointer"
                 onLoad={() => setIsImageLoaded(true)}
-                onClick={() => displayUrl && onImageClick?.(displayUrl)}
+                onClick={() => rawUrl && onImageClick?.(rawUrl)}
               />
             </motion.div>
           ) : (
@@ -141,7 +147,6 @@ export const CoverPhotoUploader = ({
           ref={fileInputRef}
           type="file"
           accept="image/*"
-          capture="environment"
           className="hidden"
           onChange={handleFileSelect}
         />

@@ -35,7 +35,7 @@ export const SOCIAL_PLATFORMS: {
 
 export type SocialLinksMap = Partial<Record<SocialPlatform, string>>;
 
-function toUrl(platform: SocialPlatform, raw: string): string {
+export function toUrl(platform: SocialPlatform, raw: string): string {
   const v = raw.trim();
   if (!v) return "";
   if (/^https?:\/\//i.test(v)) return v;
@@ -100,3 +100,55 @@ export const SocialLinksDisplay = ({ links, className, size = "md" }: Props) => 
     </div>
   );
 };
+
+function displayHandle(platform: SocialPlatform, raw: string): string {
+  const v = raw.trim().replace(/^https?:\/\//i, "").replace(/\/$/, "");
+  switch (platform) {
+    case "youtube":
+      return v.startsWith("@") ? v : `@${v.replace(/^youtube\.com\/@?/i, "").replace(/^@/, "")}`;
+    case "instagram":
+    case "twitter":
+    case "threads":
+    case "tiktok":
+      return `@${v.replace(/^(instagram\.com|x\.com|twitter\.com|threads\.net|tiktok\.com)\/?@?/i, "").replace(/^@/, "")}`;
+    case "facebook":
+      return v.replace(/^facebook\.com\//i, "");
+    case "github":
+      return v.replace(/^github\.com\//i, "");
+    case "linkedin":
+      return v.replace(/^linkedin\.com\/(in\/)?/i, "");
+    case "twitch":
+      return v.replace(/^twitch\.tv\//i, "");
+    default:
+      return v;
+  }
+}
+
+export const SocialLinksInline = ({ links, className }: Props) => {
+  if (!links) return null;
+  const entries = SOCIAL_PLATFORMS.filter((p) => links[p.id]);
+  if (entries.length === 0) return null;
+  return (
+    <div className={cn("flex flex-wrap gap-x-3 gap-y-1.5", className)}>
+      {entries.map((p) => {
+        const Icon = p.icon;
+        const raw = links[p.id]!;
+        const href = toUrl(p.id, raw);
+        return (
+          <a
+            key={p.id}
+            href={href}
+            target="_blank"
+            rel="noreferrer noopener"
+            aria-label={p.label}
+            className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <Icon className="h-3.5 w-3.5" strokeWidth={1.75} />
+            <span className="font-medium truncate max-w-[140px]">{displayHandle(p.id, raw)}</span>
+          </a>
+        );
+      })}
+    </div>
+  );
+};
+

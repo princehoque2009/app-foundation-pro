@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { format, formatDistanceToNow } from "date-fns";
 import { getCountryName, getCountryFlag } from "@/lib/countries";
-import { SocialLinksDisplay, type SocialLinksMap } from "./SocialLinks";
+import type { SocialLinksMap } from "./SocialLinks";
 
 interface ProfileAboutSectionProps {
   bio?: string | null;
@@ -62,12 +62,8 @@ export const ProfileAboutSection = ({
           </div>
         )}
 
-        {/* Social links */}
-        {socialLinks && Object.keys(socialLinks).length > 0 && (
-          <div className="pt-1">
-            <SocialLinksDisplay links={socialLinks} size="md" />
-          </div>
-        )}
+
+
 
 
         {/* Stats Row */}
