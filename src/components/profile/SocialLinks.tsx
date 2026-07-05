@@ -35,7 +35,7 @@ export const SOCIAL_PLATFORMS: {
 
 export type SocialLinksMap = Partial<Record<SocialPlatform, string>>;
 
-function toUrl(platform: SocialPlatform, raw: string): string {
+export function toUrl(platform: SocialPlatform, raw: string): string {
   const v = raw.trim();
   if (!v) return "";
   if (/^https?:\/\//i.test(v)) return v;
