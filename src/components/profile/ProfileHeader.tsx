@@ -102,12 +102,13 @@ export const ProfileHeader = ({
             <div className="relative h-36 sm:h-48 w-full overflow-hidden bg-gradient-to-br from-muted to-muted/50">
               {profile?.cover_photo_url ? (
                 <img
-                  src={profile.cover_photo_url}
+                  src={optimizeCloudinaryUrl(profile.cover_photo_url)}
                   alt="Cover"
                   className="w-full h-full object-cover pointer-events-none select-none"
                   draggable={false}
                   onContextMenu={(e) => e.preventDefault()}
                 />
+
               ) : (
                 <div className="absolute inset-0 bg-gradient-to-br from-muted to-muted/50" />
               )}
