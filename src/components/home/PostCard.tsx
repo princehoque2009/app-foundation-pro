@@ -137,198 +137,204 @@ export const PostCard = ({ id, author, content, image, video, mediaItems, likes,
 
   return (
     <>
-      <Card className="border border-border shadow-sm hover:shadow-md mb-4 overflow-hidden animate-fade-in transition-all duration-300 rounded-2xl bg-card">
-        <CardContent className="p-0">
-          {/* Post Header */}
-          <div className="flex items-center justify-between p-4">
-            <div className="flex items-center gap-3 cursor-pointer group" onClick={handleProfileClick}>
-              <div className="relative">
-                <Avatar className="h-10 w-10 border border-border transition-transform group-hover:scale-105">
-                  <AvatarImage src={author.avatar || undefined} alt={author.name} />
-                  <AvatarFallback className="bg-muted text-muted-foreground">
-                    <UserCircle className="h-6 w-6" />
-                  </AvatarFallback>
-                </Avatar>
-              </div>
-              <div>
-                <div className="flex items-center gap-1.5">
-                  <p className={cn(
-                    "font-semibold text-sm group-hover:text-primary transition-colors leading-tight flex items-center gap-1",
-                    authorEffects.hasRainbowName
-                      ? "bg-gradient-to-r from-red-500 via-yellow-500 via-green-500 via-blue-500 to-purple-500 bg-clip-text text-transparent"
-                      : "text-foreground"
-                  )}>
-                    {author.name}
-                    {author.isVerified && <VerifiedBadge size="sm" />}
-                    {authorEffects.hasCustomBadge && (
-                      <span className="inline-flex items-center justify-center h-4 w-4 rounded-full bg-gradient-to-r from-violet-500 to-purple-600 text-[8px] text-white font-bold ml-0.5">★</span>
-                    )}
-                  </p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <p className="text-xs text-muted-foreground leading-tight">
-                    {formatDistanceToNow(new Date(timestamp), { addSuffix: true })}
-                  </p>
-                  {userRoles && userRoles.length > 0 && (
-                    <UserRoleBadges roles={userRoles as any} size="sm" />
+      <article className="mb-6 pb-6 border-b border-border/70 animate-fade-in">
+        {/* Post Header */}
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-3 cursor-pointer group min-w-0" onClick={handleProfileClick}>
+            <div className="relative shrink-0">
+              <Avatar className="h-11 w-11 ring-1 ring-border transition-transform group-hover:scale-105">
+                <AvatarImage src={author.avatar || undefined} alt={author.name} />
+                <AvatarFallback className="bg-muted text-muted-foreground">
+                  <UserCircle className="h-6 w-6" />
+                </AvatarFallback>
+              </Avatar>
+            </div>
+            <div className="min-w-0">
+              <div className="flex items-center gap-1.5">
+                <p className={cn(
+                  "font-semibold text-[14px] group-hover:text-primary transition-colors leading-tight flex items-center gap-1 truncate",
+                  authorEffects.hasRainbowName
+                    ? "bg-gradient-to-r from-red-500 via-yellow-500 via-green-500 via-blue-500 to-purple-500 bg-clip-text text-transparent"
+                    : "text-foreground"
+                )}>
+                  {author.name}
+                  {author.isVerified && <VerifiedBadge size="sm" />}
+                  {authorEffects.hasCustomBadge && (
+                    <span className="inline-flex items-center justify-center h-4 w-4 rounded-full bg-gradient-to-r from-violet-500 to-purple-600 text-[8px] text-white font-bold ml-0.5">★</span>
                   )}
-                </div>
+                </p>
+              </div>
+              <div className="flex items-center gap-1.5 mt-0.5">
+                <span
+                  className="text-[11px] text-muted-foreground font-mono"
+                  style={{ fontFamily: "var(--font-mono)" }}
+                >
+                  @{author.username}
+                </span>
+                <span className="text-muted-foreground/50 text-[11px]">·</span>
+                <span className="text-[11px] text-muted-foreground">
+                  {formatDistanceToNow(new Date(timestamp), { addSuffix: true })}
+                </span>
+                {userRoles && userRoles.length > 0 && (
+                  <UserRoleBadges roles={userRoles as any} size="sm" />
+                )}
               </div>
             </div>
-            <PostMenu 
-              postId={id} 
-              postUserId={userProfile?.id || ""} 
-              mediaUrl={image || video}
-              mediaType={video ? "video" : "image"}
-              onEdit={handleEdit}
-              onDelete={handleDelete}
-              onShare={handleShare}
-            />
           </div>
+          <PostMenu
+            postId={id}
+            postUserId={userProfile?.id || ""}
+            mediaUrl={image || video}
+            mediaType={video ? "video" : "image"}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+            onShare={handleShare}
+          />
+        </div>
 
-          {/* Post Content */}
-          {content && (
-            <p className="text-sm px-4 pb-3 leading-relaxed text-foreground select-none">
-              <RenderMentions text={content} />
-            </p>
-          )}
+        {/* Post Content */}
+        {content && (
+          <p className="text-[15px] leading-relaxed text-foreground select-none mb-3">
+            <RenderMentions text={content} />
+          </p>
+        )}
 
-          {/* Post Media */}
-          {mediaItems && mediaItems.length > 0 ? (
-            <div 
-              className="relative bg-muted/50 cursor-pointer overflow-hidden select-none"
-              onDoubleClick={handleDoubleTap}
-              onContextMenu={(e) => e.preventDefault()}
-            >
-              <MediaCarousel media={mediaItems} onDoubleClick={handleDoubleTap} />
-              <AnimatePresence>
-                {showHeartAnimation && (
-                  <motion.div
-                    initial={{ scale: 0, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    exit={{ scale: 1.8, opacity: 0 }}
-                    transition={{ duration: 0.5, ease: "easeOut" }}
-                    className="absolute inset-0 flex items-center justify-center pointer-events-none z-10"
-                  >
-                    <span className="text-7xl drop-shadow-2xl">
-                      {getReactionMeta(myReaction || "love").emoji}
-                    </span>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-          ) : (image || video) && (
-            <div 
-              className="relative bg-muted/50 cursor-pointer overflow-hidden select-none"
-              onDoubleClick={handleDoubleTap}
-              onContextMenu={(e) => e.preventDefault()}
-            >
-              {image && (
-                <>
-                  {!isImageLoaded && <div className="w-full h-80 shimmer" />}
-                  <img 
-                    src={image} alt="Post" 
-                    className={cn(
-                      "w-full object-cover max-h-[500px] transition-opacity duration-300 pointer-events-none",
-                      isImageLoaded ? "opacity-100" : "opacity-0 h-0"
-                    )}
-                    loading="lazy"
-                    onLoad={() => setIsImageLoaded(true)}
-                    draggable={false}
-                  />
-                </>
+        {/* Post Media — thin outline, rounded */}
+        {mediaItems && mediaItems.length > 0 ? (
+          <div
+            className="relative bg-muted/40 cursor-pointer overflow-hidden select-none rounded-xl border border-border"
+            onDoubleClick={handleDoubleTap}
+            onContextMenu={(e) => e.preventDefault()}
+          >
+            <MediaCarousel media={mediaItems} onDoubleClick={handleDoubleTap} />
+            <AnimatePresence>
+              {showHeartAnimation && (
+                <motion.div
+                  initial={{ scale: 0, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  exit={{ scale: 1.8, opacity: 0 }}
+                  transition={{ duration: 0.5, ease: "easeOut" }}
+                  className="absolute inset-0 flex items-center justify-center pointer-events-none z-10"
+                >
+                  <span className="text-7xl drop-shadow-2xl">
+                    {getReactionMeta(myReaction || "love").emoji}
+                  </span>
+                </motion.div>
               )}
-              {video && (
-                <PrangonVideoPlayer src={video} className="w-full max-h-[500px]" compact />
-              )}
-              <AnimatePresence>
-                {showHeartAnimation && (
-                  <motion.div
-                    initial={{ scale: 0, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    exit={{ scale: 1.8, opacity: 0 }}
-                    transition={{ duration: 0.5, ease: "easeOut" }}
-                    className="absolute inset-0 flex items-center justify-center pointer-events-none"
-                  >
-                    <span className="text-7xl drop-shadow-2xl">
-                      {getReactionMeta(myReaction || "love").emoji}
-                    </span>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-          )}
-
-          {/* Reaction summary */}
-          {likeCount > 0 && (
-            <button
-              onClick={() => setShowReactionBreakdown(true)}
-              className="flex items-center gap-1.5 px-4 pt-2 pb-1 hover:opacity-80 transition-opacity"
-            >
-              <div className="flex -space-x-1">
-                {Object.entries(reactionData?.counts || {})
-                  .filter(([_, c]) => (c as number) > 0)
-                  .sort((a, b) => (b[1] as number) - (a[1] as number))
-                  .slice(0, 3)
-                  .map(([key]) => (
-                    <span key={key} className="text-base leading-none">
-                      {getReactionMeta(key).emoji}
-                    </span>
-                  ))}
-              </div>
-              <span className="text-xs text-muted-foreground font-medium">
-                {likeCount} {likeCount === 1 ? "reaction" : "reactions"}
-              </span>
-            </button>
-          )}
-
-          {/* Post Actions */}
-          <div className="p-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-1">
-                <ReactionTrayButton
-                  currentReaction={myReaction}
-                  count={likeCount}
-                  onReact={handleReact}
-                  disabled={toggleReaction.isPending}
+            </AnimatePresence>
+          </div>
+        ) : (image || video) && (
+          <div
+            className="relative bg-muted/40 cursor-pointer overflow-hidden select-none rounded-xl border border-border"
+            onDoubleClick={handleDoubleTap}
+            onContextMenu={(e) => e.preventDefault()}
+          >
+            {image && (
+              <>
+                {!isImageLoaded && <div className="w-full h-80 shimmer" />}
+                <img
+                  src={image} alt="Post"
+                  className={cn(
+                    "w-full object-cover max-h-[520px] transition-opacity duration-300 pointer-events-none",
+                    isImageLoaded ? "opacity-100" : "opacity-0 h-0"
+                  )}
+                  loading="lazy"
+                  onLoad={() => setIsImageLoaded(true)}
+                  draggable={false}
                 />
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="gap-1.5 h-10 px-3 rounded-full hover:bg-muted/60 transition-all"
-                  onClick={() => setShowComments(true)}
+              </>
+            )}
+            {video && (
+              <PrangonVideoPlayer src={video} className="w-full max-h-[520px]" compact />
+            )}
+            <AnimatePresence>
+              {showHeartAnimation && (
+                <motion.div
+                  initial={{ scale: 0, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  exit={{ scale: 1.8, opacity: 0 }}
+                  transition={{ duration: 0.5, ease: "easeOut" }}
+                  className="absolute inset-0 flex items-center justify-center pointer-events-none"
                 >
-                  <MessageCircle className="h-6 w-6" />
-                  {comments > 0 && <span className="text-sm font-semibold tabular-nums">{comments}</span>}
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-10 px-3 rounded-full hover:bg-muted/60 transition-all"
-                  onClick={handleShare}
-                >
-                  <Share2 className="h-5 w-5" />
-                </Button>
-              </div>
+                  <span className="text-7xl drop-shadow-2xl">
+                    {getReactionMeta(myReaction || "love").emoji}
+                  </span>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        )}
+
+        {/* Reaction summary */}
+        {likeCount > 0 && (
+          <button
+            onClick={() => setShowReactionBreakdown(true)}
+            className="flex items-center gap-1.5 pt-3 hover:opacity-80 transition-opacity"
+          >
+            <div className="flex -space-x-1">
+              {Object.entries(reactionData?.counts || {})
+                .filter(([_, c]) => (c as number) > 0)
+                .sort((a, b) => (b[1] as number) - (a[1] as number))
+                .slice(0, 3)
+                .map(([key]) => (
+                  <span key={key} className="text-base leading-none">
+                    {getReactionMeta(key).emoji}
+                  </span>
+                ))}
+            </div>
+            <span className="text-[11px] text-muted-foreground font-medium uppercase tracking-wide">
+              {likeCount} {likeCount === 1 ? "reaction" : "reactions"}
+            </span>
+          </button>
+        )}
+
+        {/* Post Actions — flush editorial row */}
+        <div className="pt-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-0.5">
+              <ReactionTrayButton
+                currentReaction={myReaction}
+                count={likeCount}
+                onReact={handleReact}
+                disabled={toggleReaction.isPending}
+              />
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-10 px-3 rounded-full hover:bg-muted/60 transition-all"
-                onClick={() => {
-                  if (isSaved) unsavePost.mutate(id);
-                  else savePost.mutate(id);
-                }}
-                disabled={savePost.isPending || unsavePost.isPending}
+                className="gap-1.5 h-9 px-2.5 rounded-full hover:bg-muted/60 transition-all"
+                onClick={() => setShowComments(true)}
               >
-                <Bookmark className={cn(
-                  "h-5 w-5 transition-all",
-                  isSaved && "fill-foreground text-foreground"
-                )} />
+                <MessageCircle className="h-[22px] w-[22px]" strokeWidth={1.75} />
+                {comments > 0 && <span className="text-[13px] font-semibold tabular-nums">{comments}</span>}
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-9 px-2.5 rounded-full hover:bg-muted/60 transition-all"
+                onClick={handleShare}
+              >
+                <Share2 className="h-[20px] w-[20px]" strokeWidth={1.75} />
               </Button>
             </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-9 px-2.5 rounded-full hover:bg-muted/60 transition-all"
+              onClick={() => {
+                if (isSaved) unsavePost.mutate(id);
+                else savePost.mutate(id);
+              }}
+              disabled={savePost.isPending || unsavePost.isPending}
+            >
+              <Bookmark className={cn(
+                "h-[20px] w-[20px] transition-all",
+                isSaved && "fill-foreground text-foreground"
+              )} strokeWidth={1.75} />
+            </Button>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </article>
+
       
       <CommentsDialog postId={id} open={showComments} onOpenChange={setShowComments} />
       <EditPostDialog
