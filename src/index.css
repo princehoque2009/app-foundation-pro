@@ -9,27 +9,28 @@
 
 @layer base {
   :root {
-    --background: 0 0% 96%;
-    --foreground: 0 0% 9%;
+    /* Editorial Minimal — airy whites, refined neutrals, coral as accent */
+    --background: 0 0% 100%;
+    --foreground: 240 6% 6%;
 
-    --card: 0 0% 98%;
-    --card-foreground: 0 0% 9%;
+    --card: 0 0% 100%;
+    --card-foreground: 240 6% 6%;
 
-    --popover: 0 0% 89%;
-    --popover-foreground: 0 0% 9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 6% 6%;
 
     /* Prangon Brand Colors - Electric Coral #FF4F5A */
     --primary: 355 100% 65%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 0 0% 81.5686%;
-    --secondary-foreground: 0 0% 98%;
+    --secondary: 40 8% 96%;
+    --secondary-foreground: 240 6% 10%;
 
-    --muted: 0 0% 84.3137%;
-    --muted-foreground: 0 0% 9%;
+    --muted: 40 8% 96%;
+    --muted-foreground: 240 4% 42%;
 
-    --accent: 210 40% 96.0784%;
-    --accent-foreground: 0 93.1507% 71.3725%;
+    --accent: 40 8% 94%;
+    --accent-foreground: 240 6% 10%;
 
     --success: 160 84% 39%;
     --success-foreground: 0 0% 100%;
@@ -37,11 +38,12 @@
     --destructive: 354 98.9305% 63.3333%;
     --destructive-foreground: 0 85% 97%;
 
-    --border: 0 0% 83%;
-    --input: 0 0% 83%;
-    --ring: 355 72.5322% 54.3137%;
+    --border: 30 6% 90%;
+    --input: 30 6% 90%;
+    --ring: 355 72% 54%;
 
-    --radius: 1rem;
+    --radius: 0.75rem;
+
 
     /* Prangon Theme Colors - Electric Coral #FF4F5A */
     --electric-coral: 355 100% 65%;
