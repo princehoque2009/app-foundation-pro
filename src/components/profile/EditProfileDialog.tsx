@@ -19,6 +19,7 @@ import { validateFileUpload } from "@/lib/validation";
 import { cn } from "@/lib/utils";
 import { SocialLinksEditor } from "./SocialLinksEditor";
 import type { SocialLinksMap } from "./SocialLinks";
+import { uploadToCloudinary, isCloudinaryConfigured } from "@/lib/cloudinary";
 
 interface EditProfileDialogProps {
   profile: any;
@@ -76,16 +77,14 @@ export const EditProfileDialog = ({ profile, open, onOpenChange }: EditProfileDi
         setAvatarUploading(false);
       }
 
-      // Upload banner if changed
+      // Upload banner to Cloudinary if changed
       if (bannerBlob) {
+        if (!isCloudinaryConfigured()) {
+          throw new Error("Cloudinary is not configured. Add VITE_CLOUDINARY_CLOUD_NAME and VITE_CLOUDINARY_UPLOAD_PRESET to your .env.");
+        }
         setBannerUploading(true);
-        const fileName = `cover-${user?.id}-${Date.now()}.jpg`;
-        const { error: uploadError } = await supabase.storage
-          .from("cover-photos")
-          .upload(fileName, bannerBlob, { cacheControl: "3600", upsert: true });
-        if (uploadError) throw uploadError;
-        const { data: urlData } = supabase.storage.from("cover-photos").getPublicUrl(fileName);
-        cover_photo_url = urlData.publicUrl;
+        const result = await uploadToCloudinary(bannerBlob, { folder: `prangon/covers/${user?.id}` });
+        cover_photo_url = result.secure_url;
         setBannerUploading(false);
       }
 
