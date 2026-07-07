@@ -129,7 +129,7 @@ export const SocialLinksInline = ({ links, className }: Props) => {
   const entries = SOCIAL_PLATFORMS.filter((p) => links[p.id]);
   if (entries.length === 0) return null;
   return (
-    <div className={cn("flex flex-wrap gap-x-3 gap-y-1.5", className)}>
+    <div className={cn("flex flex-wrap gap-1.5", className)}>
       {entries.map((p) => {
         const Icon = p.icon;
         const raw = links[p.id]!;
@@ -141,14 +141,15 @@ export const SocialLinksInline = ({ links, className }: Props) => {
             target="_blank"
             rel="noreferrer noopener"
             aria-label={p.label}
-            className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+            className="inline-flex items-center gap-1.5 rounded-full border border-border bg-background hover:bg-muted/60 hover:border-foreground/30 px-2.5 py-1 text-[11px] font-medium text-foreground/80 hover:text-foreground transition-colors"
           >
             <Icon className="h-3.5 w-3.5" strokeWidth={1.75} />
-            <span className="font-medium truncate max-w-[140px]">{displayHandle(p.id, raw)}</span>
+            <span className="truncate max-w-[140px]">{displayHandle(p.id, raw)}</span>
           </a>
         );
       })}
     </div>
   );
 };
+
 

@@ -90,8 +90,8 @@ export const ProfileHeader = ({
   return (
     <>
       <div className="relative">
-        {/* Hero Layer - Cover Photo (owner can edit inline; instant refresh via React Query) */}
-        <div className="relative h-36 sm:h-48 overflow-hidden mx-3 mt-2 rounded-xl">
+        {/* Cover — full-bleed, thin outline */}
+        <div className="relative h-40 sm:h-56 overflow-hidden border-b border-border">
           {isOwner ? (
             <CoverPhotoUploader
               userId={userId}
@@ -99,7 +99,7 @@ export const ProfileHeader = ({
               isOwner
             />
           ) : (
-            <div className="relative h-36 sm:h-48 w-full overflow-hidden bg-gradient-to-br from-muted to-muted/50">
+            <div className="relative h-full w-full overflow-hidden bg-muted">
               {profile?.cover_photo_url ? (
                 <img
                   src={optimizeCloudinaryUrl(profile.cover_photo_url)}
@@ -108,20 +108,16 @@ export const ProfileHeader = ({
                   draggable={false}
                   onContextMenu={(e) => e.preventDefault()}
                 />
-
               ) : (
-                <div className="absolute inset-0 bg-gradient-to-br from-muted to-muted/50" />
+                <div className="absolute inset-0 bg-gradient-to-br from-muted via-background to-muted" />
               )}
             </div>
           )}
-          {/* Gradient overlay for contrast */}
-          <div className="absolute inset-0 bg-gradient-to-t from-background/60 via-transparent to-transparent pointer-events-none" />
         </div>
 
-        {/* Identity Layer - Avatar + Name */}
-        <div className="px-4 sm:px-6">
-          <div className="flex items-end gap-4 -mt-12 sm:-mt-16 relative z-10">
-            {/* Avatar (no editing, no fullscreen - tap opens Edit Profile for owner) */}
+        {/* Identity block */}
+        <div className="px-4 sm:px-6 max-w-2xl mx-auto">
+          <div className="flex items-end justify-between gap-3 -mt-14 sm:-mt-16 relative z-10">
             <motion.div
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
@@ -130,10 +126,9 @@ export const ProfileHeader = ({
             >
               <div
                 className={cn(
-                  "p-[3px] rounded-full bg-card shadow-lg",
-                  "ring-4 ring-background",
-                  effects.hasNeonFrame && "ring-4 ring-fuchsia-500 shadow-[0_0_20px_rgba(217,70,239,0.5)]",
-                  effects.hasPremiumFrame && !effects.hasNeonFrame && "ring-4 ring-amber-500 shadow-[0_0_15px_rgba(245,158,11,0.4)]",
+                  "rounded-full bg-background p-1 shadow-sm",
+                  effects.hasNeonFrame && "ring-2 ring-fuchsia-500 shadow-[0_0_20px_rgba(217,70,239,0.5)]",
+                  effects.hasPremiumFrame && !effects.hasNeonFrame && "ring-2 ring-amber-500",
                   effects.hasSpotlight && "shadow-[0_0_30px_rgba(249,115,22,0.6)]"
                 )}
                 onClick={isOwner ? onEditClick : undefined}
@@ -141,11 +136,11 @@ export const ProfileHeader = ({
                 tabIndex={isOwner ? 0 : undefined}
               >
                 <Avatar className={cn(
-                  "h-24 w-24 sm:h-28 sm:w-28 border-2 border-background",
+                  "h-24 w-24 sm:h-28 sm:w-28",
                   isOwner && "cursor-pointer"
                 )}>
-                  <AvatarImage 
-                    src={profile?.avatar_url || ""} 
+                  <AvatarImage
+                    src={profile?.avatar_url || ""}
                     alt={profile?.display_name || profile?.username}
                     className="object-cover pointer-events-none select-none"
                     draggable={false}
@@ -158,24 +153,24 @@ export const ProfileHeader = ({
               </div>
             </motion.div>
 
-            {/* Action Layer - Buttons */}
-            <div className="flex-1 flex justify-end items-center gap-2 pt-16 sm:pt-20">
-              {isOwner ? (
+            {/* Action buttons */}
+            <div className="flex items-center gap-1.5 pt-16 sm:pt-20">
+              {isOwner && (
                 <>
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={onEditClick}
-                    className="gap-1.5 rounded-full border-border"
+                    className="gap-1.5 rounded-full h-9 px-4 text-xs font-medium tracking-wide uppercase"
                   >
-                    <Edit3 className="h-4 w-4" />
-                    <span className="hidden sm:inline">Edit</span>
+                    <Edit3 className="h-3.5 w-3.5" />
+                    Edit
                   </Button>
                   <Button
                     variant="ghost"
                     size="icon"
                     onClick={onAboutClick}
-                    className="rounded-full h-8 w-8"
+                    className="rounded-full h-9 w-9 border border-border"
                     title="About"
                   >
                     <Info className="h-4 w-4" />
@@ -184,7 +179,7 @@ export const ProfileHeader = ({
                     variant="ghost"
                     size="icon"
                     onClick={onAnalyticsClick}
-                    className="rounded-full h-8 w-8"
+                    className="rounded-full h-9 w-9 border border-border"
                     title="Analytics"
                   >
                     <BarChart3 className="h-4 w-4" />
@@ -193,97 +188,116 @@ export const ProfileHeader = ({
                     variant="ghost"
                     size="icon"
                     onClick={handleShare}
-                    className="rounded-full h-8 w-8"
+                    className="rounded-full h-9 w-9 border border-border"
                     title="Share"
                   >
                     <Share2 className="h-4 w-4" />
                   </Button>
                 </>
-              ) : null}
+              )}
             </div>
           </div>
 
-          {/* Name, Handle, Bio */}
+          {/* Name + Handle chip */}
           <motion.div
             initial={{ y: 10, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.1, duration: 0.3 }}
-            className="mt-3 space-y-1"
+            className="mt-4"
           >
             <div className="flex items-center gap-2 flex-wrap">
-              <h1 className={cn(
-                "text-xl sm:text-2xl font-bold leading-tight",
-                effects.hasRainbowName
-                  ? "bg-gradient-to-r from-red-500 via-yellow-500 via-green-500 via-blue-500 to-purple-500 bg-clip-text text-transparent animate-gradient-x"
-                  : "text-foreground"
-              )}>
+              <h1
+                className={cn(
+                  "text-3xl sm:text-4xl font-semibold leading-none tracking-tight",
+                  "font-serif",
+                  effects.hasRainbowName
+                    ? "bg-gradient-to-r from-red-500 via-yellow-500 via-green-500 via-blue-500 to-purple-500 bg-clip-text text-transparent animate-gradient-x"
+                    : "text-foreground"
+                )}
+                style={{ fontFamily: "var(--font-serif)" }}
+              >
                 {profile?.display_name || profile?.username}
               </h1>
               {profile?.is_verified && <VerifiedBadge size="lg" />}
               <UserRolesDisplay userId={userId} size="sm" />
             </div>
-            
-            <p className="text-sm text-muted-foreground font-medium">
-              @{profile?.username}
-            </p>
+
+            {/* Handle pill */}
+            <div className="mt-2 flex items-center gap-2 flex-wrap">
+              <span
+                className="inline-flex items-center rounded-full border border-border bg-muted/40 px-2.5 py-0.5 text-[12px] font-mono text-foreground/70"
+                style={{ fontFamily: "var(--font-mono)" }}
+              >
+                @{profile?.username}
+              </span>
+              {profile?.country && (
+                <span className="text-[11px] uppercase tracking-widest text-muted-foreground">
+                  {profile.country}
+                </span>
+              )}
+            </div>
 
             {profile?.bio && (
-              <p className="text-sm text-foreground leading-relaxed pt-2 max-w-xl whitespace-pre-wrap">
+              <p className="text-[15px] text-foreground/85 leading-relaxed pt-4 max-w-xl whitespace-pre-wrap">
                 {profile.bio}
               </p>
             )}
 
             {profile?.social_links && Object.keys(profile.social_links).length > 0 && (
-              <div className="pt-2">
+              <div className="pt-3">
                 <SocialLinksInline links={profile.social_links} />
               </div>
             )}
           </motion.div>
 
-          {/* Metrics Row */}
+          {/* Metrics — inline editorial row with hairline divider */}
           <motion.div
             initial={{ y: 10, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.2, duration: 0.3 }}
-            className="flex gap-5 mt-4 pb-4"
+            className="flex items-center gap-6 mt-5 pt-4 pb-4 border-t border-border/60"
           >
             <button className="group text-left" onClick={() => {}}>
-              <span className="text-lg font-bold text-foreground group-hover:text-primary transition-colors">
+              <div className="text-[10px] uppercase tracking-[0.15em] text-muted-foreground">Posts</div>
+              <div className="text-xl font-semibold text-foreground tabular-nums group-hover:text-primary transition-colors">
                 {postsCount}
-              </span>
-              <span className="text-sm text-muted-foreground ml-1.5">posts</span>
+              </div>
             </button>
-            {/* Hide follower/following counts for private accounts viewed by non-owners */}
             {(isOwner || profile?.account_type !== "private") ? (
               <>
+                <div className="h-8 w-px bg-border" />
                 <button className="group text-left" onClick={() => openFollowersDialog("followers")}>
-                  <span className="text-lg font-bold text-foreground group-hover:text-primary transition-colors">
+                  <div className="text-[10px] uppercase tracking-[0.15em] text-muted-foreground">Followers</div>
+                  <div className="text-xl font-semibold text-foreground tabular-nums group-hover:text-primary transition-colors">
                     {profile?.followers_count || 0}
-                  </span>
-                  <span className="text-sm text-muted-foreground ml-1.5">followers</span>
+                  </div>
                 </button>
+                <div className="h-8 w-px bg-border" />
                 <button className="group text-left" onClick={() => openFollowersDialog("following")}>
-                  <span className="text-lg font-bold text-foreground group-hover:text-primary transition-colors">
+                  <div className="text-[10px] uppercase tracking-[0.15em] text-muted-foreground">Following</div>
+                  <div className="text-xl font-semibold text-foreground tabular-nums group-hover:text-primary transition-colors">
                     {profile?.following_count || 0}
-                  </span>
-                  <span className="text-sm text-muted-foreground ml-1.5">following</span>
+                  </div>
                 </button>
               </>
             ) : (
               <>
+                <div className="h-8 w-px bg-border" />
                 <div className="text-left">
-                  <span className="text-lg font-bold text-foreground">{profile?.followers_count || 0}</span>
-                  <span className="text-sm text-muted-foreground ml-1.5">followers</span>
+                  <div className="text-[10px] uppercase tracking-[0.15em] text-muted-foreground">Followers</div>
+                  <div className="text-xl font-semibold text-foreground tabular-nums">{profile?.followers_count || 0}</div>
                 </div>
+                <div className="h-8 w-px bg-border" />
                 <div className="text-left">
-                  <span className="text-lg font-bold text-foreground">{profile?.following_count || 0}</span>
-                  <span className="text-sm text-muted-foreground ml-1.5">following</span>
+                  <div className="text-[10px] uppercase tracking-[0.15em] text-muted-foreground">Following</div>
+                  <div className="text-xl font-semibold text-foreground tabular-nums">{profile?.following_count || 0}</div>
                 </div>
               </>
             )}
           </motion.div>
         </div>
       </div>
+
 
       {/* Followers/Following Dialog */}
       <FollowersFollowingDialog
