@@ -19,6 +19,7 @@ import { validateFileUpload } from "@/lib/validation";
 import { cn } from "@/lib/utils";
 import { SocialLinksEditor } from "./SocialLinksEditor";
 import type { SocialLinksMap } from "./SocialLinks";
+import { uploadToCloudinary, isCloudinaryConfigured } from "@/lib/cloudinary";
 
 interface EditProfileDialogProps {
   profile: any;
