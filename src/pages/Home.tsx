@@ -25,11 +25,6 @@ const Home = () => {
         {showStories && (
           <div className="border-b border-border/70 py-3">
             <div className="max-w-xl mx-auto px-3">
-              <div className="flex items-center justify-between mb-2">
-                <h2 className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground font-semibold">
-                  Stories
-                </h2>
-              </div>
               {isLoading ? <StorySkeleton /> : <Stories />}
             </div>
           </div>
@@ -39,18 +34,6 @@ const Home = () => {
 
         {/* Feed */}
         <div className="max-w-xl mx-auto px-4 py-5">
-          <div className="flex items-baseline justify-between mb-4">
-            <h1
-              className="text-2xl font-semibold tracking-tight text-foreground"
-              style={{ fontFamily: "var(--font-serif)" }}
-            >
-              Today
-            </h1>
-            <span className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
-              Latest
-            </span>
-          </div>
-
           <SmartFeedAd placement="home_feed" className="mb-6" />
           {isLoading ? (
             <div className="space-y-3">
