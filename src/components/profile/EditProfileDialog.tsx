@@ -390,7 +390,7 @@ export const EditProfileDialog = ({ profile, open, onOpenChange }: EditProfileDi
           open={!!bannerCropSrc}
           onOpenChange={(v) => !v && setBannerCropSrc(null)}
           imageSrc={bannerCropSrc}
-          aspectRatio={3}
+          aspectRatio={16 / 9}
           shape="rect"
           onCropComplete={handleBannerCropComplete}
         />
