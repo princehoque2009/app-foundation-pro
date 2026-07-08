@@ -86,7 +86,7 @@ export const CoverPhotoUploader = ({
 
   return (
     <>
-      <div className="relative h-36 sm:h-48 w-full overflow-hidden bg-gradient-to-br from-muted to-muted/50">
+      <div className="relative h-full w-full overflow-hidden bg-gradient-to-br from-muted to-muted/50">
         <AnimatePresence mode="wait">
           {displayUrl ? (
             <motion.div
