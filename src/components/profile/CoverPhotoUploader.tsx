@@ -157,7 +157,7 @@ export const CoverPhotoUploader = ({
           open={!!cropSrc}
           onOpenChange={(v) => !v && setCropSrc(null)}
           imageSrc={cropSrc}
-          aspectRatio={3}
+          aspectRatio={16 / 9}
           shape="rect"
           onCropComplete={handleCropComplete}
         />
