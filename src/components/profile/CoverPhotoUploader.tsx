@@ -81,12 +81,12 @@ export const CoverPhotoUploader = ({
 
   const rawUrl = previewUrl || currentCoverUrl;
   // Only run Cloudinary optimization on the persisted remote URL, not local blob previews.
-  const displayUrl = previewUrl ? previewUrl : optimizeCloudinaryUrl(currentCoverUrl);
+  const displayUrl = previewUrl ? previewUrl : optimizeCloudinaryUrl(currentCoverUrl, "c_fill,ar_16:9,g_auto");
   const isUploading = uploadMutation.isPending;
 
   return (
     <>
-      <div className="relative h-36 sm:h-48 w-full overflow-hidden bg-gradient-to-br from-muted to-muted/50">
+      <div className="relative h-full w-full overflow-hidden bg-gradient-to-br from-muted to-muted/50">
         <AnimatePresence mode="wait">
           {displayUrl ? (
             <motion.div

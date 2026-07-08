@@ -92,7 +92,7 @@ export const ProfileHeader = ({
       <div className="relative pb-4">
         {/* Cover — rounded card, contained */}
         <div className="px-3 sm:px-4 pt-3">
-          <div className="relative h-44 sm:h-56 w-full overflow-hidden rounded-2xl border border-border bg-muted">
+          <div className="relative aspect-[16/9] w-full overflow-hidden rounded-2xl border border-border bg-muted">
             {isOwner ? (
               <CoverPhotoUploader
                 userId={userId}
@@ -101,7 +101,7 @@ export const ProfileHeader = ({
               />
             ) : profile?.cover_photo_url ? (
               <img
-                src={optimizeCloudinaryUrl(profile.cover_photo_url)}
+                src={optimizeCloudinaryUrl(profile.cover_photo_url, "c_fill,ar_16:9,g_auto")}
                 alt="Cover"
                 className="w-full h-full object-cover pointer-events-none select-none"
                 draggable={false}
@@ -112,6 +112,7 @@ export const ProfileHeader = ({
             )}
           </div>
         </div>
+
 
         {/* Identity block — centered, avatar overlaps cover */}
         <div className="px-4 sm:px-6 max-w-2xl mx-auto">
