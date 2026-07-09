@@ -1,16 +1,16 @@
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
-// Premium custom reaction set (Facebook-style, but stylized — not plain emoji vibe)
+// Classic Facebook-style reaction set
 export const REACTION_TYPES = [
-  { key: "like",    label: "Like",    emoji: "👍", color: "from-blue-400 to-blue-600",       ring: "ring-blue-400" },
-  { key: "love",    label: "Love",    emoji: "❤️", color: "from-rose-400 to-red-600",         ring: "ring-rose-400" },
-  { key: "support", label: "Support", emoji: "🤝", color: "from-emerald-400 to-teal-600",    ring: "ring-emerald-400" },
-  { key: "fire",    label: "Hype",    emoji: "🔥", color: "from-orange-400 to-rose-600",     ring: "ring-orange-400" },
-  { key: "laugh",   label: "Laugh",   emoji: "😂", color: "from-yellow-300 to-amber-500",    ring: "ring-yellow-400" },
-  { key: "shock",   label: "Shock",   emoji: "😮", color: "from-sky-300 to-indigo-500",      ring: "ring-sky-400" },
-  { key: "respect", label: "Respect", emoji: "🫡", color: "from-violet-400 to-purple-600",   ring: "ring-violet-400" },
+  { key: "like",  label: "Like",  emoji: "👍", color: "from-blue-400 to-blue-600",     ring: "ring-blue-400" },
+  { key: "love",  label: "Love",  emoji: "❤️", color: "from-rose-400 to-red-600",       ring: "ring-rose-400" },
+  { key: "haha",  label: "Haha",  emoji: "😆", color: "from-yellow-300 to-amber-500",   ring: "ring-yellow-400" },
+  { key: "wow",   label: "Wow",   emoji: "😮", color: "from-yellow-300 to-amber-500",   ring: "ring-amber-400" },
+  { key: "sad",   label: "Sad",   emoji: "😢", color: "from-sky-300 to-indigo-500",     ring: "ring-sky-400" },
+  { key: "angry", label: "Angry", emoji: "😡", color: "from-orange-400 to-rose-600",    ring: "ring-orange-400" },
 ] as const;
+
 
 export type ReactionKey = typeof REACTION_TYPES[number]["key"];
 
