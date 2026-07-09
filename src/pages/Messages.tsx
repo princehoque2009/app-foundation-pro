@@ -193,103 +193,148 @@ const Messages = () => {
     }
   };
 
+  const totalUnread = useMemo(
+    () =>
+      Object.values(previews).reduce(
+        (sum: number, p: any) => sum + (p?.unreadCount || 0),
+        0
+      ),
+    [previews]
+  );
+
+  const { data: selfProfile } = useQuery({
+    queryKey: ["self-profile-mini", user?.id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("profiles")
+        .select("display_name, username, avatar_url")
+        .eq("id", user!.id)
+        .single();
+      return data;
+    },
+    enabled: !!user?.id,
+  });
+
+  const firstName =
+    selfProfile?.display_name?.split(" ")[0] ||
+    selfProfile?.username ||
+    "there";
+
   return (
     <MainLayout showHeader={false} showBottomNav={false}>
-      <div className="h-[100dvh] flex flex-col">
-        {/* Custom messenger header (mobile-first) */}
-        <header className={cn(
-          "flex items-center justify-between gap-2 px-3 h-14 border-b bg-card",
-          selectedFriend && "hidden md:flex"
-        )}>
-          <div className="flex items-center gap-2 min-w-0">
-            <button
-              onClick={() => navigate("/")}
-              aria-label="Back to home"
-              className="p-2 -ml-1 rounded-full hover:bg-muted/80 active:scale-95"
-            >
-              <ArrowLeft className="h-5 w-5" />
-            </button>
-            {/* Branded text logo */}
-            <div className="flex items-center gap-1.5 min-w-0">
-              <div className="h-7 w-7 rounded-xl bg-coral-gradient flex items-center justify-center shadow-sm shrink-0">
-                <span className="text-white font-black text-[15px] leading-none tracking-tight">P</span>
-              </div>
-              <div className="flex flex-col leading-none min-w-0">
-                <span className="text-[17px] font-extrabold tracking-tight bg-coral-gradient bg-clip-text text-transparent">
-                  prangon<span className="text-foreground/70 font-bold">.chat</span>
-                </span>
-                <span className="text-[9px] uppercase tracking-[0.18em] text-muted-foreground inline-flex items-center gap-1">
-                  <ShieldCheck className="h-2.5 w-2.5 text-emerald-500" /> End-to-end encrypted
-                </span>
-              </div>
-            </div>
-          </div>
-          <div className="flex items-center gap-0.5">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setShowCreateGroup(true)}
-              className="h-9 w-9"
-              title="New group"
-            >
-              <Users className="h-5 w-5" />
-            </Button>
-            <MessengerSettings
-              trigger={
-                <Button variant="ghost" size="icon" className="h-9 w-9" title="Settings">
-                  <Settings className="h-5 w-5" />
-                </Button>
-              }
-            />
-          </div>
-        </header>
-
+      <div className="min-h-[100dvh] flex flex-col bg-background">
         <div className="flex flex-1 min-h-0">
           {/* Chat list */}
           <div
             className={cn(
-              "w-full md:w-80 lg:w-96 border-r bg-card flex flex-col min-h-0",
+              "w-full md:w-96 border-r bg-background flex flex-col min-h-0",
               selectedFriend ? "hidden md:flex" : "flex"
             )}
           >
-            <div className="p-3 space-y-3 border-b">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search chats..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-9 bg-muted/50 border-0 rounded-full h-10"
-                />
-              </div>
-              <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
+            {/* Greeting header */}
+            <div className={cn("px-5 pt-6 pb-4", selectedFriend && "hidden md:block")}>
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <h1 className="text-[28px] leading-tight font-extrabold tracking-tight text-foreground truncate">
+                    Hi {firstName}
+                  </h1>
+                  <p className="text-[13px] text-muted-foreground mt-1">
+                    {String(totalUnread).padStart(2, "0")} unread{" "}
+                    {totalUnread === 1 ? "message" : "messages"}
+                  </p>
+                </div>
                 <button
-                  onClick={() => setShowArchived(false)}
-                  className={cn(
-                    "shrink-0 text-xs font-semibold px-3 py-1.5 rounded-full transition",
-                    !showArchived ? "bg-coral-gradient text-white" : "bg-muted text-muted-foreground"
-                  )}
+                  onClick={() => navigate("/profile")}
+                  className="relative h-10 w-10 rounded-full bg-muted flex items-center justify-center shrink-0"
+                  aria-label="Profile"
                 >
-                  All
+                  <Avatar className="h-10 w-10">
+                    <AvatarImage src={selfProfile?.avatar_url || ""} />
+                    <AvatarFallback className="bg-muted">
+                      <UserCircle className="h-5 w-5 text-muted-foreground" />
+                    </AvatarFallback>
+                  </Avatar>
+                  {totalUnread > 0 && (
+                    <span className="absolute top-0 right-0 h-2.5 w-2.5 rounded-full bg-primary ring-2 ring-background" />
+                  )}
                 </button>
-                {favouritesPresent && (
-                  <span className="shrink-0 text-xs font-semibold px-3 py-1.5 rounded-full bg-muted text-muted-foreground inline-flex items-center gap-1">
-                    <Heart className="h-3 w-3" /> Favourites
-                  </span>
-                )}
-                {archivedCount > 0 && (
-                  <button
-                    onClick={() => setShowArchived(true)}
-                    className={cn(
-                      "shrink-0 text-xs font-semibold px-3 py-1.5 rounded-full inline-flex items-center gap-1 transition",
-                      showArchived ? "bg-coral-gradient text-white" : "bg-muted text-muted-foreground"
-                    )}
-                  >
-                    <Archive className="h-3 w-3" /> Archived ({archivedCount})
-                  </button>
-                )}
               </div>
             </div>
+
+            {/* Stories row */}
+            <div className="px-5 pb-4">
+              <div className="flex items-center gap-4 overflow-x-auto no-scrollbar">
+                <button
+                  onClick={() => navigate("/create")}
+                  className="flex flex-col items-center gap-1.5 shrink-0"
+                >
+                  <div className="h-14 w-14 rounded-full border-2 border-dashed border-muted-foreground/40 flex items-center justify-center text-muted-foreground">
+                    <Plus className="h-5 w-5" />
+                  </div>
+                  <span className="text-[11px] text-muted-foreground">Add Story</span>
+                </button>
+                {(friends || []).slice(0, 12).map((f) => (
+                  <button
+                    key={f.id}
+                    onClick={() => navigate(`/profile/${f.id}`)}
+                    className="flex flex-col items-center gap-1.5 shrink-0"
+                  >
+                    <div className="h-14 w-14 rounded-full p-[2px] bg-gradient-to-tr from-primary via-primary/60 to-primary/30">
+                      <Avatar className="h-full w-full ring-2 ring-background">
+                        <AvatarImage src={f.avatar_url || ""} />
+                        <AvatarFallback className="bg-muted text-foreground text-xs">
+                          {(f.display_name || f.username || "?")[0]}
+                        </AvatarFallback>
+                      </Avatar>
+                    </div>
+                    <span className="text-[11px] text-muted-foreground truncate max-w-[64px]">
+                      {(f.display_name || f.username || "").split(" ")[0]}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Chats section header */}
+            <div className="px-5 pb-2 flex items-center justify-between">
+              <h2 className="text-[20px] font-bold tracking-tight">Chats</h2>
+              <div className="flex items-center gap-1">
+                {archivedCount > 0 && (
+                  <button
+                    onClick={() => setShowArchived((v) => !v)}
+                    className={cn(
+                      "text-[11px] font-semibold px-2.5 py-1 rounded-full inline-flex items-center gap-1",
+                      showArchived ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+                    )}
+                  >
+                    <Archive className="h-3 w-3" /> {archivedCount}
+                  </button>
+                )}
+                <MessengerSettings
+                  trigger={
+                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-muted-foreground">
+                      <Settings className="h-4 w-4" />
+                    </Button>
+                  }
+                />
+              </div>
+            </div>
+
+            {/* Optional search (compact) */}
+            {(friends?.length || 0) > 6 && (
+              <div className="px-5 pb-2">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search chats..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-9 bg-muted/60 border-0 rounded-full h-9 text-sm"
+                  />
+                </div>
+              </div>
+            )}
+
 
             <ScrollArea className="flex-1">
               <div className="p-2 space-y-0.5">
