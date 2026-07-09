@@ -3,6 +3,10 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Global lucide icon stroke — thinner, editorial */
+.lucide { stroke-width: 1.5; }
+
+
 /* Prangon v0.2 Design System - Electric Coral Theme */
 
 @layer base {
