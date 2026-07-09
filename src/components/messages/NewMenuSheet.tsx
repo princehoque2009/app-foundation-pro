@@ -11,11 +11,12 @@ interface NewMenuSheetProps {
 }
 
 interface MenuItem {
-  icon: React.ComponentType<{ className?: string }>;
+  icon: React.ComponentType<React.SVGProps<SVGSVGElement> & { size?: number | string; strokeWidth?: number | string }>;
   title: string;
   description: string;
   onClick?: () => void;
 }
+
 
 export const NewMenuSheet = ({
   onNewChat,
