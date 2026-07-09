@@ -337,21 +337,8 @@ const Messages = () => {
 
 
             <ScrollArea className="flex-1">
-              <div className="p-2 space-y-0.5">
-                {!showArchived && (
-                  <button
-                    onClick={() => setShowCreateGroup(true)}
-                    className="w-full p-2.5 rounded-2xl flex items-center gap-3 transition-all hover:bg-accent/60"
-                  >
-                    <div className="h-12 w-12 rounded-full bg-coral-gradient flex items-center justify-center shadow-sm">
-                      <Plus className="h-6 w-6 text-white" strokeWidth={2.5} />
-                    </div>
-                    <div className="flex-1 text-left">
-                      <h3 className="font-semibold text-[15px]">New Group</h3>
-                      <p className="text-xs text-muted-foreground">Start a group conversation</p>
-                    </div>
-                  </button>
-                )}
+              <div className="px-3 pb-32 space-y-1">
+
 
                 {friendsLoading ? (
                   Array.from({ length: 6 }).map((_, i) => (
