@@ -450,6 +450,18 @@ const Messages = () => {
 
       <CreateGroupDialog open={showCreateGroup} onOpenChange={setShowCreateGroup} />
 
+      {!selectedFriend && (
+        <NewMenuSheet
+          onNewChat={() => {
+            const el = document.querySelector<HTMLInputElement>('input[placeholder="Search chats..."]');
+            el?.focus();
+          }}
+          onNewContact={() => navigate("/friends")}
+          onNewCommunity={() => setShowCreateGroup(true)}
+        />
+      )}
+
+
       <ConversationActionsSheet
         open={!!actionsTarget}
         onOpenChange={(v) => !v && setActionsTarget(null)}
