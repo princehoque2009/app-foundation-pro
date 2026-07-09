@@ -90,28 +90,29 @@ export const ProfileHeader = ({
   return (
     <>
       <div className="relative pb-4">
-        {/* Cover — rounded card, contained */}
-        <div className="px-3 sm:px-4 pt-3">
-          <div className="relative aspect-[16/9] w-full overflow-hidden rounded-2xl border border-border bg-muted">
-            {isOwner ? (
-              <CoverPhotoUploader
-                userId={userId}
-                currentCoverUrl={profile?.cover_photo_url}
-                isOwner
-              />
-            ) : profile?.cover_photo_url ? (
-              <img
-                src={optimizeCloudinaryUrl(profile.cover_photo_url, "c_fill,ar_16:9,g_auto")}
-                alt="Cover"
-                className="w-full h-full object-cover pointer-events-none select-none"
-                draggable={false}
-                onContextMenu={(e) => e.preventDefault()}
-              />
-            ) : (
-              <div className="absolute inset-0 bg-gradient-to-br from-muted via-background to-muted" />
-            )}
-          </div>
+        {/* Cover — edge-to-edge, no radius, faded bottom */}
+        <div className="relative aspect-[16/9] w-full overflow-hidden bg-muted">
+          {isOwner ? (
+            <CoverPhotoUploader
+              userId={userId}
+              currentCoverUrl={profile?.cover_photo_url}
+              isOwner
+            />
+          ) : profile?.cover_photo_url ? (
+            <img
+              src={optimizeCloudinaryUrl(profile.cover_photo_url, "c_fill,ar_16:9,g_auto")}
+              alt="Cover"
+              className="w-full h-full object-cover pointer-events-none select-none"
+              draggable={false}
+              onContextMenu={(e) => e.preventDefault()}
+            />
+          ) : (
+            <div className="absolute inset-0 bg-gradient-to-br from-muted via-background to-muted" />
+          )}
+          {/* Faded bottom gradient blending into page background */}
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 h-2/5 bg-gradient-to-b from-transparent to-background" />
         </div>
+
 
 
         {/* Identity block — centered, avatar overlaps cover */}

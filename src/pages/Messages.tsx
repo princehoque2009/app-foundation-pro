@@ -8,6 +8,8 @@ import { SupabaseChatWindow } from "@/components/messages/SupabaseChatWindow";
 import { MessengerSettings } from "@/components/messages/MessengerSettings";
 import { CreateGroupDialog } from "@/components/groups/CreateGroupDialog";
 import { ConversationActionsSheet } from "@/components/messages/ConversationActionsSheet";
+import { NewMenuSheet } from "@/components/messages/NewMenuSheet";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -447,6 +449,18 @@ const Messages = () => {
       </div>
 
       <CreateGroupDialog open={showCreateGroup} onOpenChange={setShowCreateGroup} />
+
+      {!selectedFriend && (
+        <NewMenuSheet
+          onNewChat={() => {
+            const el = document.querySelector<HTMLInputElement>('input[placeholder="Search chats..."]');
+            el?.focus();
+          }}
+          onNewContact={() => navigate("/friends")}
+          onNewCommunity={() => setShowCreateGroup(true)}
+        />
+      )}
+
 
       <ConversationActionsSheet
         open={!!actionsTarget}
