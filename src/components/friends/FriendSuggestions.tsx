@@ -47,23 +47,30 @@ export const FriendSuggestions = () => {
 
   const sendRequestMutation = useMutation({
     mutationFn: async (toUserId: string) => {
+      await supabase
+        .from("friend_requests")
+        .delete()
+        .eq("from_user_id", user?.id)
+        .eq("to_user_id", toUserId);
+
       const { error } = await supabase
         .from("friend_requests")
         .insert({
           from_user_id: user?.id,
           to_user_id: toUserId,
+          status: "accepted",
         });
       if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["friend-suggestions"] });
-      queryClient.invalidateQueries({ queryKey: ["friend-requests-sent"] });
-      toast({
-        title: "Follow request sent",
-        description: "Your follow request has been sent successfully.",
-      });
+      queryClient.invalidateQueries({ queryKey: ["friendships"] });
+      queryClient.invalidateQueries({ queryKey: ["friends"] });
+      queryClient.invalidateQueries({ queryKey: ["is-following"] });
+      toast({ title: "Following!" });
     },
   });
+
 
   if (!suggestions || suggestions.length === 0) {
     return (
