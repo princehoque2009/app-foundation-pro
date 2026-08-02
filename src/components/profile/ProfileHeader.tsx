@@ -120,24 +120,16 @@ export const ProfileHeader = ({
           {/* Counters row with centered avatar */}
           <div className="relative flex items-center justify-between -mt-12 sm:-mt-14">
             {/* Followers */}
-            {(isOwner || profile?.account_type !== "private") ? (
-              <button
-                className="flex-1 text-center pt-14"
-                onClick={() => openFollowersDialog("followers")}
-              >
-                <div className="text-lg font-semibold text-foreground tabular-nums">
-                  {profile?.followers_count || 0}
-                </div>
-                <div className="text-xs text-muted-foreground">Followers</div>
-              </button>
-            ) : (
-              <div className="flex-1 text-center pt-14">
-                <div className="text-lg font-semibold text-foreground tabular-nums">
-                  {profile?.followers_count || 0}
-                </div>
-                <div className="text-xs text-muted-foreground">Followers</div>
+            <button
+              className="flex-1 text-center pt-14"
+              onClick={() => openFollowersDialog("followers")}
+            >
+              <div className="text-lg font-semibold text-foreground tabular-nums">
+                {profile?.followers_count || 0}
               </div>
-            )}
+              <div className="text-xs text-muted-foreground">Followers</div>
+            </button>
+
 
             {/* Avatar — centered, overlapping */}
             <motion.div
