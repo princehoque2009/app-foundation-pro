@@ -55,6 +55,7 @@ const Messages = () => {
   const [showCreateGroup, setShowCreateGroup] = useState(false);
   const [showArchived, setShowArchived] = useState(false);
   const [actionsTarget, setActionsTarget] = useState<Profile | null>(null);
+  const [messengerTab, setMessengerTab] = useState<"chats" | "feed" | "me">("chats");
 
   useSelfPresence();
 
