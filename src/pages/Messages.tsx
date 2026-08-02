@@ -9,6 +9,8 @@ import { MessengerSettings } from "@/components/messages/MessengerSettings";
 import { CreateGroupDialog } from "@/components/groups/CreateGroupDialog";
 import { ConversationActionsSheet } from "@/components/messages/ConversationActionsSheet";
 import { NewMenuSheet } from "@/components/messages/NewMenuSheet";
+import { MessengerHome } from "@/components/messages/MessengerHome";
+import { MessengerProfile } from "@/components/messages/MessengerProfile";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
