@@ -268,24 +268,17 @@ const UserProfile = () => {
                 Following
               </Button>
             </>
-          ) : pendingRequest ? (
-            <Button
-              variant="secondary"
-              onClick={() => cancelRequestMutation.mutate()}
-              className="flex-1 rounded-full gap-2"
-            >
-              <Clock className="h-4 w-4" />
-              Requested
-            </Button>
           ) : (
             <Button
               onClick={() => followMutation.mutate()}
+              disabled={followMutation.isPending}
               className="flex-1 rounded-full gap-2"
             >
               <UserPlus className="h-4 w-4" />
               Follow
             </Button>
           )}
+
 
           <Button
             variant="ghost"
