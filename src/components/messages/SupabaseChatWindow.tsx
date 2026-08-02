@@ -749,7 +749,10 @@ export const SupabaseChatWindow = ({ friendProfile, onBack }: SupabaseChatWindow
       </ScrollArea>
 
       {/* Composer */}
-      <div className="border-t p-3 bg-card">
+      <div
+        className="sticky bottom-0 z-20 shrink-0 border-t p-3 bg-card"
+        style={{ paddingBottom: "calc(0.75rem + env(safe-area-inset-bottom))" }}
+      >
         {editingId && (
           <div className="flex items-center gap-2 mb-2 px-3 py-2 rounded-2xl bg-amber-500/10 border-l-2 border-amber-500">
             <Pencil className="h-4 w-4 text-amber-600 shrink-0" />
