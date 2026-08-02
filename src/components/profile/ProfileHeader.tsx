@@ -173,24 +173,16 @@ export const ProfileHeader = ({
             </motion.div>
 
             {/* Following */}
-            {(isOwner || profile?.account_type !== "private") ? (
-              <button
-                className="flex-1 text-center pt-14"
-                onClick={() => openFollowersDialog("following")}
-              >
-                <div className="text-lg font-semibold text-foreground tabular-nums">
-                  {profile?.following_count || 0}
-                </div>
-                <div className="text-xs text-muted-foreground">Following</div>
-              </button>
-            ) : (
-              <div className="flex-1 text-center pt-14">
-                <div className="text-lg font-semibold text-foreground tabular-nums">
-                  {profile?.following_count || 0}
-                </div>
-                <div className="text-xs text-muted-foreground">Following</div>
+            <button
+              className="flex-1 text-center pt-14"
+              onClick={() => openFollowersDialog("following")}
+            >
+              <div className="text-lg font-semibold text-foreground tabular-nums">
+                {profile?.following_count || 0}
               </div>
-            )}
+              <div className="text-xs text-muted-foreground">Following</div>
+            </button>
+
           </div>
 
           {/* Name + handle — centered */}
