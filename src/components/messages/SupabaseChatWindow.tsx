@@ -332,7 +332,7 @@ export const SupabaseChatWindow = ({ friendProfile, onBack }: SupabaseChatWindow
   };
 
   return (
-    <div className="flex-1 flex flex-col h-full bg-background min-w-0 overflow-hidden">
+    <div className="flex-1 flex flex-col h-[100dvh] md:h-full bg-background min-w-0 overflow-hidden">
       {/* Header */}
       <div className="sticky top-0 z-10 px-2 sm:px-3 py-2 flex items-center gap-2 border-b bg-card/80 backdrop-blur-md min-w-0">
         {onBack && (
