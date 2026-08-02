@@ -130,70 +130,69 @@ const UserProfile = () => {
     { id: "reels", label: "Reels", count: reelPosts.length },
   ];
 
-  // Follow: instant for public, request for private
+  // Follow — instant for everyone (all accounts are public)
   const followMutation = useMutation({
     mutationFn: async () => {
-      if (isPrivate) {
-        // Send follow request - delete any old rejected/accepted requests first
-        await supabase
-          .from("friend_requests")
-          .delete()
-          .eq("from_user_id", user?.id)
-          .eq("to_user_id", userId);
-        
-        const { error } = await supabase
-          .from("friend_requests")
-          .insert({ from_user_id: user?.id, to_user_id: userId });
-        if (error) throw error;
-      } else {
-        // Instant follow - clean up old requests first
-        await supabase
-          .from("friend_requests")
-          .delete()
-          .eq("from_user_id", user?.id)
-          .eq("to_user_id", userId);
-        
-        const { error } = await supabase
-          .from("friend_requests")
-          .insert({ from_user_id: user?.id, to_user_id: userId, status: "accepted" });
-        if (error) throw error;
-      }
+      await supabase
+        .from("friend_requests")
+        .delete()
+        .eq("from_user_id", user?.id)
+        .eq("to_user_id", userId);
+
+      const { error } = await supabase
+        .from("friend_requests")
+        .insert({ from_user_id: user?.id, to_user_id: userId, status: "accepted" });
+      if (error) throw error;
+    },
+    onMutate: async () => {
+      await queryClient.cancelQueries({ queryKey: ["is-following", user?.id, userId] });
+      queryClient.setQueryData(["is-following", user?.id, userId], true);
+    },
+    onError: (error: any) => {
+      queryClient.setQueryData(["is-following", user?.id, userId], false);
+      toast({ title: "Could not follow", description: error.message, variant: "destructive" });
     },
     onSuccess: () => {
+      toast({ title: "Following!" });
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["is-following"] });
-      queryClient.invalidateQueries({ queryKey: ["follow-request"] });
       queryClient.invalidateQueries({ queryKey: ["profile", userId] });
-      toast({ title: isPrivate ? "Follow request sent" : "Following!" });
+      queryClient.invalidateQueries({ queryKey: ["friendships"] });
+      queryClient.invalidateQueries({ queryKey: ["friends"] });
+      queryClient.invalidateQueries({ queryKey: ["followers-following"] });
     },
   });
 
   const unfollowMutation = useMutation({
     mutationFn: async () => {
-      // Delete friendships
       await supabase
         .from("friendships")
         .delete()
         .eq("user_id", user?.id)
         .eq("friend_id", userId);
       await supabase
-        .from("friendships")
-        .delete()
-        .eq("user_id", userId)
-        .eq("friend_id", user!.id);
-      // Also clean up any friend_requests so re-follow works
-      await supabase
         .from("friend_requests")
         .delete()
         .eq("from_user_id", user?.id)
         .eq("to_user_id", userId);
     },
+    onMutate: async () => {
+      await queryClient.cancelQueries({ queryKey: ["is-following", user?.id, userId] });
+      queryClient.setQueryData(["is-following", user?.id, userId], false);
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["is-following"] });
-      queryClient.invalidateQueries({ queryKey: ["follow-request"] });
-      queryClient.invalidateQueries({ queryKey: ["profile", userId] });
       toast({ title: "Unfollowed" });
     },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["is-following"] });
+      queryClient.invalidateQueries({ queryKey: ["profile", userId] });
+      queryClient.invalidateQueries({ queryKey: ["friendships"] });
+      queryClient.invalidateQueries({ queryKey: ["friends"] });
+      queryClient.invalidateQueries({ queryKey: ["followers-following"] });
+    },
   });
+
 
 
 
