@@ -195,20 +195,8 @@ const UserProfile = () => {
     },
   });
 
-  const cancelRequestMutation = useMutation({
-    mutationFn: async () => {
-      await supabase
-        .from("friend_requests")
-        .delete()
-        .eq("from_user_id", user?.id)
-        .eq("to_user_id", userId)
-        .eq("status", "pending");
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["follow-request"] });
-      toast({ title: "Request cancelled" });
-    },
-  });
+
+
 
   const handleMessage = async () => {
     if (!userId) return;
