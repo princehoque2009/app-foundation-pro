@@ -512,9 +512,14 @@ const Messages = () => {
 
       {!selectedFriend && (
         <NewMenuSheet
+          activeTab={messengerTab}
+          onSelectTab={(t) => setMessengerTab(messengerTab === t ? "chats" : t)}
           onNewChat={() => {
-            const el = document.querySelector<HTMLInputElement>('input[placeholder="Search chats..."]');
-            el?.focus();
+            setMessengerTab("chats");
+            setTimeout(() => {
+              const el = document.querySelector<HTMLInputElement>('input[placeholder="Search chats..."]');
+              el?.focus();
+            }, 50);
           }}
           onNewContact={() => navigate("/friends")}
           onNewCommunity={() => setShowCreateGroup(true)}
