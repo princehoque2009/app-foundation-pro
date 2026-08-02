@@ -153,11 +153,34 @@ export const SupabaseChatWindow = ({ friendProfile, onBack }: SupabaseChatWindow
     setViewerOpen(true);
   };
 
+  // Always keep the newest message in view (ScrollArea viewport is the scroll container)
+  const scrollToBottom = (behavior: ScrollBehavior = "auto") => {
+    const viewport = scrollRef.current?.closest(
+      "[data-radix-scroll-area-viewport]"
+    ) as HTMLElement | null;
+    const el = viewport || scrollRef.current;
+    if (!el) return;
+    el.scrollTo({ top: el.scrollHeight, behavior });
+  };
+
   useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-    }
-  }, [visibleMessages.length]);
+    const raf = requestAnimationFrame(() => scrollToBottom());
+    const t = window.setTimeout(() => scrollToBottom(), 120);
+    return () => {
+      cancelAnimationFrame(raf);
+      window.clearTimeout(t);
+    };
+  }, [visibleMessages.length, conversationId]);
+
+  // Keep pinned to bottom when the mobile keyboard opens/closes
+  useEffect(() => {
+    const vv = window.visualViewport;
+    if (!vv) return;
+    const onResize = () => scrollToBottom();
+    vv.addEventListener("resize", onResize);
+    return () => vv.removeEventListener("resize", onResize);
+  }, []);
+
 
   // Mark messages as read when viewing
   useEffect(() => {
