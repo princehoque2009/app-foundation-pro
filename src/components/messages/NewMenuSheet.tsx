@@ -26,6 +26,8 @@ export const NewMenuSheet = ({
   onNewContact,
   onNewCommunity,
   className,
+  activeTab = "chats",
+  onSelectTab,
 }: NewMenuSheetProps) => {
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
