@@ -223,6 +223,30 @@ const Messages = () => {
 
   return (
     <MainLayout showHeader={false} showBottomNav={false}>
+      {messengerTab !== "chats" ? (
+        <div className="min-h-[100dvh] flex flex-col bg-background">
+          {messengerTab === "feed" ? (
+            <MessengerHome
+              friends={(friends || []) as any}
+              onlineIds={friendIds.filter((id) => isUserOnline(presenceMap[id]))}
+              totalUnread={totalUnread}
+              onOpenChat={(f) => {
+                setMessengerTab("chats");
+                handleSelectFriend(f.id, f as any);
+              }}
+              onExit={() => setMessengerTab("chats")}
+            />
+          ) : (
+            <MessengerProfile
+              profile={selfProfile}
+              chatsCount={(friends || []).length}
+              totalUnread={totalUnread}
+              onOpenFullProfile={() => navigate("/profile")}
+              onExit={() => setMessengerTab("chats")}
+            />
+          )}
+        </div>
+      ) : (
       <div className="min-h-[100dvh] flex flex-col bg-background">
         <div className="flex flex-1 min-h-0">
           {/* Chat list */}
