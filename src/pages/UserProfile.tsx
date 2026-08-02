@@ -58,21 +58,8 @@ const UserProfile = () => {
     enabled: !!user?.id && !!userId && user.id !== userId,
   });
 
-  // Check pending follow request
-  const { data: pendingRequest } = useQuery({
-    queryKey: ["follow-request", user?.id, userId],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from("friend_requests")
-        .select("*")
-        .eq("from_user_id", user?.id)
-        .eq("to_user_id", userId)
-        .eq("status", "pending")
-        .maybeSingle();
-      return data;
-    },
-    enabled: !!user?.id && !!userId && user.id !== userId,
-  });
+
+
 
   // Fetch user's posts
   const { data: posts, isLoading: postsLoading } = useQuery({
