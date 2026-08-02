@@ -43,23 +43,8 @@ export const PrivacySettings = () => {
     enabled: !!user?.id,
   });
 
-  const updateAccountTypeMutation = useMutation({
-    mutationFn: async (accountType: string) => {
-      const { error } = await supabase
-        .from("profiles")
-        .update({ account_type: accountType })
-        .eq("id", user?.id);
 
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["profile", user?.id] });
-      toast({
-        title: "Account type updated",
-        description: "Your account privacy settings have been updated.",
-      });
-    },
-  });
+
 
   const update2FAMutation = useMutation({
     mutationFn: async (enabled: boolean) => {
@@ -100,30 +85,16 @@ export const PrivacySettings = () => {
             Account Type
           </CardTitle>
           <CardDescription>
-            Control who can see your profile and posts
+            All Prangon accounts are public
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Select
-            value={profile?.account_type || "public"}
-            onValueChange={(value) => updateAccountTypeMutation.mutate(value)}
-          >
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="public">Public</SelectItem>
-              <SelectItem value="private">Private</SelectItem>
-            </SelectContent>
-          </Select>
-          <p className="text-sm text-muted-foreground mt-2">
-            {profile?.account_type === "private" 
-              ? "Only approved followers can see your posts"
-              : "Anyone can see your posts"
-            }
+          <p className="text-sm text-muted-foreground">
+            Anyone can see your posts and follow you instantly — no approval needed.
           </p>
         </CardContent>
       </Card>
+
 
       <Card>
         <CardHeader>

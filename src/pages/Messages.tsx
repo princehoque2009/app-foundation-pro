@@ -9,6 +9,8 @@ import { MessengerSettings } from "@/components/messages/MessengerSettings";
 import { CreateGroupDialog } from "@/components/groups/CreateGroupDialog";
 import { ConversationActionsSheet } from "@/components/messages/ConversationActionsSheet";
 import { NewMenuSheet } from "@/components/messages/NewMenuSheet";
+import { MessengerHome } from "@/components/messages/MessengerHome";
+import { MessengerProfile } from "@/components/messages/MessengerProfile";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -55,6 +57,7 @@ const Messages = () => {
   const [showCreateGroup, setShowCreateGroup] = useState(false);
   const [showArchived, setShowArchived] = useState(false);
   const [actionsTarget, setActionsTarget] = useState<Profile | null>(null);
+  const [messengerTab, setMessengerTab] = useState<"chats" | "feed" | "me">("chats");
 
   useSelfPresence();
 
@@ -222,6 +225,30 @@ const Messages = () => {
 
   return (
     <MainLayout showHeader={false} showBottomNav={false}>
+      {messengerTab !== "chats" ? (
+        <div className="min-h-[100dvh] flex flex-col bg-background">
+          {messengerTab === "feed" ? (
+            <MessengerHome
+              friends={(friends || []) as any}
+              onlineIds={friendIds.filter((id) => isUserOnline(presenceMap[id]))}
+              totalUnread={totalUnread}
+              onOpenChat={(f) => {
+                setMessengerTab("chats");
+                handleSelectFriend(f.id, f as any);
+              }}
+              onExit={() => setMessengerTab("chats")}
+            />
+          ) : (
+            <MessengerProfile
+              profile={selfProfile}
+              chatsCount={(friends || []).length}
+              totalUnread={totalUnread}
+              onOpenFullProfile={() => navigate("/profile")}
+              onExit={() => setMessengerTab("chats")}
+            />
+          )}
+        </div>
+      ) : (
       <div className="min-h-[100dvh] flex flex-col bg-background">
         <div className="flex flex-1 min-h-0">
           {/* Chat list */}
@@ -479,14 +506,20 @@ const Messages = () => {
           </div>
         </div>
       </div>
+      )}
 
       <CreateGroupDialog open={showCreateGroup} onOpenChange={setShowCreateGroup} />
 
       {!selectedFriend && (
         <NewMenuSheet
+          activeTab={messengerTab}
+          onSelectTab={(t) => setMessengerTab(messengerTab === t ? "chats" : t)}
           onNewChat={() => {
-            const el = document.querySelector<HTMLInputElement>('input[placeholder="Search chats..."]');
-            el?.focus();
+            setMessengerTab("chats");
+            setTimeout(() => {
+              const el = document.querySelector<HTMLInputElement>('input[placeholder="Search chats..."]');
+              el?.focus();
+            }, 50);
           }}
           onNewContact={() => navigate("/friends")}
           onNewCommunity={() => setShowCreateGroup(true)}

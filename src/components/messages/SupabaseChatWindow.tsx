@@ -153,11 +153,34 @@ export const SupabaseChatWindow = ({ friendProfile, onBack }: SupabaseChatWindow
     setViewerOpen(true);
   };
 
+  // Always keep the newest message in view (ScrollArea viewport is the scroll container)
+  const scrollToBottom = (behavior: ScrollBehavior = "auto") => {
+    const viewport = scrollRef.current?.closest(
+      "[data-radix-scroll-area-viewport]"
+    ) as HTMLElement | null;
+    const el = viewport || scrollRef.current;
+    if (!el) return;
+    el.scrollTo({ top: el.scrollHeight, behavior });
+  };
+
   useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-    }
-  }, [visibleMessages.length]);
+    const raf = requestAnimationFrame(() => scrollToBottom());
+    const t = window.setTimeout(() => scrollToBottom(), 120);
+    return () => {
+      cancelAnimationFrame(raf);
+      window.clearTimeout(t);
+    };
+  }, [visibleMessages.length, conversationId]);
+
+  // Keep pinned to bottom when the mobile keyboard opens/closes
+  useEffect(() => {
+    const vv = window.visualViewport;
+    if (!vv) return;
+    const onResize = () => scrollToBottom();
+    vv.addEventListener("resize", onResize);
+    return () => vv.removeEventListener("resize", onResize);
+  }, []);
+
 
   // Mark messages as read when viewing
   useEffect(() => {
@@ -309,7 +332,7 @@ export const SupabaseChatWindow = ({ friendProfile, onBack }: SupabaseChatWindow
   };
 
   return (
-    <div className="flex-1 flex flex-col h-full bg-background min-w-0 overflow-hidden">
+    <div className="flex-1 flex flex-col h-[100dvh] md:h-full bg-background min-w-0 overflow-hidden">
       {/* Header */}
       <div className="sticky top-0 z-10 px-2 sm:px-3 py-2 flex items-center gap-2 border-b bg-card/80 backdrop-blur-md min-w-0">
         {onBack && (
@@ -726,7 +749,10 @@ export const SupabaseChatWindow = ({ friendProfile, onBack }: SupabaseChatWindow
       </ScrollArea>
 
       {/* Composer */}
-      <div className="border-t p-3 bg-card">
+      <div
+        className="sticky bottom-0 z-20 shrink-0 border-t p-3 bg-card"
+        style={{ paddingBottom: "calc(0.75rem + env(safe-area-inset-bottom))" }}
+      >
         {editingId && (
           <div className="flex items-center gap-2 mb-2 px-3 py-2 rounded-2xl bg-amber-500/10 border-l-2 border-amber-500">
             <Pencil className="h-4 w-4 text-amber-600 shrink-0" />
