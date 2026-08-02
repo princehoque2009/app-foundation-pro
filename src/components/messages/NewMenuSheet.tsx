@@ -9,6 +9,9 @@ interface NewMenuSheetProps {
   onNewContact?: () => void;
   onNewCommunity?: () => void;
   className?: string;
+  /** Messenger-internal tab navigation */
+  activeTab?: "chats" | "feed" | "me";
+  onSelectTab?: (tab: "chats" | "feed" | "me") => void;
 }
 
 interface MenuItem {
