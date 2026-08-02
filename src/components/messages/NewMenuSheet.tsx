@@ -77,9 +77,14 @@ export const NewMenuSheet = ({
         )}
       >
         <button
-          onClick={() => navigate("/")}
-          aria-label="Home"
-          className="h-11 w-11 rounded-full flex items-center justify-center text-neutral-800 dark:text-neutral-200 active:scale-95 transition-transform"
+          onClick={() => (onSelectTab ? onSelectTab("feed") : navigate("/"))}
+          aria-label="Messenger home"
+          className={cn(
+            "h-11 w-11 rounded-full flex items-center justify-center active:scale-95 transition-transform",
+            activeTab === "feed"
+              ? "text-primary"
+              : "text-neutral-800 dark:text-neutral-200"
+          )}
         >
           <Home className="h-6 w-6" />
         </button>
@@ -93,12 +98,18 @@ export const NewMenuSheet = ({
         </button>
 
         <button
-          onClick={() => navigate("/profile")}
-          aria-label="Profile"
-          className="h-11 w-11 rounded-full flex items-center justify-center text-neutral-800 dark:text-neutral-200 active:scale-95 transition-transform"
+          onClick={() => (onSelectTab ? onSelectTab("me") : navigate("/profile"))}
+          aria-label="Messenger profile"
+          className={cn(
+            "h-11 w-11 rounded-full flex items-center justify-center active:scale-95 transition-transform",
+            activeTab === "me"
+              ? "text-primary"
+              : "text-neutral-800 dark:text-neutral-200"
+          )}
         >
           <User className="h-6 w-6" />
         </button>
+
       </div>
 
       {open &&
