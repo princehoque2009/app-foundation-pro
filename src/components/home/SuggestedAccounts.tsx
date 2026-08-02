@@ -86,24 +86,34 @@ export const SuggestedAccounts = () => {
 
   const sendRequestMutation = useMutation({
     mutationFn: async (toUserId: string) => {
+      await supabase
+        .from("friend_requests")
+        .delete()
+        .eq("from_user_id", user?.id)
+        .eq("to_user_id", toUserId);
+
       const { error } = await supabase
         .from("friend_requests")
         .insert({
           from_user_id: user?.id,
           to_user_id: toUserId,
+          status: "accepted",
         });
 
       if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["suggested-accounts"] });
-      queryClient.invalidateQueries({ queryKey: ["friend-requests-sent"] });
-      toast({ title: "Friend request sent!" });
+      queryClient.invalidateQueries({ queryKey: ["friendships"] });
+      queryClient.invalidateQueries({ queryKey: ["friends"] });
+      queryClient.invalidateQueries({ queryKey: ["is-following"] });
+      toast({ title: "Following!" });
     },
     onError: () => {
-      toast({ title: "Failed to send request", variant: "destructive" });
+      toast({ title: "Failed to follow", variant: "destructive" });
     },
   });
+
 
   const handleDismiss = (id: string) => {
     setDismissedIds(prev => new Set([...prev, id]));
