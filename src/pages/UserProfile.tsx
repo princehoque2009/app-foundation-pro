@@ -104,8 +104,9 @@ const UserProfile = () => {
     enabled: !!userId,
   });
 
-  const isPrivate = profile?.account_type === "private";
-  const canViewContent = !isPrivate || isFollowing;
+  // All accounts are public — content is always viewable
+  const canViewContent = true;
+
 
   // Transform posts
   const creations = useMemo(() => {
