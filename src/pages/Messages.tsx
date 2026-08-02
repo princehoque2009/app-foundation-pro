@@ -504,6 +504,7 @@ const Messages = () => {
           </div>
         </div>
       </div>
+      )}
 
       <CreateGroupDialog open={showCreateGroup} onOpenChange={setShowCreateGroup} />
 
