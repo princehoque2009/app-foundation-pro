@@ -11,6 +11,7 @@ import { ConversationActionsSheet } from "@/components/messages/ConversationActi
 import { NewMenuSheet } from "@/components/messages/NewMenuSheet";
 import { MessengerHome } from "@/components/messages/MessengerHome";
 import { MessengerProfile } from "@/components/messages/MessengerProfile";
+import { StoryComposer } from "@/components/stories/StoryComposer";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -58,6 +59,7 @@ const Messages = () => {
   const [showArchived, setShowArchived] = useState(false);
   const [actionsTarget, setActionsTarget] = useState<Profile | null>(null);
   const [messengerTab, setMessengerTab] = useState<"chats" | "feed" | "me">("chats");
+  const [storyComposerOpen, setStoryComposerOpen] = useState(false);
 
   useSelfPresence();
 
@@ -259,7 +261,13 @@ const Messages = () => {
             )}
           >
             {/* Greeting header */}
-            <div className={cn("px-5 pt-6 pb-4", selectedFriend && "hidden md:block")}>
+            <div
+              className={cn(
+                "sticky top-0 z-20 px-5 pt-6 pb-4 bg-background/80 backdrop-blur-xl",
+                "after:absolute after:inset-x-0 after:bottom-0 after:h-px after:bg-gradient-to-r after:from-transparent after:via-primary/30 after:to-transparent",
+                selectedFriend && "hidden md:block"
+              )}
+            >
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <h1 className="text-[28px] leading-tight font-extrabold tracking-tight text-foreground truncate">
@@ -292,7 +300,7 @@ const Messages = () => {
             <div className="px-5 pb-4">
               <div className="flex items-center gap-4 overflow-x-auto no-scrollbar">
                 <button
-                  onClick={() => navigate("/create")}
+                  onClick={() => setStoryComposerOpen(true)}
                   className="flex flex-col items-center gap-1.5 shrink-0"
                 >
                   <div className="h-14 w-14 rounded-full border-2 border-dashed border-muted-foreground/40 flex items-center justify-center text-muted-foreground">
