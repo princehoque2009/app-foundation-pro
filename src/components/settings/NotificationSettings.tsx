@@ -59,6 +59,44 @@ export const NotificationSettings = () => {
     },
   });
 
+  const [pushSupported, setPushSupported] = useState(true);
+  const [pushSubscribed, setPushSubscribed] = useState(false);
+  const [pushBusy, setPushBusy] = useState(false);
+
+  useEffect(() => {
+    getPushSubscriptionState().then((state) => {
+      setPushSupported(state.supported);
+      setPushSubscribed(state.subscribed);
+    });
+  }, []);
+
+  const handlePushToggle = async (checked: boolean) => {
+    setPushBusy(true);
+    try {
+      if (checked) {
+        const ok = await subscribeToPush();
+        setPushSubscribed(ok);
+        if (ok) {
+          updateSettingMutation.mutate({ notifications_enabled: true });
+          toast({ title: "Push notifications on", description: "This device will now receive alerts." });
+        } else {
+          toast({
+            title: "Permission needed",
+            description: "Allow notifications in your browser settings to enable push.",
+            variant: "destructive",
+          });
+        }
+      } else {
+        await unsubscribeFromPush();
+        setPushSubscribed(false);
+        updateSettingMutation.mutate({ notifications_enabled: false });
+        toast({ title: "Push notifications off" });
+      }
+    } finally {
+      setPushBusy(false);
+    }
+  };
+
   const toggleItems = [
     { icon: Heart, label: "Likes", desc: "When someone likes your post", color: "text-foreground" },
     { icon: MessageCircle, label: "Comments", desc: "When someone comments on your post", color: "text-foreground" },
@@ -77,21 +115,25 @@ export const NotificationSettings = () => {
             <Bell className="h-5 w-5 text-foreground" />
             Push Notifications
           </CardTitle>
-          <CardDescription>Control push notifications on this device</CardDescription>
+          <CardDescription>
+            {pushSupported
+              ? "Get alerts on this device even when Prangon is closed"
+              : "Push notifications are not supported by this browser"}
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex items-center justify-between">
             <Label htmlFor="push">Enable push notifications</Label>
             <Switch
               id="push"
-              checked={settings?.notifications_enabled ?? true}
-              onCheckedChange={(checked) =>
-                updateSettingMutation.mutate({ notifications_enabled: checked })
-              }
+              disabled={!pushSupported || pushBusy}
+              checked={pushSubscribed && (settings?.notifications_enabled ?? true)}
+              onCheckedChange={handlePushToggle}
             />
           </div>
         </CardContent>
       </Card>
+
 
       <Card>
         <CardHeader>
