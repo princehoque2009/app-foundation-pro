@@ -113,3 +113,69 @@ export const sendPush = async (args: SendPushArgs) => {
     return null;
   }
 };
+
+const actorLabel = async (userId: string) => {
+  const { data } = await supabase
+    .from("profiles")
+    .select("display_name, username")
+    .eq("id", userId)
+    .maybeSingle();
+  return data?.display_name || data?.username || "Someone";
+};
+
+/** Notify a post's author about a like or comment. */
+export const pushPostActivity = async (
+  postId: string,
+  actorId: string,
+  kind: "like" | "comment",
+  preview?: string
+) => {
+  try {
+    const { data: post } = await supabase.from("posts").select("user_id").eq("id", postId).maybeSingle();
+    if (!post?.user_id || post.user_id === actorId) return;
+    const name = await actorLabel(actorId);
+    await sendPush({
+      user_ids: [post.user_id],
+      title: kind === "like" ? `${name} liked your post` : `${name} commented on your post`,
+      body: kind === "comment" && preview ? preview.slice(0, 120) : "Tap to view your post",
+      url: `/post/${postId}`,
+      type: kind,
+    });
+  } catch (e) {
+    console.error("[push] post activity", e);
+  }
+};
+
+/** Notify a user that someone started following them. */
+export const pushNewFollower = async (targetUserId: string, actorId: string) => {
+  try {
+    if (!targetUserId || targetUserId === actorId) return;
+    const name = await actorLabel(actorId);
+    await sendPush({
+      user_ids: [targetUserId],
+      title: "New follower",
+      body: `${name} started following you`,
+      url: `/profile/${actorId}`,
+      type: "follow",
+    });
+  } catch (e) {
+    console.error("[push] follower", e);
+  }
+};
+
+/** Notify a chat recipient about a new message. */
+export const pushNewMessage = async (recipientId: string, actorId: string, preview: string) => {
+  try {
+    if (!recipientId || recipientId === actorId) return;
+    const name = await actorLabel(actorId);
+    await sendPush({
+      user_ids: [recipientId],
+      title: name,
+      body: preview ? preview.slice(0, 120) : "Sent you a message",
+      url: `/messages`,
+      type: "message",
+    });
+  } catch (e) {
+    console.error("[push] message", e);
+  }
+};
