@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { pushNewFollower } from "@/lib/push";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { MainLayout } from "@/components/layout/MainLayout";
@@ -131,6 +132,7 @@ const UserProfile = () => {
         .from("friend_requests")
         .insert({ from_user_id: user?.id, to_user_id: userId, status: "accepted" });
       if (error) throw error;
+      void pushNewFollower(userId as string, user?.id as string);
     },
     onMutate: async () => {
       await queryClient.cancelQueries({ queryKey: ["is-following", user?.id, userId] });
