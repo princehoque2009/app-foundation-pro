@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -5,7 +6,13 @@ import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/hooks/use-toast";
+import {
+  getPushSubscriptionState,
+  subscribeToPush,
+  unsubscribeFromPush,
+} from "@/lib/push";
 import { Bell, Mail, Heart, MessageCircle, UserPlus, Users, AtSign, Eye } from "lucide-react";
+
 
 export const NotificationSettings = () => {
   const { user } = useAuth();
