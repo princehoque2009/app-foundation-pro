@@ -24,8 +24,10 @@ export const useToggleLike = (postId: string) => {
           .from("likes")
           .insert({ post_id: postId, user_id: user.id });
         if (error) throw error;
+        void pushPostActivity(postId, user.id, "like");
       }
     },
+
     onMutate: async (isLiked) => {
       await queryClient.cancelQueries({ queryKey: ["posts"] });
       const previousPosts = queryClient.getQueryData(["posts"]);
