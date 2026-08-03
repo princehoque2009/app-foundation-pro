@@ -517,6 +517,8 @@ const Messages = () => {
       )}
 
       <CreateGroupDialog open={showCreateGroup} onOpenChange={setShowCreateGroup} />
+      <StoryComposer open={storyComposerOpen} onOpenChange={setStoryComposerOpen} />
+
 
       {!selectedFriend && (
         <NewMenuSheet
