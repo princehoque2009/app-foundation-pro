@@ -1,6 +1,8 @@
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import { pushPostActivity } from "@/lib/push";
+
 
 export const useToggleLike = (postId: string) => {
   const queryClient = useQueryClient();
