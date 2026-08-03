@@ -109,9 +109,12 @@ export const useCreateComment = () => {
         console.error("Error creating comment:", error);
         throw error;
       }
-      
+
+      void pushPostActivity(postId, user.id, "comment", content.trim());
+
       return data;
     },
+
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["posts"] });
       queryClient.invalidateQueries({ queryKey: ["comments", variables.postId] });
