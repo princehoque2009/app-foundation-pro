@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/hooks/use-toast";
+import { pushNewMessage } from "@/lib/push";
 
 export const useMessages = (conversationId: string | null) => {
   const { user } = useAuth();
@@ -114,6 +115,20 @@ export const useMessages = (conversationId: string | null) => {
         .from("conversations" as any)
         .update({ updated_at: new Date().toISOString() })
         .eq("id", conversationId);
+
+      // Push notify the other participant(s)
+      (async () => {
+        const { data: participants } = await supabase
+          .from("conversation_participants" as any)
+          .select("user_id")
+          .eq("conversation_id", conversationId);
+        const others = (participants || [])
+          .map((p: any) => p.user_id)
+          .filter((id: string) => id && id !== user?.id);
+        for (const recipient of others) {
+          void pushNewMessage(recipient, user?.id as string, content || "Sent an attachment");
+        }
+      })();
 
       return data;
     },

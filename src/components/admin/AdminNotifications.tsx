@@ -9,7 +9,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { toast } from "@/hooks/use-toast";
-import { Bell, Send, Users, User, Megaphone, AlertTriangle, Sparkles, Loader2 } from "lucide-react";
+import { Bell, Send, Users, User, Megaphone, AlertTriangle, Sparkles, Loader2, Smartphone } from "lucide-react";
+import { sendPush } from "@/lib/push";
 
 export const AdminNotifications = () => {
   const { user } = useAuth();
@@ -84,6 +85,81 @@ export const AdminNotifications = () => {
         title: "Error", 
         description: error instanceof Error ? error.message : "Failed to send notifications.", 
         variant: "destructive" 
+      });
+    },
+  });
+
+  // ---- Push notification form ----
+  const [pushTitle, setPushTitle] = useState("");
+  const [pushBody, setPushBody] = useState("");
+  const [pushUrl, setPushUrl] = useState("/notifications");
+  const [pushTarget, setPushTarget] = useState<"all" | "selected">("all");
+  const [pushUserId, setPushUserId] = useState("");
+
+  const sendPushNotification = useMutation({
+    mutationFn: async () => {
+      const ids =
+        pushTarget === "all"
+          ? ("all" as const)
+          : pushUserId.split(",").map((id) => id.trim()).filter(Boolean);
+
+      if (ids !== "all" && ids.length === 0) throw new Error("Enter at least one user ID");
+
+      const result = await sendPush({
+        user_ids: ids,
+        title: pushTitle.trim(),
+        body: pushBody.trim(),
+        url: pushUrl.trim() || "/notifications",
+        type: "admin",
+      });
+
+      // Mirror as in-app notifications
+      let recipients: string[] = [];
+      if (ids === "all") {
+        const { data: profiles } = await supabase.from("profiles").select("id");
+        recipients = profiles?.map((p) => p.id) || [];
+      } else {
+        recipients = ids;
+      }
+
+      const rows = recipients.map((userId) => ({
+        user_id: userId,
+        from_user_id: user?.id,
+        type: "announcement",
+        title: pushTitle.trim(),
+        message: pushBody.trim(),
+        action_url: pushUrl.trim() || null,
+      }));
+
+      for (let i = 0; i < rows.length; i += 100) {
+        const { error } = await supabase.from("notifications").insert(rows.slice(i, i + 100));
+        if (error) throw error;
+      }
+
+      await supabase.from("admin_logs").insert({
+        admin_id: user?.id,
+        action_type: "push_notification_sent",
+        target_type: "notification",
+        details: { title: pushTitle, body: pushBody, url: pushUrl, target: pushTarget, result },
+      });
+
+      return result as { sent?: number; failed?: number } | null;
+    },
+    onSuccess: (result) => {
+      toast({
+        title: "Push sent",
+        description: `Delivered to ${result?.sent ?? 0} device(s)${result?.failed ? `, ${result.failed} failed` : ""}.`,
+      });
+      setPushTitle("");
+      setPushBody("");
+      setPushUserId("");
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to send push notification.",
+        variant: "destructive",
       });
     },
   });
@@ -251,6 +327,87 @@ export const AdminNotifications = () => {
               <Send className="h-5 w-5 mr-2" />
             )}
             Send Notification
+          </Button>
+        </CardContent>
+      </Card>
+
+      {/* Push Notification */}
+      <Card className="border-0 shadow-sm">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Smartphone className="h-5 w-5 text-primary" />
+            Send Push Notification
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label>Title</Label>
+            <Input
+              placeholder="Push title"
+              value={pushTitle}
+              onChange={(e) => setPushTitle(e.target.value)}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label>Body</Label>
+            <Textarea
+              placeholder="Push message body..."
+              value={pushBody}
+              onChange={(e) => setPushBody(e.target.value)}
+              className="min-h-[90px]"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label>Target URL</Label>
+            <Input
+              placeholder="/notifications"
+              value={pushUrl}
+              onChange={(e) => setPushUrl(e.target.value)}
+            />
+          </div>
+
+          <div className="space-y-3">
+            <Label>Recipients</Label>
+            <RadioGroup value={pushTarget} onValueChange={(v) => setPushTarget(v as "all" | "selected")}>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="all" id="push-all" />
+                <Label htmlFor="push-all" className="flex items-center gap-2 cursor-pointer">
+                  <Users className="h-4 w-4" />
+                  Broadcast to all
+                </Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="selected" id="push-selected" />
+                <Label htmlFor="push-selected" className="flex items-center gap-2 cursor-pointer">
+                  <User className="h-4 w-4" />
+                  Specific user IDs
+                </Label>
+              </div>
+            </RadioGroup>
+
+            {pushTarget === "selected" && (
+              <Input
+                placeholder="Enter user IDs separated by commas"
+                value={pushUserId}
+                onChange={(e) => setPushUserId(e.target.value)}
+              />
+            )}
+          </div>
+
+          <Button
+            className="w-full"
+            size="lg"
+            onClick={() => sendPushNotification.mutate()}
+            disabled={sendPushNotification.isPending || !pushTitle.trim() || !pushBody.trim()}
+          >
+            {sendPushNotification.isPending ? (
+              <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+            ) : (
+              <Smartphone className="h-5 w-5 mr-2" />
+            )}
+            Send Push Notification
           </Button>
         </CardContent>
       </Card>

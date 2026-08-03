@@ -1,6 +1,8 @@
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import { pushPostActivity } from "@/lib/push";
+
 
 export const useToggleLike = (postId: string) => {
   const queryClient = useQueryClient();
@@ -22,8 +24,10 @@ export const useToggleLike = (postId: string) => {
           .from("likes")
           .insert({ post_id: postId, user_id: user.id });
         if (error) throw error;
+        void pushPostActivity(postId, user.id, "like");
       }
     },
+
     onMutate: async (isLiked) => {
       await queryClient.cancelQueries({ queryKey: ["posts"] });
       const previousPosts = queryClient.getQueryData(["posts"]);
@@ -105,9 +109,12 @@ export const useCreateComment = () => {
         console.error("Error creating comment:", error);
         throw error;
       }
-      
+
+      void pushPostActivity(postId, user.id, "comment", content.trim());
+
       return data;
     },
+
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["posts"] });
       queryClient.invalidateQueries({ queryKey: ["comments", variables.postId] });
