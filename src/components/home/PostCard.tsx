@@ -263,27 +263,27 @@ export const PostCard = ({ id, author, content, image, video, mediaItems, likes,
           </div>
         )}
 
-        {/* Reaction summary */}
+        {/* Reaction summary — pill badge */}
         {likeCount > 0 && (
-          <button
-            onClick={() => setShowReactionBreakdown(true)}
-            className="flex items-center gap-1.5 pt-3 hover:opacity-80 transition-opacity"
-          >
-            <div className="flex -space-x-1">
-              {Object.entries(reactionData?.counts || {})
-                .filter(([_, c]) => (c as number) > 0)
-                .sort((a, b) => (b[1] as number) - (a[1] as number))
-                .slice(0, 3)
-                .map(([key]) => (
-                  <span key={key} className="text-base leading-none">
-                    {getReactionMeta(key).emoji}
-                  </span>
-                ))}
-            </div>
-            <span className="text-[11px] text-muted-foreground font-medium uppercase tracking-wide">
-              {likeCount} {likeCount === 1 ? "reaction" : "reactions"}
-            </span>
-          </button>
+          <div className="pt-3">
+            <button
+              onClick={() => setShowReactionBreakdown(true)}
+              className="inline-flex items-center gap-1.5 bg-muted rounded-full px-2.5 py-1 text-xs font-semibold hover:opacity-80 transition-opacity"
+            >
+              <span className="flex -space-x-1">
+                {Object.entries(reactionData?.counts || {})
+                  .filter(([_, c]) => (c as number) > 0)
+                  .sort((a, b) => (b[1] as number) - (a[1] as number))
+                  .slice(0, 3)
+                  .map(([key]) => (
+                    <span key={key} className="text-sm leading-none">
+                      {getReactionMeta(key).emoji}
+                    </span>
+                  ))}
+              </span>
+              <span className="tabular-nums text-foreground/80">{likeCount}</span>
+            </button>
+          </div>
         )}
 
         {/* Post Actions — flush editorial row */}
