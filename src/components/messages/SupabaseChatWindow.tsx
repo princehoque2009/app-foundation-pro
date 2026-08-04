@@ -41,6 +41,8 @@ interface Profile {
 interface SupabaseChatWindowProps {
   friendProfile: Profile;
   onBack?: () => void;
+  /** Pre-fills the composer, e.g. when replying to a note */
+  initialDraft?: string;
 }
 
 const formatBubbleTime = (iso: string) => {
