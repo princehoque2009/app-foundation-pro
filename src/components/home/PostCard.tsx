@@ -326,7 +326,7 @@ export const PostCard = ({ id, author, content, image, video, mediaItems, likes,
             >
               <Bookmark className={cn(
                 "h-[20px] w-[20px] transition-all",
-                isSaved && "fill-foreground text-foreground"
+                isSaved && "fill-primary text-primary"
               )} strokeWidth={1.75} />
             </Button>
           </div>
