@@ -137,48 +137,46 @@ export const PostCard = ({ id, author, content, image, video, mediaItems, likes,
 
   return (
     <>
-      <article className="mb-6 pb-6 border-b border-border/70 animate-fade-in">
-        {/* Post Header */}
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-3 cursor-pointer group min-w-0" onClick={handleProfileClick}>
-            <div className="relative shrink-0">
-              <Avatar className="h-11 w-11 ring-1 ring-border transition-transform group-hover:scale-105">
-                <AvatarImage src={author.avatar || undefined} alt={author.name} />
-                <AvatarFallback className="bg-muted text-muted-foreground">
-                  <UserCircle className="h-6 w-6" />
-                </AvatarFallback>
-              </Avatar>
-            </div>
-            <div className="min-w-0">
-              <div className="flex items-center gap-1.5">
-                <p className={cn(
-                  "font-semibold text-[14px] group-hover:text-primary transition-colors leading-tight flex items-center gap-1 truncate",
+      <article className="mb-8 pb-7 border-b border-border/60 animate-fade-in">
+        {/* Post Header — single row */}
+        <div className="flex items-center gap-3 mb-3">
+          <div
+            className="flex items-center gap-3 cursor-pointer group min-w-0 flex-1"
+            onClick={handleProfileClick}
+          >
+            <Avatar className="h-11 w-11 shrink-0 ring-1 ring-border transition-transform group-hover:scale-105">
+              <AvatarImage src={author.avatar || undefined} alt={author.name} />
+              <AvatarFallback className="bg-muted text-muted-foreground">
+                <UserCircle className="h-6 w-6" />
+              </AvatarFallback>
+            </Avatar>
+            <div className="min-w-0 flex items-center gap-1.5 flex-wrap">
+              <span
+                className={cn(
+                  "font-bold text-[14.5px] leading-tight truncate group-hover:text-primary transition-colors",
                   authorEffects.hasRainbowName
                     ? "bg-gradient-to-r from-red-500 via-yellow-500 via-green-500 via-blue-500 to-purple-500 bg-clip-text text-transparent"
                     : "text-foreground"
-                )}>
-                  {author.name}
-                  {author.isVerified && <VerifiedBadge size="sm" />}
-                  {authorEffects.hasCustomBadge && (
-                    <span className="inline-flex items-center justify-center h-4 w-4 rounded-full bg-gradient-to-r from-violet-500 to-purple-600 text-[8px] text-white font-bold ml-0.5">★</span>
-                  )}
-                </p>
-              </div>
-              <div className="flex items-center gap-1.5 mt-0.5">
-                <span
-                  className="text-[11px] text-muted-foreground font-mono"
-                  style={{ fontFamily: "var(--font-mono)" }}
-                >
-                  @{author.username}
-                </span>
-                <span className="text-muted-foreground/50 text-[11px]">·</span>
-                <span className="text-[11px] text-muted-foreground">
-                  {formatDistanceToNow(new Date(timestamp), { addSuffix: true })}
-                </span>
-                {userRoles && userRoles.length > 0 && (
-                  <UserRoleBadges roles={userRoles as any} size="sm" />
                 )}
-              </div>
+              >
+                {author.name}
+              </span>
+              {author.isVerified && <VerifiedBadge size="sm" />}
+              {authorEffects.hasCustomBadge && (
+                <span className="inline-flex items-center justify-center h-4 w-4 rounded-full bg-gradient-to-r from-violet-500 to-purple-600 text-[8px] text-white font-bold">
+                  ★
+                </span>
+              )}
+              <span className="text-[12px] text-muted-foreground/80 truncate">
+                @{author.username}
+              </span>
+              <span className="text-muted-foreground/50 text-[12px]">·</span>
+              <span className="text-[12px] text-muted-foreground/80">
+                {formatDistanceToNow(new Date(timestamp), { addSuffix: true })}
+              </span>
+              {userRoles && userRoles.length > 0 && (
+                <UserRoleBadges roles={userRoles as any} size="sm" />
+              )}
             </div>
           </div>
           <PostMenu
@@ -265,27 +263,27 @@ export const PostCard = ({ id, author, content, image, video, mediaItems, likes,
           </div>
         )}
 
-        {/* Reaction summary */}
+        {/* Reaction summary — pill badge */}
         {likeCount > 0 && (
-          <button
-            onClick={() => setShowReactionBreakdown(true)}
-            className="flex items-center gap-1.5 pt-3 hover:opacity-80 transition-opacity"
-          >
-            <div className="flex -space-x-1">
-              {Object.entries(reactionData?.counts || {})
-                .filter(([_, c]) => (c as number) > 0)
-                .sort((a, b) => (b[1] as number) - (a[1] as number))
-                .slice(0, 3)
-                .map(([key]) => (
-                  <span key={key} className="text-base leading-none">
-                    {getReactionMeta(key).emoji}
-                  </span>
-                ))}
-            </div>
-            <span className="text-[11px] text-muted-foreground font-medium uppercase tracking-wide">
-              {likeCount} {likeCount === 1 ? "reaction" : "reactions"}
-            </span>
-          </button>
+          <div className="pt-3">
+            <button
+              onClick={() => setShowReactionBreakdown(true)}
+              className="inline-flex items-center gap-1.5 bg-muted rounded-full px-2.5 py-1 text-xs font-semibold hover:opacity-80 transition-opacity"
+            >
+              <span className="flex -space-x-1">
+                {Object.entries(reactionData?.counts || {})
+                  .filter(([_, c]) => (c as number) > 0)
+                  .sort((a, b) => (b[1] as number) - (a[1] as number))
+                  .slice(0, 3)
+                  .map(([key]) => (
+                    <span key={key} className="text-sm leading-none">
+                      {getReactionMeta(key).emoji}
+                    </span>
+                  ))}
+              </span>
+              <span className="tabular-nums text-foreground/80">{likeCount}</span>
+            </button>
+          </div>
         )}
 
         {/* Post Actions — flush editorial row */}
@@ -328,7 +326,7 @@ export const PostCard = ({ id, author, content, image, video, mediaItems, likes,
             >
               <Bookmark className={cn(
                 "h-[20px] w-[20px] transition-all",
-                isSaved && "fill-foreground text-foreground"
+                isSaved && "fill-primary text-primary"
               )} strokeWidth={1.75} />
             </Button>
           </div>

@@ -41,6 +41,8 @@ interface Profile {
 interface SupabaseChatWindowProps {
   friendProfile: Profile;
   onBack?: () => void;
+  /** Pre-fills the composer, e.g. when replying to a note */
+  initialDraft?: string;
 }
 
 const formatBubbleTime = (iso: string) => {
@@ -50,7 +52,7 @@ const formatBubbleTime = (iso: string) => {
   return format(d, "MMM d, h:mm a");
 };
 
-export const SupabaseChatWindow = ({ friendProfile, onBack }: SupabaseChatWindowProps) => {
+export const SupabaseChatWindow = ({ friendProfile, onBack, initialDraft }: SupabaseChatWindowProps) => {
   const { user } = useAuth();
   const { conversationId, loading: convoLoading } = useDirectConversation(friendProfile.id);
   const { messages, loading, sendText, sendMedia, deleteMessage, editMessage, forwardMessage } = useChat(conversationId);
@@ -74,7 +76,11 @@ export const SupabaseChatWindow = ({ friendProfile, onBack }: SupabaseChatWindow
     setCallProfile(friendProfile);
   }, [friendProfile.id]);
 
-  const [text, setText] = useState("");
+  const [text, setText] = useState(initialDraft || "");
+
+  useEffect(() => {
+    if (initialDraft) setText(initialDraft);
+  }, [initialDraft, friendProfile.id]);
   const [uploading, setUploading] = useState(false);
   const [infoOpen, setInfoOpen] = useState(false);
   const [viewerOpen, setViewerOpen] = useState(false);
