@@ -234,25 +234,33 @@ export const NotificationsList = () => {
         </div>
       ) : (
         <Tabs defaultValue="all" className="w-full">
-          <TabsList className="w-full grid grid-cols-4 h-10 rounded-xl">
-            <TabsTrigger value="all" className="text-xs rounded-lg">
+          <TabsList className="lg-bar w-full grid grid-cols-4 h-11 rounded-2xl p-1 gap-1">
+            <TabsTrigger
+              value="all"
+              className="text-xs rounded-xl data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-none"
+            >
               All
-              {notifications.length > 0 && (
-                <Badge variant="secondary" className="ml-1 h-4 min-w-[16px] text-[10px] px-1">
-                  {notifications.length}
-                </Badge>
-              )}
             </TabsTrigger>
-            <TabsTrigger value="social" className="text-xs rounded-lg">
+            <TabsTrigger
+              value="social"
+              className="text-xs rounded-xl data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-none"
+            >
               Social
             </TabsTrigger>
-            <TabsTrigger value="messages" className="text-xs rounded-lg">
+            <TabsTrigger
+              value="messages"
+              className="text-xs rounded-xl data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-none"
+            >
               Chats
             </TabsTrigger>
-            <TabsTrigger value="system" className="text-xs rounded-lg">
+            <TabsTrigger
+              value="system"
+              className="text-xs rounded-xl data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-none"
+            >
               System
             </TabsTrigger>
           </TabsList>
+
 
           <TabsContent value="all" className="mt-2">
             <ScrollArea className="h-[calc(100vh-14rem)]">
