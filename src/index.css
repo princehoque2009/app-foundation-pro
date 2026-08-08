@@ -607,3 +607,145 @@
 .ring-coral {
   box-shadow: 0 0 0 2px #FF3D7F;
 }
+
+/* ============================================================
+   Liquid Glass Design System — Prangon v0.3
+   Reusable translucent surfaces with layered depth.
+   ============================================================ */
+@layer utilities {
+  :root {
+    --glass-bg: 0 0% 100%;
+    --glass-bg-opacity: 0.68;
+    --glass-border: 0 0% 100%;
+    --glass-border-opacity: 0.55;
+    --glass-shade: 240 6% 6%;
+    --glass-blur: 22px;
+  }
+  .dark {
+    --glass-bg: 0 0% 12%;
+    --glass-bg-opacity: 0.62;
+    --glass-border: 0 0% 100%;
+    --glass-border-opacity: 0.10;
+    --glass-shade: 0 0% 0%;
+  }
+
+  /* Base glass surface */
+  .lg-surface {
+    background-color: hsl(var(--glass-bg) / var(--glass-bg-opacity));
+    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(180%);
+    backdrop-filter: blur(var(--glass-blur)) saturate(180%);
+    border: 1px solid hsl(var(--glass-border) / var(--glass-border-opacity));
+    box-shadow:
+      inset 0 1px 0 hsl(0 0% 100% / 0.35),
+      0 1px 2px hsl(var(--glass-shade) / 0.05),
+      0 12px 32px -14px hsl(var(--glass-shade) / 0.20);
+  }
+  .dark .lg-surface {
+    box-shadow:
+      inset 0 1px 0 hsl(0 0% 100% / 0.06),
+      0 12px 32px -14px hsl(0 0% 0% / 0.6);
+  }
+
+  /* Top / bottom navigation bars */
+  .lg-nav {
+    background-color: hsl(var(--glass-bg) / 0.78);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    backdrop-filter: blur(20px) saturate(180%);
+    border-bottom: 1px solid hsl(var(--border) / 0.6);
+  }
+  .dark .lg-nav { background-color: hsl(var(--glass-bg) / 0.72); }
+
+  /* Floating bars (bottom nav, tab bars) */
+  .lg-bar {
+    background-color: hsl(var(--glass-bg) / 0.80);
+    -webkit-backdrop-filter: blur(24px) saturate(190%);
+    backdrop-filter: blur(24px) saturate(190%);
+    border: 1px solid hsl(var(--border) / 0.55);
+    box-shadow:
+      inset 0 1px 0 hsl(0 0% 100% / 0.4),
+      0 10px 30px -12px hsl(var(--glass-shade) / 0.28);
+  }
+  .dark .lg-bar {
+    box-shadow:
+      inset 0 1px 0 hsl(0 0% 100% / 0.06),
+      0 10px 30px -12px hsl(0 0% 0% / 0.7);
+  }
+
+  /* Cards / panels */
+  .lg-panel {
+    background-color: hsl(var(--card) / 0.72);
+    -webkit-backdrop-filter: blur(16px) saturate(160%);
+    backdrop-filter: blur(16px) saturate(160%);
+    border: 1px solid hsl(var(--border) / 0.6);
+    border-radius: var(--radius);
+  }
+
+  /* Bottom sheets & modals */
+  .lg-sheet {
+    background-color: hsl(var(--glass-bg) / 0.88);
+    -webkit-backdrop-filter: blur(28px) saturate(180%);
+    backdrop-filter: blur(28px) saturate(180%);
+    border: 1px solid hsl(var(--border) / 0.6);
+    box-shadow: 0 -8px 40px -12px hsl(var(--glass-shade) / 0.35);
+  }
+
+  /* Scrim behind modals/sheets */
+  .lg-scrim {
+    background-color: hsl(var(--glass-shade) / 0.35);
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+  }
+
+  /* Inputs / search surfaces */
+  .lg-field {
+    background-color: hsl(var(--muted) / 0.6);
+    -webkit-backdrop-filter: blur(12px) saturate(150%);
+    backdrop-filter: blur(12px) saturate(150%);
+    border: 1px solid hsl(var(--border) / 0.5);
+    transition: border-color .2s ease, background-color .2s ease, box-shadow .2s ease;
+  }
+  .lg-field:focus-within {
+    border-color: hsl(var(--primary) / 0.55);
+    background-color: hsl(var(--muted) / 0.85);
+    box-shadow: 0 0 0 3px hsl(var(--primary) / 0.12);
+  }
+
+  /* Chips / segmented controls */
+  .lg-chip {
+    background-color: hsl(var(--muted) / 0.55);
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+    border: 1px solid hsl(var(--border) / 0.45);
+    transition: all .18s cubic-bezier(.22,1,.36,1);
+  }
+  .lg-chip-active {
+    background-color: hsl(var(--primary) / 0.12);
+    border-color: hsl(var(--primary) / 0.45);
+    color: hsl(var(--primary));
+  }
+
+  /* Floating action button — clean, no glow */
+  .lg-fab {
+    background-color: hsl(var(--primary));
+    color: hsl(var(--primary-foreground));
+    border: 1px solid hsl(0 0% 100% / 0.22);
+    box-shadow: 0 6px 18px -8px hsl(var(--glass-shade) / 0.45);
+    transition: transform .16s cubic-bezier(.22,1,.36,1), filter .16s ease, box-shadow .16s ease;
+  }
+  .lg-fab:hover { filter: brightness(1.05); }
+  .lg-fab:active { transform: scale(0.94); }
+  .lg-fab:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 4px hsl(var(--primary) / 0.28);
+  }
+
+  /* Consistent interactive press for any control */
+  .lg-press { transition: transform .14s cubic-bezier(.22,1,.36,1), background-color .18s ease; }
+  .lg-press:active { transform: scale(0.96); }
+
+  .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+
+  /* Neutralise legacy glow effect */
+  .animate-glow { animation: none !important; box-shadow: none !important; }
+}
