@@ -130,46 +130,40 @@ export const NotificationsList = () => {
     >
       <button
         className={cn(
-          "w-full flex items-start gap-3 p-3.5 rounded-2xl transition-all text-left hover:bg-muted/40",
-          !notification.is_read && "bg-primary/5"
+          "w-full flex items-start gap-3 p-3 rounded-2xl transition-colors text-left lg-press hover:bg-muted/50",
+          !notification.is_read && "bg-primary/[0.07]"
         )}
         onClick={() => handleNotificationClick(notification)}
       >
         <div className="relative shrink-0">
-          <Avatar className="h-12 w-12">
+          <Avatar className="h-12 w-12 ring-1 ring-border">
             <AvatarImage src={notification.from_user?.avatar_url} />
             <AvatarFallback className="bg-muted">
               <UserCircle className="h-6 w-6 text-muted-foreground" />
             </AvatarFallback>
           </Avatar>
-          <div className="absolute -bottom-0.5 -right-0.5 bg-background rounded-full p-0.5 border-2 border-background">
+          <div className="absolute -bottom-1 -right-1 h-6 w-6 rounded-full lg-surface flex items-center justify-center">
             {getIcon(notification.type)}
           </div>
         </div>
-        <div className="flex-1 min-w-0">
-          <p
-            className={cn(
-              "text-sm leading-snug",
-              !notification.is_read ? "font-semibold text-foreground" : "text-foreground/80"
-            )}
-          >
-            <span className="font-bold">
+        <div className="flex-1 min-w-0 pt-0.5">
+          <p className="text-[14px] leading-snug">
+            <span className={cn(!notification.is_read ? "font-bold" : "font-semibold")}>
               {notification.from_user?.display_name || notification.from_user?.username || "Someone"}
             </span>{" "}
-            <span className="font-normal text-muted-foreground">
-              {notification.message}
-            </span>
+            <span className="font-normal text-muted-foreground">{notification.message}</span>
           </p>
-          <p className="text-xs text-muted-foreground mt-0.5">
+          <p className="text-[11.5px] text-muted-foreground/80 mt-1">
             {formatDistanceToNow(new Date(notification.created_at), { addSuffix: true })}
           </p>
         </div>
         {!notification.is_read && (
-          <div className="w-2.5 h-2.5 bg-primary rounded-full shrink-0 mt-2" />
+          <span className="w-2 h-2 bg-primary rounded-full shrink-0 mt-3.5" />
         )}
       </button>
     </motion.div>
   );
+
 
   const GroupedNotifications = ({ items }: { items: any[] }) => {
     const groups: Record<TimeGroup, any[]> = { today: [], this_week: [], earlier: [] };
