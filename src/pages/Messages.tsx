@@ -15,7 +15,7 @@ import { MessengerTabBar, type MessengerTab } from "@/components/messages/Messen
 import { CallsScreen } from "@/components/messages/CallsScreen";
 import { PeopleScreen } from "@/components/messages/PeopleScreen";
 import { SettingsScreen } from "@/components/messages/SettingsScreen";
-import { useNotes, type UserNote } from "@/hooks/useNotes";
+import { useNotes, useMutedNoteUsers, type UserNote } from "@/hooks/useNotes";
 
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -113,6 +113,7 @@ const Messages = () => {
   );
   const { data: notesMap } = useNotes(noteUserIds);
   const myNote = user?.id ? notesMap?.[user.id] : undefined;
+  const { data: mutedNoteIds } = useMutedNoteUsers();
 
   const sortedFriends = useMemo(() => {
     if (!friends) return [];
@@ -322,6 +323,7 @@ const Messages = () => {
         myNote={myNote}
         friends={friends || []}
         notes={notesMap || {}}
+        mutedIds={mutedNoteIds || []}
         onCreateNote={() => setNoteComposerOpen(true)}
         onOpenNote={(f, note) => setNoteTarget({ friend: f as Profile, note })}
       />
@@ -536,6 +538,7 @@ const Messages = () => {
         avatarUrl={selfProfile?.avatar_url}
         name={selfProfile?.display_name || selfProfile?.username || "You"}
         existingNote={myNote?.content}
+        existing={myNote}
       />
 
       <NoteViewModal
@@ -543,6 +546,8 @@ const Messages = () => {
         onOpenChange={(v) => !v && setNoteTarget(null)}
         friend={noteTarget?.friend}
         note={noteTarget?.note.content}
+        noteData={noteTarget?.note}
+        muted={!!noteTarget && (mutedNoteIds || []).includes(noteTarget.friend.id)}
         onReply={(friendId, message) => {
           const friend = noteTarget?.friend;
           setNoteTarget(null);
