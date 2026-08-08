@@ -961,6 +961,59 @@ export type Database = {
           },
         ]
       }
+      note_mutes: {
+        Row: {
+          created_at: string
+          id: string
+          muted_user_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          muted_user_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          muted_user_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      note_reactions: {
+        Row: {
+          created_at: string
+          emoji: string
+          id: string
+          note_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          emoji: string
+          id?: string
+          note_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          emoji?: string
+          id?: string
+          note_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "note_reactions_note_id_fkey"
+            columns: ["note_id"]
+            isOneToOne: false
+            referencedRelation: "user_notes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notifications: {
         Row: {
           action_url: string | null
@@ -1963,24 +2016,33 @@ export type Database = {
       }
       user_notes: {
         Row: {
+          audience: string
           content: string
           created_at: string
+          emoji: string | null
           expires_at: string
           id: string
+          music: string | null
           user_id: string
         }
         Insert: {
+          audience?: string
           content: string
           created_at?: string
+          emoji?: string | null
           expires_at?: string
           id?: string
+          music?: string | null
           user_id: string
         }
         Update: {
+          audience?: string
           content?: string
           created_at?: string
+          emoji?: string | null
           expires_at?: string
           id?: string
+          music?: string | null
           user_id?: string
         }
         Relationships: []
