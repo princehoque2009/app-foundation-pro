@@ -25,7 +25,7 @@ export const MainLayout = ({
       {showHeader && <TopHeader />}
       <main
         key={typeof window !== "undefined" ? window.location.pathname : ""}
-        className={cn("page-enter", showBottomNav && "pb-24")}
+        className={cn("page-enter", showBottomNav && !navCollapsed && "pb-24")}
       >
         {children}
       </main>
