@@ -749,3 +749,86 @@
   /* Neutralise legacy glow effect */
   .animate-glow { animation: none !important; box-shadow: none !important; }
 }
+
+/* ============================================================
+   Liquid Glass v2 — shared tokens (iOS 26/27 material)
+   ============================================================ */
+@layer utilities {
+  :root {
+    /* content-aware intensity: raised by useScrollCollapse */
+    --lg-intensity: 0;
+    --lg-blur-base: 24px;
+    --lg-rim: 0 0% 0%;
+  }
+
+  /* Canonical glass material — every floating surface uses this */
+  .lg-glass {
+    position: relative;
+    background-color: hsl(var(--glass-bg) / calc(0.55 + var(--lg-intensity) * 0.18));
+    -webkit-backdrop-filter: blur(calc(var(--lg-blur-base) + var(--lg-intensity) * 8px)) saturate(180%);
+    backdrop-filter: blur(calc(var(--lg-blur-base) + var(--lg-intensity) * 8px)) saturate(180%);
+    border: 1px solid hsl(0 0% 100% / 0.35);
+    box-shadow:
+      0 0 0 1px hsl(var(--lg-rim) / 0.06),
+      inset 0 1px 0 hsl(0 0% 100% / 0.45),
+      0 8px 32px hsl(var(--lg-rim) / 0.12);
+  }
+  .dark .lg-glass {
+    background-color: hsl(0 0% 8% / calc(0.55 + var(--lg-intensity) * 0.18));
+    border-color: hsl(0 0% 100% / 0.10);
+    box-shadow:
+      0 0 0 1px hsl(0 0% 0% / 0.5),
+      inset 0 1px 0 hsl(0 0% 100% / 0.08),
+      0 8px 32px hsl(0 0% 0% / 0.45);
+  }
+
+  /* Static specular sheen near the top edge — material, not effect */
+  .lg-sheen::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    background: linear-gradient(
+      to bottom,
+      hsl(0 0% 100% / 0.28) 0%,
+      hsl(0 0% 100% / 0.06) 42%,
+      transparent 70%
+    );
+  }
+  .dark .lg-sheen::before {
+    background: linear-gradient(
+      to bottom,
+      hsl(0 0% 100% / 0.10) 0%,
+      hsl(0 0% 100% / 0.02) 45%,
+      transparent 70%
+    );
+  }
+
+  /* Stadium/pill shape shared by every floating bar */
+  .lg-pill { border-radius: 9999px; }
+
+  /* More opaque variant for chips floating over video */
+  .lg-glass-strong {
+    background-color: hsl(0 0% 8% / 0.42);
+    -webkit-backdrop-filter: blur(18px) saturate(170%);
+    backdrop-filter: blur(18px) saturate(170%);
+    border: 1px solid hsl(0 0% 100% / 0.22);
+    box-shadow: 0 6px 20px hsl(0 0% 0% / 0.35);
+  }
+
+  .lg-focus:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px hsl(var(--primary) / 0.45);
+  }
+
+  .reel-text-shadow { text-shadow: 0 1px 3px rgb(0 0 0 / 0.55); }
+  .reel-scrim {
+    background: linear-gradient(to top, rgb(0 0 0 / 0.7) 0%, rgb(0 0 0 / 0.35) 45%, transparent 100%);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .lg-press, .lg-fab { transition: opacity .15s linear !important; }
+    .lg-press:active, .lg-fab:active { transform: none !important; }
+  }
+}
