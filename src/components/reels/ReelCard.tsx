@@ -1,5 +1,5 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Heart, MessageCircle, Share2, Bookmark, Music2, Plus, MoreVertical } from "lucide-react";
+import { Heart, MessageCircle, Share2, Bookmark, Music2, Plus } from "lucide-react";
 import { useToggleLike, usePostLikes } from "@/hooks/usePostInteractions";
 import { useState, memo } from "react";
 import { CommentsDialog } from "../home/CommentsDialog";
