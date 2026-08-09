@@ -7,16 +7,28 @@ import { useRef, useEffect, useState, useCallback } from "react";
 const Reels = () => {
   const { data: reels, isLoading } = usePosts(true);
   const [activeIndex, setActiveIndex] = useState(0);
+  const [dimmed, setDimmed] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const idleTimer = useRef<number>();
+
+  const wake = useCallback(() => {
+    setDimmed(false);
+    window.clearTimeout(idleTimer.current);
+    idleTimer.current = window.setTimeout(() => setDimmed(true), 2000);
+  }, []);
+
+  useEffect(() => {
+    wake();
+    return () => window.clearTimeout(idleTimer.current);
+  }, [wake]);
 
   const handleScroll = useCallback(() => {
     const container = containerRef.current;
     if (!container) return;
-    const scrollTop = container.scrollTop;
-    const height = container.clientHeight;
-    const newIndex = Math.round(scrollTop / height);
-    if (newIndex !== activeIndex) setActiveIndex(newIndex);
-  }, [activeIndex]);
+    const newIndex = Math.round(container.scrollTop / container.clientHeight);
+    setActiveIndex((prev) => (newIndex !== prev ? newIndex : prev));
+    wake();
+  }, [wake]);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -26,17 +38,18 @@ const Reels = () => {
   }, [handleScroll]);
 
   return (
-    <MainLayout showHeader={false} showBottomNav={true}>
+    <MainLayout showHeader={false} showBottomNav navCollapsed navDimmed={dimmed}>
       <div
         ref={containerRef}
-        className="h-[100dvh] overflow-y-scroll snap-y snap-mandatory scrollbar-hide overscroll-none"
+        onPointerDown={wake}
+        className="h-[100dvh] snap-y snap-mandatory overflow-y-scroll overscroll-none scrollbar-hide bg-black"
       >
         {isLoading ? (
-          <div className="flex items-center justify-center h-[100dvh]">
+          <div className="flex h-[100dvh] items-center justify-center">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
           </div>
         ) : reels?.length === 0 ? (
-          <div className="flex items-center justify-center h-[100dvh] text-center px-4">
+          <div className="flex h-[100dvh] items-center justify-center px-4 text-center">
             <p className="text-muted-foreground">No reels yet. Be the first to create one!</p>
           </div>
         ) : (
@@ -44,6 +57,7 @@ const Reels = () => {
             <ReelCard
               key={reel.id}
               id={reel.id}
+              authorId={reel.user_id}
               author={{
                 name: reel.profiles.display_name || reel.profiles.username,
                 username: reel.profiles.username,
@@ -55,6 +69,8 @@ const Reels = () => {
               comments={reel.comments_count}
               timestamp={reel.created_at}
               isInView={index === activeIndex}
+              mounted={Math.abs(index - activeIndex) <= 1}
+              onInteract={wake}
             />
           ))
         )}
