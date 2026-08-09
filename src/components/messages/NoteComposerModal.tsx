@@ -141,55 +141,17 @@ export const NoteComposerModal = ({
           </span>
         </div>
 
-        {/* Emoji row */}
-        <div className="flex items-center gap-1.5 mb-3 overflow-x-auto no-scrollbar">
-          <span className="h-8 w-8 shrink-0 rounded-full bg-muted flex items-center justify-center text-muted-foreground">
-            <Smile className="h-4 w-4" />
-          </span>
-          {QUICK_EMOJIS.map((e) => (
-            <button
-              key={e}
-              onClick={() => setEmoji(emoji === e ? null : e)}
-              className={cn(
-                "h-8 w-8 shrink-0 rounded-full text-[16px] leading-none lg-press flex items-center justify-center",
-                emoji === e ? "bg-primary/15 ring-1 ring-primary/40" : "hover:bg-muted"
-              )}
-            >
-              {e}
-            </button>
-          ))}
+        {/* Music / activity — coming soon */}
+        <div className="lg-chip w-full rounded-2xl mb-3 px-3.5 py-3 flex items-center gap-2.5 opacity-80">
+          <Music2 className="h-4 w-4 text-primary shrink-0" />
+          <div className="min-w-0">
+            <p className="text-[13px] font-medium leading-tight">Music & activity</p>
+            <p className="text-[11px] text-muted-foreground leading-tight">
+              Coming soon — you'll be able to attach a song or what you're up to.
+            </p>
+          </div>
         </div>
 
-        {/* Music / activity */}
-        {showMusic ? (
-          <div className="lg-field flex items-center gap-2 rounded-2xl px-3.5 h-11 mb-3">
-            <Music2 className="h-4 w-4 text-primary shrink-0" />
-            <input
-              value={music}
-              maxLength={40}
-              onChange={(e) => setMusic(e.target.value)}
-              placeholder="Song or activity"
-              className="flex-1 bg-transparent text-sm outline-none"
-            />
-            <button
-              onClick={() => {
-                setMusic("");
-                setShowMusic(false);
-              }}
-              className="text-muted-foreground lg-press"
-              aria-label="Remove activity"
-            >
-              <X className="h-4 w-4" />
-            </button>
-          </div>
-        ) : (
-          <button
-            onClick={() => setShowMusic(true)}
-            className="lg-chip w-full h-11 rounded-2xl mb-3 flex items-center justify-center gap-2 text-[13px] font-medium text-muted-foreground lg-press"
-          >
-            <Music2 className="h-4 w-4" /> Add music or activity
-          </button>
-        )}
 
         {/* Audience */}
         <div className="lg-bar grid grid-cols-2 gap-1 p-1 rounded-2xl mb-5">
