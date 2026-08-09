@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { UserRound, X, Trash2, Music2, Smile, Globe2, Users } from "lucide-react";
+import { UserRound, X, Trash2, Music2, Globe2, Users } from "lucide-react";
 import {
   NOTE_MAX_LENGTH,
   useSaveNote,
@@ -11,8 +11,6 @@ import {
 } from "@/hooks/useNotes";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-
-const QUICK_EMOJIS = ["😀", "🥹", "🔥", "🎧", "☕", "💻", "🌙", "🎬", "🏃", "❤️"];
 
 interface NoteComposerModalProps {
   open: boolean;
@@ -32,9 +30,8 @@ export const NoteComposerModal = ({
   existing,
 }: NoteComposerModalProps) => {
   const [text, setText] = useState("");
-  const [emoji, setEmoji] = useState<string | null>(null);
+  const [emoji] = useState<string | null>(null);
   const [music, setMusic] = useState("");
-  const [showMusic, setShowMusic] = useState(false);
   const [audience, setAudience] = useState<NoteAudience>("followers");
   const saveNote = useSaveNote();
   const deleteNote = useDeleteNote();
@@ -43,9 +40,7 @@ export const NoteComposerModal = ({
   useEffect(() => {
     if (!open) return;
     setText(existing?.content ?? existingNote ?? "");
-    setEmoji(existing?.emoji ?? null);
     setMusic(existing?.music ?? "");
-    setShowMusic(!!existing?.music);
     setAudience((existing?.audience as NoteAudience) || "followers");
   }, [open, existing, existingNote]);
 
