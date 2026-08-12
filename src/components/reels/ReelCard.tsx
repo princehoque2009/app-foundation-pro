@@ -123,8 +123,8 @@ export const ReelCard = memo(
 
     return (
       <div
-        className="relative w-full snap-start snap-always bg-black"
-        style={{ height: "100dvh" }}
+        className="relative w-full snap-start snap-always bg-black [content-visibility:auto]"
+        style={{ height: "100dvh", contain: "layout paint" }}
         onPointerDown={onInteract}
       >
         {mounted && (
@@ -142,10 +142,10 @@ export const ReelCard = memo(
         )}
 
         {/* Bottom scrim — plain gradient, not glass */}
-        <div className="reel-scrim pointer-events-none absolute inset-x-0 bottom-0 h-64 z-[5]" />
+        <div className="reel-scrim pointer-events-none absolute inset-x-0 bottom-0 h-56 z-[5]" />
 
         {/* Info block */}
-        <div className="absolute bottom-28 left-4 right-24 z-[15] text-white">
+        <div className="absolute left-4 right-[86px] z-[15] text-white">
           <button
             onClick={() => navigate(`/profile/${author.username}`)}
             className="reel-text-shadow text-[15px] font-semibold lg-focus rounded-md"
@@ -177,7 +177,7 @@ export const ReelCard = memo(
         </div>
 
         {/* Right action rail */}
-        <div className="absolute bottom-28 right-3 z-[15] flex flex-col items-center gap-4">
+        <div className="absolute right-3 z-[15] flex flex-col items-center gap-4" style={{ bottom: "calc(env(safe-area-inset-bottom) + 24px)" }}>
           <div className="relative">
             <button
               onClick={() => navigate(`/profile/${author.username}`)}
