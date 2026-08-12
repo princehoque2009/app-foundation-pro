@@ -167,8 +167,9 @@ export const ReelCard = memo(
                 <button
                   onClick={() => setExpanded(true)}
                   className="ml-1 font-semibold opacity-80"
+                  aria-label="View full caption"
                 >
-                  more
+                  view full caption
                 </button>
               )}
             </p>

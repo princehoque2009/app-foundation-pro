@@ -82,7 +82,7 @@ const About = () => {
           <div className="relative inline-block">
             <img
               src={prangonLogo}
-              alt="Prangon Logo"
+              alt="Prangon brand mark — social networking app logo"
               className="w-24 h-24 mx-auto rounded-2xl shadow-lg"
             />
             <motion.div
@@ -94,7 +94,7 @@ const About = () => {
               <Sparkles className="h-3.5 w-3.5 text-primary-foreground" />
             </motion.div>
           </div>
-          <h1 className="text-2xl font-bold mt-4 text-foreground">{versionInfo.name}</h1>
+          <h2 className="text-2xl font-bold mt-4 text-foreground">{versionInfo.name}</h2>
           <p className="text-muted-foreground text-sm">Version {versionInfo.version}</p>
         </motion.div>
 
