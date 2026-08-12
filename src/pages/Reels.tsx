@@ -1,20 +1,22 @@
-import { MainLayout } from "@/components/layout/MainLayout";
 import { ReelCard } from "@/components/reels/ReelCard";
 import { usePosts } from "@/hooks/usePosts";
-import { Loader2 } from "lucide-react";
+import { Loader2, ArrowLeft, Camera } from "lucide-react";
 import { useRef, useEffect, useState, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
 
 const Reels = () => {
   const { data: reels, isLoading } = usePosts(true);
   const [activeIndex, setActiveIndex] = useState(0);
-  const [dimmed, setDimmed] = useState(false);
+  const [chromeVisible, setChromeVisible] = useState(true);
   const containerRef = useRef<HTMLDivElement>(null);
   const idleTimer = useRef<number>();
+  const navigate = useNavigate();
 
   const wake = useCallback(() => {
-    setDimmed(false);
+    setChromeVisible(true);
     window.clearTimeout(idleTimer.current);
-    idleTimer.current = window.setTimeout(() => setDimmed(true), 2000);
+    idleTimer.current = window.setTimeout(() => setChromeVisible(false), 2600);
   }, []);
 
   useEffect(() => {
@@ -38,7 +40,37 @@ const Reels = () => {
   }, [handleScroll]);
 
   return (
-    <MainLayout showHeader={false} showBottomNav navCollapsed navDimmed={dimmed}>
+    <div className="fixed inset-0 bg-black">
+      {/* Floating top chrome — replaces the bottom bar so nothing overlaps the feed */}
+      <AnimatePresence>
+        {chromeVisible && (
+          <motion.div
+            initial={{ opacity: 0, y: -12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -12 }}
+            transition={{ duration: 0.22 }}
+            className="pointer-events-none absolute inset-x-0 top-0 z-30 flex items-center justify-between px-3"
+            style={{ paddingTop: "max(12px, env(safe-area-inset-top))" }}
+          >
+            <button
+              onClick={() => navigate("/")}
+              aria-label="Back"
+              className="lg-glass-strong lg-press lg-focus pointer-events-auto flex h-10 w-10 items-center justify-center rounded-full text-white"
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </button>
+            <span className="reel-text-shadow text-[15px] font-semibold text-white">Reels</span>
+            <button
+              onClick={() => navigate("/create")}
+              aria-label="Create reel"
+              className="lg-glass-strong lg-press lg-focus pointer-events-auto flex h-10 w-10 items-center justify-center rounded-full text-white"
+            >
+              <Camera className="h-5 w-5" />
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <div
         ref={containerRef}
         onPointerDown={wake}
@@ -49,8 +81,14 @@ const Reels = () => {
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
           </div>
         ) : reels?.length === 0 ? (
-          <div className="flex h-[100dvh] items-center justify-center px-4 text-center">
-            <p className="text-muted-foreground">No reels yet. Be the first to create one!</p>
+          <div className="flex h-[100dvh] flex-col items-center justify-center gap-3 px-4 text-center">
+            <p className="text-white/70">No reels yet. Be the first to create one!</p>
+            <button
+              onClick={() => navigate("/create")}
+              className="lg-glass-strong lg-press rounded-full px-5 py-2 text-sm font-semibold text-white"
+            >
+              Create a reel
+            </button>
           </div>
         ) : (
           reels?.map((reel, index) => (
@@ -75,7 +113,7 @@ const Reels = () => {
           ))
         )}
       </div>
-    </MainLayout>
+    </div>
   );
 };
 
