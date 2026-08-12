@@ -145,7 +145,10 @@ export const ReelCard = memo(
         <div className="reel-scrim pointer-events-none absolute inset-x-0 bottom-0 h-56 z-[5]" />
 
         {/* Info block */}
-        <div className="absolute left-4 right-[86px] z-[15] text-white">
+        <div
+          className="absolute left-4 right-[86px] z-[15] text-white"
+          style={{ bottom: "calc(env(safe-area-inset-bottom) + 28px)" }}
+        >
           <button
             onClick={() => navigate(`/profile/${author.username}`)}
             className="reel-text-shadow text-[15px] font-semibold lg-focus rounded-md"
