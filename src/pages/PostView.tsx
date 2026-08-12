@@ -2,6 +2,7 @@ import { useState, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { Seo } from "@/components/seo/Seo";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { PostCard } from "@/components/home/PostCard";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -68,6 +69,22 @@ const PostView = () => {
 
   return (
     <MainLayout>
+      <Seo
+        title={`${(post.caption || "Post").slice(0, 40)} — ${post.profiles?.display_name || post.profiles?.username || "Prangon"}`}
+        description={(post.caption || `A post shared by ${post.profiles?.display_name || post.profiles?.username || "a member"} on Prangon.`).slice(0, 160)}
+        path={`/post/${postId}`}
+        jsonLd={{
+          "@context": "https://schema.org",
+          "@type": "SocialMediaPosting",
+          headline: (post.caption || "Prangon post").slice(0, 110),
+          datePublished: post.created_at,
+          author: {
+            "@type": "Person",
+            name: post.profiles?.display_name || post.profiles?.username || "Prangon member",
+          },
+          url: `https://prangon.lovable.app/post/${postId}`,
+        }}
+      />
       <div className="max-w-screen-sm mx-auto p-4">
         {/* Back button */}
         <Button

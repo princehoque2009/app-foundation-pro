@@ -10,6 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { MessageCircle, UserPlus, UserMinus, Clock, Info, Lock } from "lucide-react";
 import { ProfileAboutSection } from "@/components/profile/ProfileAboutSection";
 import { ProfileActionsDropdown } from "@/components/profile/ProfileActionsDropdown";
+import { Seo } from "@/components/seo/Seo";
 import { ProfileHeader } from "@/components/profile/ProfileHeader";
 import { ProfileTabs } from "@/components/profile/ProfileTabs";
 import { ProfileContentGrid } from "@/components/profile/ProfileContentGrid";
@@ -219,6 +220,23 @@ const UserProfile = () => {
 
   return (
     <MainLayout>
+      <Seo
+        title={`${profile?.display_name || profile?.username || "Profile"} (@${profile?.username || "user"}) on Prangon`}
+        description={(profile?.bio || `See posts, reels and Circles shared by ${profile?.display_name || profile?.username || "this member"} on Prangon.`).slice(0, 160)}
+        path={`/profile/${userId}`}
+        jsonLd={{
+          "@context": "https://schema.org",
+          "@type": "ProfilePage",
+          mainEntity: {
+            "@type": "Person",
+            name: profile?.display_name || profile?.username,
+            alternateName: profile?.username,
+            description: profile?.bio || undefined,
+            image: profile?.avatar_url || undefined,
+            url: `https://prangon.lovable.app/profile/${userId}`,
+          },
+        }}
+      />
       <div className="max-w-screen-lg mx-auto bg-background min-h-screen">
         <ProfileHeader
           profile={profile}

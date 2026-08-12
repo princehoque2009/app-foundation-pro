@@ -1,3 +1,4 @@
+import { Seo } from "@/components/seo/Seo";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { useState, useMemo, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
@@ -214,6 +215,11 @@ const Circles = () => {
 
   return (
     <MainLayout>
+      <Seo
+        title="Circles on Prangon — Private Group Communities"
+        description="Create and join Circles on Prangon: intimate, invite-only groups where you share exclusive posts and discussions with the people who matter."
+        path="/circles"
+      />
       <div className="max-w-screen-xl mx-auto pb-24">
         {/* Header */}
         <div className="flex items-center justify-between px-4 pt-3 pb-2">

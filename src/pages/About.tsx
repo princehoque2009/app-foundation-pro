@@ -1,4 +1,5 @@
 import { ArrowLeft, Heart, Globe, Shield, Users, ChevronRight, Sparkles } from "lucide-react";
+import { Seo } from "@/components/seo/Seo";
 import { useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { motion } from "framer-motion";
@@ -58,6 +59,11 @@ const About = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <Seo
+        title="About Prangon — Our Story and Mission"
+        description="Learn about Prangon, the next-generation social networking platform built for authentic connection through moments, reels, Circles and real-time chat."
+        path="/about"
+      />
       {/* Header */}
       <div className="sticky top-0 z-40 bg-background/80 backdrop-blur-xl border-b border-border">
         <div className="flex items-center h-14 px-4 max-w-screen-xl mx-auto">
