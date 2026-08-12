@@ -96,11 +96,11 @@ export const TopHeader = memo(() => {
         layout
         transition={spring}
         className={cn(
-          "lg-glass lg-sheen lg-pill mx-auto flex max-w-screen-xl items-center justify-between gap-1 px-2",
-          collapsed ? "h-11" : "h-14"
+          "lg-glass lg-sheen lg-pill mx-auto flex max-w-screen-xl items-center justify-between gap-3 pl-3 pr-2",
+          collapsed ? "h-12" : "h-14"
         )}
       >
-        <div className="flex min-w-0 items-center gap-1">
+        <div className="flex min-w-0 shrink-0 items-center gap-1">
           {!isHome && (
             <button
               onClick={() => (window.history.length > 1 ? navigate(-1) : navigate("/"))}
@@ -111,16 +111,10 @@ export const TopHeader = memo(() => {
             </button>
           )}
           <Link to="/" className="flex shrink-0 items-center gap-2 pl-1 lg-press lg-focus rounded-full">
-            <motion.img
-              layout
-              transition={spring}
+            <img
               src={prangonLogo}
               alt="Prangon"
-              className={cn(
-                "pointer-events-none select-none object-contain object-left",
-                collapsed ? "h-6 w-6" : "h-8"
-              )}
-              style={collapsed ? { objectFit: "cover", objectPosition: "left center" } : undefined}
+              className="pointer-events-none h-8 w-auto shrink-0 select-none object-contain object-left"
               decoding="async"
               draggable={false}
               onContextMenu={(e) => e.preventDefault()}
@@ -128,7 +122,7 @@ export const TopHeader = memo(() => {
           </Link>
         </div>
 
-        <div className="flex items-center gap-0.5">
+        <div className="flex shrink-0 items-center gap-0.5">
           <AnimatePresence initial={false} mode="popLayout">
             {!collapsed &&
               secondary.slice(0, 2).map((item) => (
