@@ -1,3 +1,4 @@
+import { Seo } from "@/components/seo/Seo";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { Stories } from "@/components/home/Stories";
 import { useAppSettings } from "@/contexts/AppSettingsContext";
@@ -21,6 +22,16 @@ const Home = () => {
 
   return (
     <MainLayout>
+      <Seo
+        title="Prangon — Next-Generation Social Networking"
+        description="Share moments, create reels, join private Circles and chat in real time on Prangon, the next-generation social networking platform."
+        path="/"
+        jsonLd={[
+          { "@context": "https://schema.org", "@type": "WebSite", name: "Prangon", url: "https://prangon.lovable.app", potentialAction: { "@type": "SearchAction", target: "https://prangon.lovable.app/search?q={search_term_string}", "query-input": "required name=search_term_string" } },
+          { "@context": "https://schema.org", "@type": "Organization", name: "Prangon", url: "https://prangon.lovable.app", logo: "https://prangon.lovable.app/pwa-icon-512.png" },
+        ]}
+      />
+      <h1 className="sr-only">Prangon — share moments, reels and Circles with your people</h1>
       <div className="bg-background min-h-screen select-none">
         {showStories && (
           <div className="border-b border-border/70 py-3">

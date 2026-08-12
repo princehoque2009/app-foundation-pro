@@ -1,3 +1,4 @@
+import { Seo } from "@/components/seo/Seo";
 import { ReelCard } from "@/components/reels/ReelCard";
 import { usePosts } from "@/hooks/usePosts";
 import { Loader2, ArrowLeft, Camera } from "lucide-react";
@@ -41,6 +42,12 @@ const Reels = () => {
 
   return (
     <div className="fixed inset-0 bg-black">
+      <Seo
+        title="Reels on Prangon — Short-Form Video Feed"
+        description="Watch and create short-form vertical videos on Prangon Reels, with trending audio, instant reactions and an endless personalised feed."
+        path="/reels"
+      />
+      <h1 className="sr-only">Prangon Reels — short-form vertical videos</h1>
       {/* Floating top chrome — replaces the bottom bar so nothing overlaps the feed */}
       <AnimatePresence>
         {chromeVisible && (

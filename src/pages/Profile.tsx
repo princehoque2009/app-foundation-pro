@@ -6,6 +6,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { EditProfileDialog } from "@/components/profile/EditProfileDialog";
 import { ProfileAboutSection } from "@/components/profile/ProfileAboutSection";
 import { LiveInsights } from "@/components/profile/LiveInsights";
+import { Seo } from "@/components/seo/Seo";
 import { ProfileHeader } from "@/components/profile/ProfileHeader";
 import { ProfileTabs } from "@/components/profile/ProfileTabs";
 import { ProfileContentGrid } from "@/components/profile/ProfileContentGrid";
@@ -111,6 +112,11 @@ const Profile = () => {
 
   return (
     <MainLayout>
+      <Seo
+        title="Your Profile on Prangon"
+        description="Manage your Prangon profile: update your cover photo, bio and social links, and review the posts, reels and Circles you have shared."
+        path="/profile"
+      />
       <div className="max-w-screen-lg mx-auto bg-background min-h-screen">
         {/* Profile Header with Hero/Identity/Action Layers */}
         <ProfileHeader

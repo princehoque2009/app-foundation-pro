@@ -101,7 +101,7 @@ export const ProfileHeader = ({
           ) : profile?.cover_photo_url ? (
             <img
               src={optimizeCloudinaryUrl(profile.cover_photo_url, "c_fill,ar_16:9,g_auto")}
-              alt="Cover"
+              alt={`${profile?.display_name || profile?.username || "User"} profile cover photo`}
               className="w-full h-full object-cover pointer-events-none select-none"
               draggable={false}
               onContextMenu={(e) => e.preventDefault()}
@@ -245,6 +245,7 @@ export const ProfileHeader = ({
                 onClick={onAboutClick}
                 className="rounded-full h-9 w-9 border border-border"
                 title="About"
+                aria-label="View profile information"
               >
                 <Info className="h-4 w-4" />
               </Button>
@@ -254,6 +255,7 @@ export const ProfileHeader = ({
                 onClick={onAnalyticsClick}
                 className="rounded-full h-9 w-9 border border-border"
                 title="Analytics"
+                aria-label="View profile analytics"
               >
                 <BarChart3 className="h-4 w-4" />
               </Button>
@@ -263,6 +265,7 @@ export const ProfileHeader = ({
                 onClick={handleShare}
                 className="rounded-full h-9 w-9 border border-border"
                 title="Share"
+                aria-label="Share this profile"
               >
                 <Share2 className="h-4 w-4" />
               </Button>

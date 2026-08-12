@@ -1,10 +1,15 @@
 import { createRoot } from "react-dom/client";
+import { HelmetProvider } from "react-helmet-async";
 import App from "./App.tsx";
 import "./index.css";
 import "./i18n";
 import { registerPushServiceWorker } from "@/lib/push";
 
-createRoot(document.getElementById("root")!).render(<App />);
+createRoot(document.getElementById("root")!).render(
+  <HelmetProvider>
+    <App />
+  </HelmetProvider>,
+);
 
 // Register the push service worker and route notification clicks
 if ("serviceWorker" in navigator) {
