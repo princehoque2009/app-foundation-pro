@@ -272,7 +272,7 @@ export const usePostComments = (postId: string) => {
       // Fetch profiles for these users
       const { data: profilesData, error: profilesError } = await supabase
         .from("profiles")
-        .select("id, username, display_name, avatar_url")
+        .select("id, username, display_name, avatar_url, is_verified")
         .in("id", userIds);
 
       if (profilesError) throw profilesError;
@@ -286,7 +286,8 @@ export const usePostComments = (postId: string) => {
         profiles: profilesMap.get(comment.user_id) || { 
           username: 'unknown', 
           display_name: null, 
-          avatar_url: null 
+          avatar_url: null,
+          is_verified: false
         }
       })) || [];
 
