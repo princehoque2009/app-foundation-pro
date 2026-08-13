@@ -78,6 +78,130 @@ export const usePostLikes = (postId: string) => {
   });
 };
 
+// ============================================
+// ARCHIVE POST FUNCTIONALITY
+// ============================================
+
+export const useToggleArchive = (postId: string) => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (isArchived: boolean) => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
+
+      // Verify user owns the post
+      const { data: post, error: postError } = await supabase
+        .from("posts")
+        .select("user_id")
+        .eq("id", postId)
+        .single();
+
+      if (postError) throw postError;
+      if (post.user_id !== user.id) throw new Error("Only post owner can archive posts");
+
+      // Toggle archive status
+      const { error } = await supabase
+        .from("posts")
+        .update({ is_archived: !isArchived })
+        .eq("id", postId)
+        .eq("user_id", user.id);
+
+      if (error) throw error;
+      return { postId, newArchiveStatus: !isArchived };
+    },
+
+    onMutate: async (isArchived) => {
+      await queryClient.cancelQueries({ queryKey: ["posts"] });
+      await queryClient.cancelQueries({ queryKey: ["archivedPosts"] });
+      
+      const previousPosts = queryClient.getQueryData(["posts"]);
+      const previousArchivedPosts = queryClient.getQueryData(["archivedPosts"]);
+
+      // Remove from active posts when archiving
+      if (!isArchived) {
+        queryClient.setQueryData(["posts"], (old: any) => {
+          if (!old) return old;
+          return old.filter((post: any) => post.id !== postId);
+        });
+      }
+
+      // Remove from archived posts when unarchiving
+      if (isArchived) {
+        queryClient.setQueryData(["archivedPosts"], (old: any) => {
+          if (!old) return old;
+          return old.filter((post: any) => post.id !== postId);
+        });
+      }
+
+      return { previousPosts, previousArchivedPosts };
+    },
+
+    onError: (err, variables, context) => {
+      if (context?.previousPosts) {
+        queryClient.setQueryData(["posts"], context.previousPosts);
+      }
+      if (context?.previousArchivedPosts) {
+        queryClient.setQueryData(["archivedPosts"], context.previousArchivedPosts);
+      }
+    },
+
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["posts"] });
+      queryClient.invalidateQueries({ queryKey: ["archivedPosts"] });
+      queryClient.invalidateQueries({ queryKey: ["post", postId] });
+    },
+  });
+};
+
+export const useArchivedPosts = () => {
+  return useQuery({
+    queryKey: ["archivedPosts"],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return [];
+
+      // Fetch archived posts for current user only
+      const { data: postsData, error: postsError } = await supabase
+        .from("posts")
+        .select("*")
+        .eq("user_id", user.id)
+        .eq("is_archived", true)
+        .order("created_at", { ascending: false });
+
+      if (postsError) throw postsError;
+      if (!postsData || postsData.length === 0) return [];
+
+      // Get unique user IDs from posts
+      const userIds = [...new Set(postsData.map(p => p.user_id))];
+
+      // Fetch profiles for these users
+      const { data: profilesData, error: profilesError } = await supabase
+        .from("profiles")
+        .select("id, username, display_name, avatar_url, is_verified")
+        .in("id", userIds);
+
+      if (profilesError) throw profilesError;
+
+      // Create a map of profiles
+      const profilesMap = new Map(profilesData?.map(p => [p.id, p]) || []);
+
+      // Combine posts with profiles
+      const postsWithProfiles = postsData.map(post => ({
+        ...post,
+        profiles: profilesMap.get(post.user_id) || {
+          username: 'unknown',
+          display_name: null,
+          avatar_url: null,
+          is_verified: false
+        }
+      }));
+
+      return postsWithProfiles;
+    },
+  });
+};
+
 interface CreateCommentParams {
   postId: string;
   content: string;
