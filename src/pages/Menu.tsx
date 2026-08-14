@@ -35,13 +35,16 @@ import {
   MessageSquare,
   Info,
   FlaskConical,
+  Archive,
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { VerifiedBadge } from "@/components/ui/VerifiedBadge";
 import { useRoles } from "@/contexts/RolesContext";
 import { MenuSearchBar } from "@/components/menu/MenuSearchBar";
+import { ArchivedPostsModal } from "@/components/ArchivedPostsModal";
 import { cn } from "@/lib/utils";
+import { useState } from "react";
 
 interface MenuItem {
   id: string;
@@ -49,6 +52,7 @@ interface MenuItem {
   label: string;
   description: string;
   path: string;
+  onClick?: () => void;
 }
 
 const mainMenuItems: MenuItem[] = [
@@ -84,6 +88,7 @@ const Menu = () => {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
   const { isAdmin, isModerator, isAdvisor, isSupport } = useRoles();
+  const [archiveModalOpen, setArchiveModalOpen] = useState(false);
 
   const { data: profile } = useQuery({
     queryKey: ["profile", user?.id],
@@ -135,13 +140,22 @@ const Menu = () => {
   if (isModerator && !isAdmin) roleItems.push({ id: "moderator", icon: Flag, label: "Moderator Panel", description: "Review reports & content", path: "/moderator-panel" });
   if (isAdvisor && !isAdmin) roleItems.push({ id: "advisor", icon: BarChart3, label: "Advisor Panel", description: "Insights & suggestions", path: "/advisor-panel" });
 
+  const archiveMenuItem: MenuItem = {
+    id: "archive",
+    icon: Archive,
+    label: "Archive",
+    description: "View your archived posts",
+    path: "#",
+    onClick: () => setArchiveModalOpen(true),
+  };
+
   const renderMenuRow = (item: MenuItem, index: number, delay: number = 0) => (
     <motion.button
       key={item.id}
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: delay + index * 0.03 }}
-      onClick={() => navigate(item.path)}
+      onClick={() => item.onClick ? item.onClick() : navigate(item.path)}
       className="w-full flex items-center gap-3.5 p-3.5 rounded-2xl hover:bg-muted/40 transition-all text-left group"
     >
       <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-muted/60 group-hover:bg-muted transition-colors">
@@ -243,6 +257,7 @@ const Menu = () => {
         {renderSectionLabel("Quick Access")}
         <div className="space-y-0.5">
           {quickAccessItems.map((item, i) => renderMenuRow(item, i, 0.3))}
+          {renderMenuRow(archiveMenuItem, quickAccessItems.length, 0.3)}
         </div>
 
         {/* Role-based Panels */}
@@ -292,6 +307,11 @@ const Menu = () => {
           <p className="text-[10px] text-muted-foreground/60 mt-1">{getVersionInfo().copyright}</p>
         </div>
       </div>
+
+      <ArchivedPostsModal
+        open={archiveModalOpen}
+        onOpenChange={setArchiveModalOpen}
+      />
     </div>
   );
 };
