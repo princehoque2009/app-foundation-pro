@@ -18,38 +18,29 @@ export const UserRolesDisplay = ({ userId, className, size = "sm" }: UserRolesDi
         .from("user_roles")
         .select("role")
         .eq("user_id", userId);
-      
       if (error) throw error;
       return data?.map((r) => r.role as AppRole) || [];
     },
     enabled: !!userId,
+    staleTime: 60_000,
+    gcTime: 5 * 60_000,
   });
 
-  if (!roles || roles.length === 0 || roles.every((r) => r === "user")) {
-    return null;
-  }
+  if (!roles || roles.length === 0 || roles.every((r) => r === "user")) return null;
 
-  // Map app_role to RoleBadge compatible types
   const displayableRoles = roles.filter((r) => r !== "user");
-  
   if (displayableRoles.length === 0) return null;
 
-  // Priority order
   const priorityOrder: AppRole[] = ["admin", "moderator", "advisor", "support"];
-  const sortedRoles = displayableRoles.sort(
-    (a, b) => priorityOrder.indexOf(a) - priorityOrder.indexOf(b)
-  );
-
-  // Show only the highest priority role
+  const sortedRoles = displayableRoles.sort((a, b) => priorityOrder.indexOf(a) - priorityOrder.indexOf(b));
   const topRole = sortedRoles[0];
 
-  // Map to RoleBadge type
   const roleMap: Record<AppRole, "admin" | "moderator" | "advisor" | "support" | "creator" | "official"> = {
     admin: "admin",
     moderator: "moderator",
     advisor: "advisor",
     support: "support",
-    user: "creator", // fallback
+    user: "creator",
   };
 
   return (
