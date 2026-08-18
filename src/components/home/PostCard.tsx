@@ -1,7 +1,5 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Heart, MessageCircle, Share2, Bookmark, UserCircle } from "lucide-react";
 import { useState, useEffect } from "react";
 import { usePostReactions, useToggleReaction } from "@/hooks/usePostReactions";
 import { formatDistanceToNow } from "date-fns";
@@ -13,7 +11,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { PostMenu } from "./PostMenu";
 import { EditPostDialog } from "./EditPostDialog";
 import { toast } from "@/hooks/use-toast";
-import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { VerifiedBadge } from "@/components/ui/VerifiedBadge";
@@ -54,7 +51,6 @@ export const PostCard = ({ id, author, content, image, video, mediaItems, likes,
   const [showReactionBreakdown, setShowReactionBreakdown] = useState(false);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { user } = useAuth();
 
   const { data: userRoles } = useUserRoles({ userId: author.userId });
   const { effects: authorEffects } = useActiveEffects(author.userId);
@@ -127,7 +123,7 @@ export const PostCard = ({ id, author, content, image, video, mediaItems, likes,
           <div className="flex items-center gap-3 cursor-pointer group min-w-0 flex-1" onClick={handleProfileClick}>
             <Avatar className="h-11 w-11 shrink-0 ring-1 ring-border transition-transform group-hover:scale-105">
               <AvatarImage src={author.avatar || undefined} alt={author.name} />
-              <AvatarFallback className="bg-muted text-muted-foreground"><UserCircle className="h-6 w-6" /></AvatarFallback>
+              <AvatarFallback className="bg-muted text-muted-foreground"><span className="text-xs">?</span></AvatarFallback>
             </Avatar>
             <div className="min-w-0 flex items-center gap-1.5 flex-wrap">
               <span className={cn("font-bold text-[14.5px] leading-tight truncate group-hover:text-primary transition-colors", authorEffects.hasRainbowName ? "bg-gradient-to-r from-red-500 via-yellow-500 via-green-500 via-blue-500 to-purple-500 bg-clip-text text-transparent" : "text-foreground")}>{author.name}</span>
@@ -151,7 +147,7 @@ export const PostCard = ({ id, author, content, image, video, mediaItems, likes,
           </div>
         ) : (image || video) && (
           <div className="relative bg-muted/40 cursor-pointer overflow-hidden select-none rounded-xl border border-border" onDoubleClick={handleDoubleTap} onContextMenu={(e) => e.preventDefault()}>
-            {image && <><!isImageLoaded && <div className="w-full h-80 shimmer" /><img src={image} alt="Post" className={cn("w-full object-cover max-h-[520px] transition-opacity duration-300 pointer-events-none", isImageLoaded ? "opacity-100" : "opacity-0 h-0")} loading="lazy" onLoad={() => setIsImageLoaded(true)} draggable={false} /></>}
+            {image && <>{!isImageLoaded && <div className="w-full h-80 shimmer" />}<img src={image} alt="Post" className={cn("w-full object-cover max-h-[520px] transition-opacity duration-300 pointer-events-none", isImageLoaded ? "opacity-100" : "opacity-0 h-0")} loading="lazy" onLoad={() => setIsImageLoaded(true)} draggable={false} /></>}
             {video && <PrangonVideoPlayer src={video} className="w-full max-h-[520px]" compact />}
             <AnimatePresence>{showHeartAnimation && <motion.div initial={{ scale: 0, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 1.8, opacity: 0 }} transition={{ duration: 0.5, ease: "easeOut" }} className="absolute inset-0 flex items-center justify-center pointer-events-none"><span className="text-7xl drop-shadow-2xl">{getReactionMeta(myReaction || "love").emoji}</span></motion.div>}</AnimatePresence>
           </div>
