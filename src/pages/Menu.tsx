@@ -9,7 +9,6 @@ import { motion } from "framer-motion";
 import {
   Bell,
   MessageCircle,
-  User,
   Users,
   Film,
   Clock,
@@ -43,7 +42,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { VerifiedBadge } from "@/components/ui/VerifiedBadge";
 import { useRoles } from "@/contexts/RolesContext";
 import { MenuSearchBar } from "@/components/menu/MenuSearchBar";
-import { cn } from "@/lib/utils";
 import { ArchivedPostsModal } from "@/components/ArchivedPostsModal";
 
 interface MenuItem {
@@ -89,6 +87,7 @@ const Menu = () => {
   const { user, signOut } = useAuth();
   const { isAdmin, isModerator, isAdvisor, isSupport } = useRoles();
   const [archiveModalOpen, setArchiveModalOpen] = useState(false);
+  const [isSigningOut, setIsSigningOut] = useState(false);
 
   const { data: profile } = useQuery({
     queryKey: ["profile", user?.id],
@@ -96,49 +95,97 @@ const Menu = () => {
       if (!user?.id) return null;
       const { data, error } = await supabase
         .from("profiles")
-        .select("*")
+        .select("id, username, display_name, avatar_url, is_verified")
         .eq("id", user.id)
-        .single();
+        .maybeSingle();
       if (error) throw error;
       return data;
     },
     enabled: !!user?.id,
+    staleTime: 60_000,
+    gcTime: 5 * 60_000,
+    retry: 1,
   });
 
   const handleSignOut = async () => {
-    await signOut();
-    toast({ title: "Signed out", description: "You have been signed out successfully." });
-    navigate("/auth");
-  };
-
-  const handleShareProfile = async () => {
-    const profileUrl = `${window.location.origin}/profile/${user?.id}`;
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: `${profile?.display_name || profile?.username}'s Profile`,
-          text: `Check out ${profile?.display_name || profile?.username} on Prangon!`,
-          url: profileUrl,
-        });
-      } catch { /* cancelled */ }
-    } else {
-      await navigator.clipboard.writeText(profileUrl);
-      toast({ title: "Link copied!", description: "Profile link copied to clipboard." });
+    if (isSigningOut) return;
+    setIsSigningOut(true);
+    try {
+      const { error } = await signOut();
+      if (error) throw error;
+      toast({ title: "Signed out", description: "You have been signed out successfully." });
+      navigate("/auth", { replace: true });
+    } catch (error) {
+      console.error("Sign out failed:", error);
+      toast({ title: "Sign out failed", description: "Please try again.", variant: "destructive" });
+    } finally {
+      setIsSigningOut(false);
     }
   };
 
-  const handleCopyLink = async () => {
-    const profileUrl = `${window.location.origin}/profile/${user?.id}`;
-    await navigator.clipboard.writeText(profileUrl);
-    toast({ title: "Link copied!", description: "Profile link copied to clipboard." });
+  const copyProfileLink = async () => {
+    if (!user?.id) {
+      toast({ title: "Profile unavailable", description: "Please sign in again.", variant: "destructive" });
+      return;
+    }
+
+    const profileUrl = `${window.location.origin}/profile/${user.id}`;
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(profileUrl);
+      } else {
+        const textarea = document.createElement("textarea");
+        textarea.value = profileUrl;
+        textarea.setAttribute("readonly", "");
+        textarea.style.position = "fixed";
+        textarea.style.opacity = "0";
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand("copy");
+        textarea.remove();
+      }
+      toast({ title: "Link copied!", description: "Profile link copied to clipboard." });
+    } catch (error) {
+      console.error("Copy profile link failed:", error);
+      toast({ title: "Couldn't copy link", description: "Please copy the profile URL from your browser.", variant: "destructive" });
+    }
   };
 
-  // Build role-based items dynamically
+  const handleShareProfile = async () => {
+    if (!user?.id) {
+      toast({ title: "Profile unavailable", description: "Please sign in again.", variant: "destructive" });
+      return;
+    }
+
+    const profileUrl = `${window.location.origin}/profile/${user.id}`;
+    const name = profile?.display_name || profile?.username || "My";
+
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: `${name}'s Profile`,
+          text: `Check out ${name} on Prangon!`,
+          url: profileUrl,
+        });
+      } else {
+        await copyProfileLink();
+      }
+    } catch (error) {
+      // AbortError means the user intentionally closed the native share sheet.
+      if (error instanceof DOMException && error.name === "AbortError") return;
+      console.error("Share profile failed:", error);
+      await copyProfileLink();
+    }
+  };
+
   const roleItems: MenuItem[] = [];
-  if (isAdmin) roleItems.push({ id: "admin", icon: Shield, label: "Admin Panel", description: "Manage the platform", path: "/admin" });
-  if (isSupport && !isAdmin) roleItems.push({ id: "support", icon: Headphones, label: "Support Panel", description: "Handle support tickets", path: "/support-panel" });
-  if (isModerator && !isAdmin) roleItems.push({ id: "moderator", icon: Flag, label: "Moderator Panel", description: "Review reports & content", path: "/moderator-panel" });
-  if (isAdvisor && !isAdmin) roleItems.push({ id: "advisor", icon: BarChart3, label: "Advisor Panel", description: "Insights & suggestions", path: "/advisor-panel" });
+  if (isAdmin) {
+    roleItems.push({ id: "admin", icon: Shield, label: "Admin Panel", description: "Manage the platform", path: "/admin" });
+  } else {
+    if (isSupport) roleItems.push({ id: "support", icon: Headphones, label: "Support Panel", description: "Handle support tickets", path: "/support-panel" });
+    if (isModerator) roleItems.push({ id: "moderator", icon: Flag, label: "Moderator Panel", description: "Review reports & content", path: "/moderator-panel" });
+    if (isAdvisor) roleItems.push({ id: "advisor", icon: BarChart3, label: "Advisor Panel", description: "Insights & suggestions", path: "/advisor-panel" });
+  }
 
   const archiveMenuItem: MenuItem = {
     id: "archive",
@@ -149,13 +196,17 @@ const Menu = () => {
     onClick: () => setArchiveModalOpen(true),
   };
 
-  const renderMenuRow = (item: MenuItem, index: number, delay: number = 0) => (
+  const renderMenuRow = (item: MenuItem, index: number, delay = 0) => (
     <motion.button
       key={item.id}
+      type="button"
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: delay + index * 0.03 }}
-      onClick={() => (item.onClick ? item.onClick() : navigate(item.path))}
+      onClick={() => {
+        if (item.onClick) item.onClick();
+        else navigate(item.path);
+      }}
       className="w-full flex items-center gap-3.5 p-3.5 rounded-2xl hover:bg-muted/40 transition-all text-left group"
     >
       <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-muted/60 group-hover:bg-muted transition-colors">
@@ -177,13 +228,9 @@ const Menu = () => {
 
   return (
     <div className="min-h-screen bg-background pb-24">
-      {/* Header */}
       <div className="sticky top-0 z-40 bg-background/80 backdrop-blur-xl border-b border-border">
         <div className="flex items-center h-14 px-4 max-w-screen-md mx-auto gap-3">
-          <button
-            onClick={() => navigate(-1)}
-            className="p-2 -ml-2 rounded-full hover:bg-muted/60 transition-colors"
-          >
+          <button type="button" onClick={() => navigate(-1)} className="p-2 -ml-2 rounded-full hover:bg-muted/60 transition-colors" aria-label="Go back">
             <ArrowLeft className="h-5 w-5 text-foreground" />
           </button>
           <h1 className="font-semibold text-lg text-foreground">Menu</h1>
@@ -191,12 +238,10 @@ const Menu = () => {
       </div>
 
       <div className="max-w-screen-md mx-auto px-4 py-4 space-y-1">
-        {/* Search */}
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
           <MenuSearchBar />
         </motion.div>
 
-        {/* Profile Card */}
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.03 }}>
           <Card
             className="p-4 mt-3 cursor-pointer hover:bg-muted/30 transition-colors"
@@ -204,7 +249,7 @@ const Menu = () => {
           >
             <div className="flex items-center gap-3">
               <Avatar className="h-12 w-12 ring-2 ring-border">
-                <AvatarImage src={profile?.avatar_url || undefined} />
+                <AvatarImage src={profile?.avatar_url || undefined} alt={profile?.display_name || profile?.username || "Profile"} />
                 <AvatarFallback className="bg-muted text-muted-foreground text-lg">
                   {profile?.username?.charAt(0).toUpperCase() || "P"}
                 </AvatarFallback>
@@ -214,14 +259,13 @@ const Menu = () => {
                   {profile?.display_name || profile?.username || "User"}
                   {profile?.is_verified && <VerifiedBadge size="md" />}
                 </p>
-                <p className="text-xs text-muted-foreground truncate">@{profile?.username}</p>
+                <p className="text-xs text-muted-foreground truncate">{profile?.username ? `@${profile.username}` : ""}</p>
               </div>
               <ChevronRight className="h-5 w-5 text-muted-foreground shrink-0" />
             </div>
           </Card>
         </motion.div>
 
-        {/* Quick Actions Row */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -230,15 +274,11 @@ const Menu = () => {
         >
           {[
             { icon: Share2, label: "Share", action: handleShareProfile },
-            { icon: Link2, label: "Copy Link", action: handleCopyLink },
+            { icon: Link2, label: "Copy Link", action: copyProfileLink },
             { icon: MessageSquare, label: "Feedback", action: () => navigate("/help") },
             { icon: Info, label: "About", action: () => navigate("/about") },
           ].map((item) => (
-            <button
-              key={item.label}
-              onClick={item.action}
-              className="flex flex-col items-center gap-1.5 p-2 rounded-xl hover:bg-muted/40 transition-colors"
-            >
+            <button type="button" key={item.label} onClick={item.action} className="flex flex-col items-center gap-1.5 p-2 rounded-xl hover:bg-muted/40 transition-colors">
               <div className="w-10 h-10 rounded-xl bg-muted/60 flex items-center justify-center">
                 <item.icon className="h-5 w-5 text-foreground" />
               </div>
@@ -247,74 +287,56 @@ const Menu = () => {
           ))}
         </motion.div>
 
-        {/* Main Menu */}
         {renderSectionLabel("Features")}
-        <div className="space-y-0.5">
-          {mainMenuItems.map((item, i) => renderMenuRow(item, i, 0.08))}
-        </div>
+        <div className="space-y-0.5">{mainMenuItems.map((item, i) => renderMenuRow(item, i, 0.08))}</div>
 
-        {/* Quick Access */}
         {renderSectionLabel("Quick Access")}
         <div className="space-y-0.5">
           {quickAccessItems.map((item, i) => renderMenuRow(item, i, 0.3))}
           {renderMenuRow(archiveMenuItem, quickAccessItems.length, 0.3)}
         </div>
 
-        {/* Role-based Panels */}
         {roleItems.length > 0 && (
           <>
             {renderSectionLabel("Panels")}
-            <div className="space-y-0.5">
-              {roleItems.map((item, i) => renderMenuRow(item, i, 0.42))}
-            </div>
+            <div className="space-y-0.5">{roleItems.map((item, i) => renderMenuRow(item, i, 0.42))}</div>
           </>
         )}
 
-        {/* Settings & Help */}
         {renderSectionLabel("Settings")}
-        <div className="space-y-0.5">
-          {settingsItems.map((item, i) => renderMenuRow(item, i, 0.5))}
-        </div>
+        <div className="space-y-0.5">{settingsItems.map((item, i) => renderMenuRow(item, i, 0.5))}</div>
 
-        {/* Legal */}
         {renderSectionLabel("Legal & Information")}
-        <div className="space-y-0.5">
-          {legalItems.map((item, i) => renderMenuRow(item, i, 0.56))}
-        </div>
+        <div className="space-y-0.5">{legalItems.map((item, i) => renderMenuRow(item, i, 0.56))}</div>
 
-        {/* Logout */}
         <div className="pt-4">
           <motion.button
+            type="button"
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.7 }}
             onClick={handleSignOut}
-            className="w-full flex items-center gap-3.5 p-3.5 rounded-2xl hover:bg-destructive/10 transition-all text-left group"
+            disabled={isSigningOut}
+            className="w-full flex items-center gap-3.5 p-3.5 rounded-2xl hover:bg-destructive/10 transition-all text-left group disabled:opacity-60 disabled:cursor-not-allowed"
           >
             <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-destructive/10">
               <LogOut className="h-5 w-5 text-destructive" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-destructive">Log Out</p>
+              <p className="text-sm font-semibold text-destructive">{isSigningOut ? "Logging Out..." : "Log Out"}</p>
               <p className="text-xs text-muted-foreground">Sign out of your account</p>
             </div>
           </motion.button>
         </div>
 
-        {/* Version */}
         <div className="text-center pt-4 pb-4">
           <p className="text-xs text-muted-foreground">{getVersionInfo().fullVersion}</p>
           <p className="text-[10px] text-muted-foreground/60 mt-1">{getVersionInfo().copyright}</p>
         </div>
       </div>
 
-      {/* Archived Posts */}
       <ArchivedPostsModal open={archiveModalOpen} onOpenChange={setArchiveModalOpen} />
     </div>
-  );
-};
-
-export default Menu;
   );
 };
 
