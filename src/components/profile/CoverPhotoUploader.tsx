@@ -16,12 +16,10 @@ interface CoverPhotoUploaderProps {
   onImageClick?: (url: string) => void;
 }
 
-export const CoverPhotoUploader = ({
-  userId,
-  currentCoverUrl,
-  isOwner,
-  onImageClick,
-}: CoverPhotoUploaderProps) => {
+const COVER_TRANSFORM = "c_fill,ar_16:9,g_auto,w_1200";
+const COVER_PLACEHOLDER_TRANSFORM = "c_fill,ar_16:9,g_auto,w_32,e_blur:1000";
+
+export const CoverPhotoUploader = ({ userId, currentCoverUrl, isOwner, onImageClick }: CoverPhotoUploaderProps) => {
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isImageLoaded, setIsImageLoaded] = useState(false);
@@ -31,21 +29,11 @@ export const CoverPhotoUploader = ({
   const uploadMutation = useMutation({
     mutationFn: async (blob: Blob) => {
       if (!isCloudinaryConfigured()) {
-        throw new Error(
-          "Cloudinary is not configured. Add VITE_CLOUDINARY_CLOUD_NAME and VITE_CLOUDINARY_UPLOAD_PRESET to your .env."
-        );
+        throw new Error("Cloudinary is not configured. Add VITE_CLOUDINARY_CLOUD_NAME and VITE_CLOUDINARY_UPLOAD_PRESET to your .env.");
       }
-
-      // 1. Direct browser -> Cloudinary upload (unsigned preset)
       const result = await uploadToCloudinary(blob, { folder: `prangon/covers/${userId}` });
-
-      // 2. Persist the returned secure URL in our existing Supabase profiles table
-      const { error: updateError } = await supabase
-        .from("profiles")
-        .update({ cover_photo_url: result.secure_url })
-        .eq("id", userId);
+      const { error: updateError } = await supabase.from("profiles").update({ cover_photo_url: result.secure_url }).eq("id", userId);
       if (updateError) throw updateError;
-
       return result.secure_url;
     },
     onSuccess: () => {
@@ -67,7 +55,6 @@ export const CoverPhotoUploader = ({
       return;
     }
     setCropSrc(URL.createObjectURL(file));
-    // Reset so selecting the same file again re-triggers change
     e.target.value = "";
   };
 
@@ -80,8 +67,8 @@ export const CoverPhotoUploader = ({
   }, [uploadMutation]);
 
   const rawUrl = previewUrl || currentCoverUrl;
-  // Only run Cloudinary optimization on the persisted remote URL, not local blob previews.
-  const displayUrl = previewUrl ? previewUrl : optimizeCloudinaryUrl(currentCoverUrl, "c_fill,ar_16:9,g_auto");
+  const displayUrl = previewUrl || optimizeCloudinaryUrl(currentCoverUrl, COVER_TRANSFORM);
+  const placeholderUrl = !previewUrl ? optimizeCloudinaryUrl(currentCoverUrl, COVER_PLACEHOLDER_TRANSFORM) : null;
   const isUploading = uploadMutation.isPending;
 
   return (
@@ -89,14 +76,7 @@ export const CoverPhotoUploader = ({
       <div className="relative h-full w-full overflow-hidden bg-gradient-to-br from-muted to-muted/50">
         <AnimatePresence mode="wait">
           {displayUrl ? (
-            <motion.div
-              key={displayUrl}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: isImageLoaded ? 1 : 0 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.3 }}
-              className="absolute inset-0"
-            >
+            <motion.div key={displayUrl} initial={{ opacity: 0 }} animate={{ opacity: isImageLoaded ? 1 : 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }} className="absolute inset-0">
               <img
                 src={displayUrl}
                 alt="Cover"
@@ -110,9 +90,10 @@ export const CoverPhotoUploader = ({
           )}
         </AnimatePresence>
 
-        {displayUrl && !isImageLoaded && (
-          <div className="absolute inset-0 shimmer" />
+        {placeholderUrl && !isImageLoaded && (
+          <img src={placeholderUrl} alt="" aria-hidden="true" className="absolute inset-0 w-full h-full object-cover scale-[1.02]" />
         )}
+        {displayUrl && !isImageLoaded && !placeholderUrl && <div className="absolute inset-0 shimmer" />}
 
         {isUploading && (
           <div className="absolute inset-0 bg-background/60 backdrop-blur-sm flex items-center justify-center">
@@ -127,40 +108,19 @@ export const CoverPhotoUploader = ({
           <Button
             variant="secondary"
             size="sm"
-            className={cn(
-              "absolute bottom-3 right-3 gap-1.5 rounded-full z-20",
-              "bg-background/80 backdrop-blur-sm shadow-lg",
-              "hover:bg-background/90 transition-all",
-              "text-xs font-medium"
-            )}
-            onClick={(e) => {
-              e.stopPropagation();
-              fileInputRef.current?.click();
-            }}
+            className={cn("absolute bottom-3 right-3 gap-1.5 rounded-full z-20", "bg-background/80 backdrop-blur-sm shadow-lg", "hover:bg-background/90 transition-all", "text-xs font-medium")}
+            onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }}
           >
             <Camera className="h-3.5 w-3.5" />
             <span className="hidden sm:inline">Edit Cover</span>
           </Button>
         )}
 
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/*"
-          className="hidden"
-          onChange={handleFileSelect}
-        />
+        <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileSelect} />
       </div>
 
       {cropSrc && (
-        <ImageCropDialog
-          open={!!cropSrc}
-          onOpenChange={(v) => !v && setCropSrc(null)}
-          imageSrc={cropSrc}
-          aspectRatio={16 / 9}
-          shape="rect"
-          onCropComplete={handleCropComplete}
-        />
+        <ImageCropDialog open={!!cropSrc} onOpenChange={(v) => !v && setCropSrc(null)} imageSrc={cropSrc} aspectRatio={16 / 9} shape="rect" onCropComplete={handleCropComplete} />
       )}
     </>
   );
