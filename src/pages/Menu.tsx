@@ -7,35 +7,10 @@ import { Card } from "@/components/ui/card";
 import { toast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
 import {
-  Bell,
-  MessageCircle,
-  Users,
-  Film,
-  Clock,
-  Settings,
-  LogOut,
-  ChevronRight,
-  Shield,
-  HelpCircle,
-  ArrowLeft,
-  Headphones,
-  BarChart3,
-  Flag,
-  Heart,
-  Radio,
-  History,
-  Star,
-  Zap,
-  Scale,
-  Cookie,
-  BookOpen,
-  Building2,
-  Share2,
-  Link2,
-  MessageSquare,
-  Info,
-  FlaskConical,
-  Archive,
+  Bell, MessageCircle, Users, Film, Clock, Settings, LogOut, ChevronRight,
+  Shield, HelpCircle, ArrowLeft, Headphones, BarChart3, Flag, Heart, Radio,
+  History, Star, Zap, Scale, Cookie, BookOpen, Building2, Share2, Link2,
+  MessageSquare, Info, FlaskConical, Archive,
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -111,8 +86,7 @@ const Menu = () => {
     if (isSigningOut) return;
     setIsSigningOut(true);
     try {
-      const { error } = await signOut();
-      if (error) throw error;
+      await signOut();
       toast({ title: "Signed out", description: "You have been signed out successfully." });
       navigate("/auth", { replace: true });
     } catch (error) {
@@ -126,7 +100,7 @@ const Menu = () => {
   const copyProfileLink = async () => {
     if (!user?.id) {
       toast({ title: "Profile unavailable", description: "Please sign in again.", variant: "destructive" });
-      return;
+      return false;
     }
 
     const profileUrl = `${window.location.origin}/profile/${user.id}`;
@@ -141,13 +115,16 @@ const Menu = () => {
         textarea.style.opacity = "0";
         document.body.appendChild(textarea);
         textarea.select();
-        document.execCommand("copy");
+        const copied = document.execCommand("copy");
         textarea.remove();
+        if (!copied) throw new Error("Clipboard copy was rejected");
       }
       toast({ title: "Link copied!", description: "Profile link copied to clipboard." });
+      return true;
     } catch (error) {
       console.error("Copy profile link failed:", error);
       toast({ title: "Couldn't copy link", description: "Please copy the profile URL from your browser.", variant: "destructive" });
+      return false;
     }
   };
 
@@ -171,7 +148,7 @@ const Menu = () => {
         await copyProfileLink();
       }
     } catch (error) {
-      // AbortError means the user intentionally closed the native share sheet.
+      // Closing the native share sheet is not an error.
       if (error instanceof DOMException && error.name === "AbortError") return;
       console.error("Share profile failed:", error);
       await copyProfileLink();
@@ -188,11 +165,7 @@ const Menu = () => {
   }
 
   const archiveMenuItem: MenuItem = {
-    id: "archive",
-    icon: Archive,
-    label: "Archive",
-    description: "View your archived posts",
-    path: "#",
+    id: "archive", icon: Archive, label: "Archive", description: "View your archived posts", path: "#",
     onClick: () => setArchiveModalOpen(true),
   };
 
@@ -203,10 +176,7 @@ const Menu = () => {
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: delay + index * 0.03 }}
-      onClick={() => {
-        if (item.onClick) item.onClick();
-        else navigate(item.path);
-      }}
+      onClick={() => (item.onClick ? item.onClick() : navigate(item.path))}
       className="w-full flex items-center gap-3.5 p-3.5 rounded-2xl hover:bg-muted/40 transition-all text-left group"
     >
       <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-muted/60 group-hover:bg-muted transition-colors">
@@ -221,9 +191,7 @@ const Menu = () => {
   );
 
   const renderSectionLabel = (label: string) => (
-    <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider px-3.5 pt-4 pb-1">
-      {label}
-    </p>
+    <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider px-3.5 pt-4 pb-1">{label}</p>
   );
 
   return (
@@ -238,21 +206,14 @@ const Menu = () => {
       </div>
 
       <div className="max-w-screen-md mx-auto px-4 py-4 space-y-1">
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
-          <MenuSearchBar />
-        </motion.div>
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}><MenuSearchBar /></motion.div>
 
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.03 }}>
-          <Card
-            className="p-4 mt-3 cursor-pointer hover:bg-muted/30 transition-colors"
-            onClick={() => navigate("/profile")}
-          >
+          <Card className="p-4 mt-3 cursor-pointer hover:bg-muted/30 transition-colors" onClick={() => navigate("/profile")}>
             <div className="flex items-center gap-3">
               <Avatar className="h-12 w-12 ring-2 ring-border">
                 <AvatarImage src={profile?.avatar_url || undefined} alt={profile?.display_name || profile?.username || "Profile"} />
-                <AvatarFallback className="bg-muted text-muted-foreground text-lg">
-                  {profile?.username?.charAt(0).toUpperCase() || "P"}
-                </AvatarFallback>
+                <AvatarFallback className="bg-muted text-muted-foreground text-lg">{profile?.username?.charAt(0).toUpperCase() || "P"}</AvatarFallback>
               </Avatar>
               <div className="flex-1 min-w-0">
                 <p className="font-semibold text-foreground truncate flex items-center gap-2">
@@ -266,12 +227,7 @@ const Menu = () => {
           </Card>
         </motion.div>
 
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.06 }}
-          className="flex items-center justify-around py-3"
-        >
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.06 }} className="flex items-center justify-around py-3">
           {[
             { icon: Share2, label: "Share", action: handleShareProfile },
             { icon: Link2, label: "Copy Link", action: copyProfileLink },
@@ -279,9 +235,7 @@ const Menu = () => {
             { icon: Info, label: "About", action: () => navigate("/about") },
           ].map((item) => (
             <button type="button" key={item.label} onClick={item.action} className="flex flex-col items-center gap-1.5 p-2 rounded-xl hover:bg-muted/40 transition-colors">
-              <div className="w-10 h-10 rounded-xl bg-muted/60 flex items-center justify-center">
-                <item.icon className="h-5 w-5 text-foreground" />
-              </div>
+              <div className="w-10 h-10 rounded-xl bg-muted/60 flex items-center justify-center"><item.icon className="h-5 w-5 text-foreground" /></div>
               <span className="text-[11px] text-muted-foreground">{item.label}</span>
             </button>
           ))}
@@ -296,12 +250,7 @@ const Menu = () => {
           {renderMenuRow(archiveMenuItem, quickAccessItems.length, 0.3)}
         </div>
 
-        {roleItems.length > 0 && (
-          <>
-            {renderSectionLabel("Panels")}
-            <div className="space-y-0.5">{roleItems.map((item, i) => renderMenuRow(item, i, 0.42))}</div>
-          </>
-        )}
+        {roleItems.length > 0 && <><>{renderSectionLabel("Panels")}</><div className="space-y-0.5">{roleItems.map((item, i) => renderMenuRow(item, i, 0.42))}</div></>}
 
         {renderSectionLabel("Settings")}
         <div className="space-y-0.5">{settingsItems.map((item, i) => renderMenuRow(item, i, 0.5))}</div>
@@ -310,22 +259,9 @@ const Menu = () => {
         <div className="space-y-0.5">{legalItems.map((item, i) => renderMenuRow(item, i, 0.56))}</div>
 
         <div className="pt-4">
-          <motion.button
-            type="button"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.7 }}
-            onClick={handleSignOut}
-            disabled={isSigningOut}
-            className="w-full flex items-center gap-3.5 p-3.5 rounded-2xl hover:bg-destructive/10 transition-all text-left group disabled:opacity-60 disabled:cursor-not-allowed"
-          >
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-destructive/10">
-              <LogOut className="h-5 w-5 text-destructive" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-destructive">{isSigningOut ? "Logging Out..." : "Log Out"}</p>
-              <p className="text-xs text-muted-foreground">Sign out of your account</p>
-            </div>
+          <motion.button type="button" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.7 }} onClick={handleSignOut} disabled={isSigningOut} className="w-full flex items-center gap-3.5 p-3.5 rounded-2xl hover:bg-destructive/10 transition-all text-left group disabled:opacity-60 disabled:cursor-not-allowed">
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-destructive/10"><LogOut className="h-5 w-5 text-destructive" /></div>
+            <div className="flex-1 min-w-0"><p className="text-sm font-semibold text-destructive">{isSigningOut ? "Logging Out..." : "Log Out"}</p><p className="text-xs text-muted-foreground">Sign out of your account</p></div>
           </motion.button>
         </div>
 
