@@ -1138,3 +1138,100 @@
     scroll-behavior: smooth;
   }
 }
+
+/* ============================================================
+   VERIFIED EXCLUSIVE THEMES - Yellow Gold & Mono B&W
+   Only for is_verified users
+   ============================================================ */
+@layer utilities {
+  /* Yellow Gold Theme */
+  .profile-theme-yellow {
+    --profile-accent: 45 100% 55%;
+    --profile-accent-foreground: 0 0% 10%;
+    --profile-bg: 48 100% 96%;
+    --profile-border: 45 90% 70%;
+  }
+  .dark .profile-theme-yellow {
+    --profile-accent: 45 95% 60%;
+    --profile-bg: 45 30% 12%;
+    --profile-border: 45 70% 40%;
+  }
+
+  .profile-theme-yellow .profile-banner {
+    border-color: hsl(45 90% 60% / 0.5) !important;
+    box-shadow: 0 0 0 1px hsl(45 100% 55% / 0.2), 0 8px 24px -8px hsl(45 100% 55% / 0.3) !important;
+  }
+  .profile-theme-yellow .profile-avatar-ring {
+    box-shadow: 0 0 0 3px hsl(45 100% 55%), 0 0 20px hsl(45 100% 55% / 0.4) !important;
+  }
+  .profile-theme-yellow .profile-name {
+    background: linear-gradient(135deg, #d97706, #f59e0b, #fbbf24);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .profile-theme-yellow .profile-follow-btn {
+    background: linear-gradient(135deg, #f59e0b, #fbbf24) !important;
+    color: black !important;
+    border-color: #f59e0b !important;
+    box-shadow: 0 4px 16px hsl(45 100% 55% / 0.35) !important;
+  }
+  .profile-theme-yellow .profile-badge {
+    background: linear-gradient(135deg, #f59e0b, #fbbf24) !important;
+    color: black !important;
+  }
+
+  /* Mono Black & White Theme */
+  .profile-theme-mono {
+    --profile-accent: 0 0% 15%;
+    --profile-bg: 0 0% 98%;
+    --profile-border: 0 0% 85%;
+    filter: grayscale(0.1);
+  }
+  .dark .profile-theme-mono {
+    --profile-accent: 0 0% 85%;
+    --profile-bg: 0 0% 8%;
+    --profile-border: 0 0% 20%;
+  }
+  .profile-theme-mono .profile-banner {
+    filter: grayscale(1) contrast(1.1);
+    border-color: hsl(0 0% 20% / 0.3) !important;
+  }
+  .profile-theme-mono .profile-avatar-ring {
+    box-shadow: 0 0 0 2px white, 0 0 0 4px black, 0 4px 16px rgba(0,0,0,0.2) !important;
+  }
+  .dark .profile-theme-mono .profile-avatar-ring {
+    box-shadow: 0 0 0 2px black, 0 0 0 4px white, 0 4px 16px rgba(255,255,255,0.15) !important;
+  }
+  .profile-theme-mono .profile-follow-btn {
+    background: black !important;
+    color: white !important;
+    border-color: black !important;
+  }
+  .dark .profile-theme-mono .profile-follow-btn {
+    background: white !important;
+    color: black !important;
+    border-color: white !important;
+  }
+  .profile-theme-mono {
+    background: linear-gradient(to bottom, hsl(0 0% 98%), hsl(0 0% 100%));
+  }
+  .dark .profile-theme-mono {
+    background: linear-gradient(to bottom, hsl(0 0% 8%), hsl(0 0% 10%));
+  }
+
+  /* Verified badge exclusive glow */
+  .verified-exclusive {
+    position: relative;
+  }
+  .verified-exclusive::after {
+    content: '';
+    position: absolute;
+    inset: -2px;
+    border-radius: inherit;
+    background: linear-gradient(135deg, #f59e0b, #fbbf24);
+    z-index: -1;
+    filter: blur(8px);
+    opacity: 0.3;
+  }
+}
