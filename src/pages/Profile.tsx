@@ -25,7 +25,7 @@ const Profile = () => {
   const [showAnalytics, setShowAnalytics] = useState(false);
   const [showAbout, setShowAbout] = useState(false);
 
-  const { data: profile, isLoading: profileLoading } = useQuery({
+  const { data: profile, isLoading: profileLoading, error: profileError } = useQuery({
     queryKey: ["profile", user?.id],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -116,10 +116,21 @@ const Profile = () => {
     }
   };
 
+  if (profileError) {
+    return (
+      <MainLayout>
+        <div className="max-w-screen-lg mx-auto min-h-screen p-8 text-center">
+          <p className="text-muted-foreground">Failed to load profile: {(profileError as any)?.message}</p>
+          <p className="text-xs mt-2">If this is about profile_theme column, run SQL: ALTER TABLE profiles ADD COLUMN profile_theme TEXT DEFAULT 'default';</p>
+        </div>
+      </MainLayout>
+    );
+  }
+
   return (
     <MainLayout>
       <Seo title="Your Profile on Prangon" description="Manage your Prangon profile: update your cover photo, bio and social links, and review the posts, reels and Circles you have shared." path="/profile" />
-      <div className="max-w-screen-lg mx-auto bg-background min-h-screen">
+      <div className="max-w-screen-lg mx-auto bg-transparent min-h-screen">
         <ProfileHeader profile={profile} userId={user?.id || ""} isOwner={true} postsCount={posts?.length || 0} onEditClick={() => setIsEditDialogOpen(true)} onAnalyticsClick={() => setShowAnalytics(!showAnalytics)} onAboutClick={() => setShowAbout(!showAbout)} isLoading={profileLoading} />
 
         <AnimatePresence>
@@ -144,8 +155,7 @@ const Profile = () => {
 
         <ProfileTabs activeTab={activeTab} onTabChange={setActiveTab} tabs={tabs} />
 
-        <AnimatePresence mode="wait">
-          <motion.div key={activeTab} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
+        <div key={activeTab}>
             {viewMode === "grid" ? (
               <ProfileContentGrid items={creations} activeTab={activeTab} isLoading={postsLoading} onItemClick={(item) => setSelectedPostId(item.id)} />
             ) : (
@@ -172,8 +182,7 @@ const Profile = () => {
                 {getFilteredPosts().length === 0 && <p className="text-center text-muted-foreground py-8">No content yet</p>}
               </div>
             )}
-          </motion.div>
-        </AnimatePresence>
+          </div>
 
         <EditProfileDialog profile={profile} open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen} />
         <PostViewDialog postId={selectedPostId} open={!!selectedPostId} onOpenChange={(open) => !open && setSelectedPostId(null)} />
