@@ -1,162 +1,81 @@
 import { cn } from "@/lib/utils";
-
-interface ShimmerProps {
-  className?: string;
-}
-
+interface ShimmerProps { className?: string; }
 export const Shimmer = ({ className }: ShimmerProps) => (
-  <div className={cn("shimmer rounded-lg", className)} />
+  <div className={cn("shimmer rounded-xl", className)} />
 );
-
 export const PostSkeleton = () => (
-  <div className="bg-card rounded-2xl p-4 space-y-4 animate-fade-in">
-    {/* Header */}
+  <div className="bg-card rounded-[28px] p-4 space-y-4 border border-border/50 animate-fade-in shadow-sm">
     <div className="flex items-center gap-3">
-      <Shimmer className="h-10 w-10 rounded-full" />
+      <Shimmer className="h-11 w-11 rounded-full" />
       <div className="flex-1 space-y-2">
-        <Shimmer className="h-4 w-32" />
-        <Shimmer className="h-3 w-20" />
+        <Shimmer className="h-4 w-32 rounded-full" />
+        <Shimmer className="h-3 w-20 rounded-full" />
       </div>
     </div>
-    {/* Content */}
     <div className="space-y-2">
-      <Shimmer className="h-4 w-full" />
-      <Shimmer className="h-4 w-3/4" />
+      <Shimmer className="h-4 w-full rounded-full" />
+      <Shimmer className="h-4 w-3/4 rounded-full" />
     </div>
-    {/* Media */}
-    <Shimmer className="h-64 w-full rounded-xl" />
-    {/* Actions */}
-    <div className="flex gap-4">
-      <Shimmer className="h-8 w-16 rounded-full" />
-      <Shimmer className="h-8 w-16 rounded-full" />
-      <Shimmer className="h-8 w-16 rounded-full" />
+    <Shimmer className="h-72 w-full rounded-[20px]" />
+    <div className="flex gap-2">
+      <Shimmer className="h-9 w-20 rounded-full" />
+      <Shimmer className="h-9 w-20 rounded-full" />
+      <Shimmer className="h-9 w-9 rounded-full ml-auto" />
     </div>
   </div>
 );
-
 export const StorySkeleton = () => (
-  <div className="flex gap-4 overflow-hidden px-4">
+  <div className="flex gap-4 overflow-hidden px-4 py-2">
     {Array.from({ length: 6 }).map((_, i) => (
       <div key={i} className="flex flex-col items-center gap-2">
-        <Shimmer className="h-16 w-16 rounded-full" />
-        <Shimmer className="h-3 w-12" />
+        <Shimmer className="h-[72px] w-[72px] rounded-full" />
+        <Shimmer className="h-3 w-12 rounded-full" />
       </div>
     ))}
   </div>
 );
-
 export const MessageSkeleton = () => (
   <div className="p-4 space-y-4">
     {Array.from({ length: 5 }).map((_, i) => (
       <div key={i} className="flex items-center gap-3">
         <Shimmer className="h-12 w-12 rounded-full" />
         <div className="flex-1 space-y-2">
-          <Shimmer className="h-4 w-24" />
-          <Shimmer className="h-3 w-48" />
+          <Shimmer className="h-4 w-24 rounded-full" />
+          <Shimmer className="h-3 w-48 rounded-full" />
         </div>
-        <Shimmer className="h-3 w-10" />
+        <Shimmer className="h-3 w-10 rounded-full" />
       </div>
     ))}
   </div>
 );
-
 export const ChatMessageSkeleton = () => (
   <div className="space-y-3 p-4">
     {Array.from({ length: 8 }).map((_, i) => (
       <div key={i} className={cn("flex gap-2", i % 3 !== 0 ? "justify-end" : "justify-start")}>
         {i % 3 === 0 && <Shimmer className="h-8 w-8 rounded-full" />}
-        <Shimmer className={cn(
-          "h-10 rounded-2xl",
-          i % 3 !== 0 ? "w-32 rounded-br-md" : "w-48 rounded-bl-md"
-        )} />
+        <Shimmer className={cn("h-10 rounded-2xl", i % 3 !== 0 ? "w-32 rounded-br-md" : "w-48 rounded-bl-md")} />
       </div>
     ))}
   </div>
 );
-
 export const ProfileSkeleton = () => (
   <div className="space-y-6 animate-fade-in">
-    {/* Cover & Avatar */}
-    <Shimmer className="h-32 w-full" />
-    <div className="px-4 -mt-12 flex items-end gap-4">
-      <Shimmer className="h-24 w-24 rounded-full border-4 border-background" />
+    <Shimmer className="h-40 w-full rounded-none" />
+    <div className="px-4 -mt-14 flex items-end gap-4">
+      <Shimmer className="h-28 w-28 rounded-full border-4 border-background shadow-md" />
       <div className="flex-1 space-y-2 pb-2">
-        <Shimmer className="h-5 w-32" />
-        <Shimmer className="h-4 w-20" />
+        <Shimmer className="h-5 w-32 rounded-full" />
+        <Shimmer className="h-4 w-20 rounded-full" />
       </div>
     </div>
-    {/* Bio */}
     <div className="px-4 space-y-2">
-      <Shimmer className="h-4 w-full" />
-      <Shimmer className="h-4 w-2/3" />
+      <Shimmer className="h-4 w-full rounded-full" />
+      <Shimmer className="h-4 w-2/3 rounded-full" />
     </div>
-    {/* Stats */}
     <div className="flex gap-8 px-4">
-      <Shimmer className="h-10 w-16" />
-      <Shimmer className="h-10 w-16" />
-      <Shimmer className="h-10 w-16" />
+      <Shimmer className="h-10 w-16 rounded-xl" />
+      <Shimmer className="h-10 w-16 rounded-xl" />
+      <Shimmer className="h-10 w-16 rounded-xl" />
     </div>
-  </div>
-);
-
-export const ChatListSkeleton = () => (
-  <div className="p-2 space-y-2">
-    {Array.from({ length: 6 }).map((_, i) => (
-      <div key={i} className="flex items-center gap-3 p-3 rounded-xl">
-        <Shimmer className="h-12 w-12 rounded-full" />
-        <div className="flex-1 space-y-2">
-          <div className="flex justify-between">
-            <Shimmer className="h-4 w-24" />
-            <Shimmer className="h-3 w-10" />
-          </div>
-          <Shimmer className="h-3 w-40" />
-        </div>
-      </div>
-    ))}
-  </div>
-);
-
-export const PanelSkeleton = () => (
-  <div className="space-y-6 p-6 animate-fade-in">
-    {/* Header */}
-    <div className="flex items-center justify-between">
-      <Shimmer className="h-8 w-48" />
-      <Shimmer className="h-10 w-32 rounded-lg" />
-    </div>
-    
-    {/* Stats cards */}
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-      {Array.from({ length: 4 }).map((_, i) => (
-        <div key={i} className="p-4 rounded-xl border bg-card space-y-3">
-          <Shimmer className="h-4 w-20" />
-          <Shimmer className="h-8 w-16" />
-          <Shimmer className="h-3 w-24" />
-        </div>
-      ))}
-    </div>
-    
-    {/* Table */}
-    <div className="border rounded-xl overflow-hidden">
-      <div className="p-4 border-b bg-muted/30">
-        <Shimmer className="h-5 w-32" />
-      </div>
-      {Array.from({ length: 5 }).map((_, i) => (
-        <div key={i} className="flex items-center gap-4 p-4 border-b last:border-b-0">
-          <Shimmer className="h-10 w-10 rounded-full" />
-          <Shimmer className="h-4 w-32" />
-          <Shimmer className="h-4 w-24 ml-auto" />
-          <Shimmer className="h-8 w-20 rounded-lg" />
-        </div>
-      ))}
-    </div>
-  </div>
-);
-
-export const FeedSkeleton = () => (
-  <div className="space-y-4">
-    <StorySkeleton />
-    {Array.from({ length: 3 }).map((_, i) => (
-      <PostSkeleton key={i} />
-    ))}
   </div>
 );
