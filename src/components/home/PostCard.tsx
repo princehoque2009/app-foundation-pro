@@ -25,6 +25,7 @@ import { RenderMentions } from "@/components/ui/RenderMentions";
 import { useRecordPostView } from "@/hooks/usePostViews";
 import { ReactionTrayButton } from "./ReactionTrayButton";
 import { getReactionMeta } from "@/hooks/usePostReactions";
+import { MessageCircle, Share2, Bookmark } from "lucide-react";
 
 interface PostCardProps {
   id: string;
@@ -118,51 +119,88 @@ export const PostCard = ({ id, author, content, image, video, mediaItems, likes,
 
   return (
     <>
-      <article className="mb-8 pb-7 border-b border-border/60 animate-fade-in">
-        <div className="flex items-center gap-3 mb-3">
-          <div className="flex items-center gap-3 cursor-pointer group min-w-0 flex-1" onClick={handleProfileClick}>
-            <Avatar className="h-11 w-11 shrink-0 ring-1 ring-border transition-transform group-hover:scale-105">
-              <AvatarImage src={author.avatar || undefined} alt={author.name} />
-              <AvatarFallback className="bg-muted text-muted-foreground"><span className="text-xs">?</span></AvatarFallback>
-            </Avatar>
-            <div className="min-w-0 flex items-center gap-1.5 flex-wrap">
-              <span className={cn("font-bold text-[14.5px] leading-tight truncate group-hover:text-primary transition-colors", authorEffects.hasRainbowName ? "bg-gradient-to-r from-red-500 via-yellow-500 via-green-500 via-blue-500 to-purple-500 bg-clip-text text-transparent" : "text-foreground")}>{author.name}</span>
-              {author.isVerified && <VerifiedBadge size="sm" />}
-              {authorEffects.hasCustomBadge && <span className="inline-flex items-center justify-center h-4 w-4 rounded-full bg-gradient-to-r from-violet-500 to-purple-600 text-[8px] text-white font-bold">★</span>}
-              <span className="text-[12px] text-muted-foreground/80 truncate">@{author.username}</span>
-              <span className="text-muted-foreground/50 text-[12px]">·</span>
-              <span className="text-[12px] text-muted-foreground/80">{formatDistanceToNow(new Date(timestamp), { addSuffix: true })}</span>
-              {userRoles && userRoles.length > 0 && <UserRoleBadges roles={userRoles as any} size="sm" />}
+      <article className="group relative mb-5 rounded-[28px] border border-border/60 bg-card shadow-sm transition-all duration-300 hover:border-border/80 hover:shadow-md hover:-translate-y-[1px] animate-fade-in overflow-hidden">
+        {/* Header */}
+        <div className="flex items-center gap-3 p-4 pb-3">
+          <div className="flex items-center gap-3 cursor-pointer group/avatar min-w-0 flex-1" onClick={handleProfileClick}>
+            <div className="relative">
+              <Avatar className="h-11 w-11 shrink-0 ring-1 ring-border/50 transition-all duration-200 group-hover/avatar:scale-[1.03] group-hover/avatar:ring-border">
+                <AvatarImage src={author.avatar || undefined} alt={author.name} className="object-cover" />
+                <AvatarFallback className="bg-muted text-muted-foreground"><span className="text-xs font-medium">?</span></AvatarFallback>
+              </Avatar>
+              <div className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-success border-2 border-card hidden group-hover/avatar:block" />
+            </div>
+            <div className="min-w-0 flex flex-col gap-0.5">
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <span className={cn("font-semibold text-[14.5px] leading-tight truncate group-hover/avatar:text-primary transition-colors tracking-tight", authorEffects.hasRainbowName ? "bg-gradient-to-r from-red-500 via-yellow-500 via-green-500 via-blue-500 to-purple-500 bg-clip-text text-transparent" : "text-foreground")}>{author.name}</span>
+                {author.isVerified && <VerifiedBadge size="sm" />}
+                {authorEffects.hasCustomBadge && <span className="inline-flex items-center justify-center h-4 w-4 rounded-full bg-gradient-to-r from-violet-500 to-purple-600 text-[8px] text-white font-bold shadow-sm">★</span>}
+                {userRoles && userRoles.length > 0 && <UserRoleBadges roles={userRoles as any} size="sm" />}
+              </div>
+              <div className="flex items-center gap-1.5 text-[12px] text-muted-foreground">
+                <span className="truncate max-w-[110px]">@{author.username}</span>
+                <span className="h-0.5 w-0.5 rounded-full bg-muted-foreground/40" />
+                <span className="text-[11.5px]">{formatDistanceToNow(new Date(timestamp), { addSuffix: true })}</span>
+              </div>
             </div>
           </div>
           <PostMenu postId={id} postUserId={author.userId || ""} mediaUrl={image || video} mediaType={video ? "video" : "image"} onEdit={handleEdit} onDelete={handleDelete} onShare={handleShare} />
         </div>
 
-        {content && <p className="text-[15px] leading-relaxed text-foreground select-none mb-3"><RenderMentions text={content} /></p>}
+        {/* Content */}
+        {content && (
+          <div className="px-4 pb-3">
+            <p className="text-[15px] leading-[1.55] text-foreground/90 tracking-[-0.01em] whitespace-pre-wrap break-words">
+              <RenderMentions text={content} />
+            </p>
+          </div>
+        )}
 
+        {/* Media */}
         {mediaItems && mediaItems.length > 0 ? (
-          <div className="relative bg-muted/40 cursor-pointer overflow-hidden select-none rounded-xl border border-border" onDoubleClick={handleDoubleTap} onContextMenu={(e) => e.preventDefault()}>
+          <div className="relative bg-muted/30 cursor-pointer overflow-hidden select-none border-y border-border/40" onDoubleClick={handleDoubleTap} onContextMenu={(e) => e.preventDefault()}>
             <MediaCarousel media={mediaItems} onDoubleClick={handleDoubleTap} />
             <AnimatePresence>{showHeartAnimation && <motion.div initial={{ scale: 0, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 1.8, opacity: 0 }} transition={{ duration: 0.5, ease: "easeOut" }} className="absolute inset-0 flex items-center justify-center pointer-events-none z-10"><span className="text-7xl drop-shadow-2xl">{getReactionMeta(myReaction || "love").emoji}</span></motion.div>}</AnimatePresence>
           </div>
         ) : (image || video) && (
-          <div className="relative bg-muted/40 cursor-pointer overflow-hidden select-none rounded-xl border border-border" onDoubleClick={handleDoubleTap} onContextMenu={(e) => e.preventDefault()}>
-            {image && <>{!isImageLoaded && <div className="w-full h-80 shimmer" />}<img src={image} alt="Post" className={cn("w-full object-cover max-h-[520px] transition-opacity duration-300 pointer-events-none", isImageLoaded ? "opacity-100" : "opacity-0 h-0")} loading="lazy" onLoad={() => setIsImageLoaded(true)} draggable={false} /></>}
-            {video && <PrangonVideoPlayer src={video} className="w-full max-h-[520px]" compact />}
+          <div className="relative bg-muted/30 cursor-pointer overflow-hidden select-none border-y border-border/40" onDoubleClick={handleDoubleTap} onContextMenu={(e) => e.preventDefault()}>
+            {image && <>
+              {!isImageLoaded && <div className="w-full h-80 shimmer rounded-none" />}
+              <img src={image} alt="Post" className={cn("w-full object-cover max-h-[560px] transition-opacity duration-300", isImageLoaded ? "opacity-100" : "opacity-0 h-0")} loading="lazy" onLoad={() => setIsImageLoaded(true)} draggable={false} />
+            </>}
+            {video && <PrangonVideoPlayer src={video} className="w-full max-h-[560px]" compact />}
             <AnimatePresence>{showHeartAnimation && <motion.div initial={{ scale: 0, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 1.8, opacity: 0 }} transition={{ duration: 0.5, ease: "easeOut" }} className="absolute inset-0 flex items-center justify-center pointer-events-none"><span className="text-7xl drop-shadow-2xl">{getReactionMeta(myReaction || "love").emoji}</span></motion.div>}</AnimatePresence>
           </div>
         )}
 
-        {likeCount > 0 && <div className="pt-3"><button onClick={() => setShowReactionBreakdown(true)} className="inline-flex items-center gap-1.5 bg-muted rounded-full px-2.5 py-1 text-xs font-semibold hover:opacity-80 transition-opacity"><span className="flex -space-x-1">{Object.entries(reactionData?.counts || {}).filter(([_, c]) => (c as number) > 0).sort((a, b) => (b[1] as number) - (a[1] as number)).slice(0, 3).map(([key]) => <span key={key} className="text-sm leading-none">{getReactionMeta(key).emoji}</span>)}</span><span className="tabular-nums text-foreground/80">{likeCount}</span></button></div>}
+        {/* Reaction count pill - refined */}
+        {likeCount > 0 && (
+          <div className="px-4 pt-3">
+            <button onClick={() => setShowReactionBreakdown(true)} className="reaction-pill lg-press">
+              <span className="flex -space-x-1">
+                {Object.entries(reactionData?.counts || {}).filter(([_, c]) => (c as number) > 0).sort((a, b) => (b[1] as number) - (a[1] as number)).slice(0, 3).map(([key]) => <span key={key} className="text-[14px] leading-none drop-shadow-sm">{getReactionMeta(key).emoji}</span>)}
+              </span>
+              <span className="tabular-nums text-foreground/80">{likeCount}</span>
+            </button>
+          </div>
+        )}
 
-        <div className="pt-3">
+        {/* Action bar - modern pill style */}
+        <div className="p-2.5 pt-3">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-0.5">
+            <div className="flex items-center gap-1">
               <ReactionTrayButton currentReaction={myReaction} count={likeCount} onReact={handleReact} disabled={toggleReaction.isPending} />
-              <Button variant="ghost" size="sm" className="gap-1.5 h-9 px-2.5 rounded-full hover:bg-muted/60 transition-all" onClick={() => setShowComments(true)}><MessageCircle className="h-[22px] w-[22px]" strokeWidth={1.75} />{comments > 0 && <span className="text-[13px] font-semibold tabular-nums">{comments}</span>}</Button>
-              <Button variant="ghost" size="sm" className="h-9 px-2.5 rounded-full hover:bg-muted/60 transition-all" onClick={handleShare}><Share2 className="h-[20px] w-[20px]" strokeWidth={1.75} /></Button>
+              <Button variant="ghost" size="sm" className="h-9 gap-1.5 rounded-full px-3 text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-all" onClick={() => setShowComments(true)}>
+                <MessageCircle className="h-[20px] w-[20px]" strokeWidth={1.75} />
+                {comments > 0 && <span className="text-[13px] font-semibold tabular-nums">{comments}</span>}
+              </Button>
+              <Button variant="ghost" size="sm" className="h-9 rounded-full px-3 text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-all" onClick={handleShare}>
+                <Share2 className="h-[19px] w-[19px]" strokeWidth={1.75} />
+              </Button>
             </div>
-            <Button variant="ghost" size="sm" className="h-9 px-2.5 rounded-full hover:bg-muted/60 transition-all" onClick={() => { if (isSaved) unsavePost.mutate(id); else savePost.mutate(id); }} disabled={savePost.isPending || unsavePost.isPending}><Bookmark className={cn("h-[20px] w-[20px] transition-all", isSaved && "fill-primary text-primary")} strokeWidth={1.75} /></Button>
+            <Button variant="ghost" size="sm" className="h-9 w-9 rounded-full hover:bg-muted/80 transition-all" onClick={() => { if (isSaved) unsavePost.mutate(id); else savePost.mutate(id); }} disabled={savePost.isPending || unsavePost.isPending}>
+              <Bookmark className={cn("h-[19px] w-[19px] transition-all", isSaved ? "fill-primary text-primary" : "text-muted-foreground")} strokeWidth={isSaved ? 2 : 1.75} />
+            </Button>
           </div>
         </div>
       </article>
