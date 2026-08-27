@@ -1,4 +1,4 @@
-import { useState } from "react";
+iimport { useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -124,7 +124,7 @@ export const ProfileHeader = ({
             </div>
             <div className="mt-1 text-sm text-muted-foreground">@{profile?.username}</div>
             {profile?.bio && <p className="text-sm text-foreground/85 leading-relaxed pt-3 max-w-md mx-auto whitespace-pre-wrap">{profile.bio}</p>}
-            {profile?.social_links && Object.keys(profile.social_links).length > 0 && <div className="pt-3 flex justify-center"><SocialLinksInline links={profile.social_links} /></div>}
+            {profile?.social_links && typeof profile.social_links === 'object' && Object.keys(profile.social_links as any).length > 0 && <div className="pt-3 flex justify-center"><SocialLinksInline links={profile.social_links} /></div>}
             {profile?.country && <div className="mt-2 text-[11px] uppercase tracking-widest text-muted-foreground">{profile.country}</div>}
             <div className="mt-4 text-xs text-muted-foreground"><span className="font-semibold text-foreground tabular-nums">{postsCount}</span> Posts</div>
           </motion.div>
