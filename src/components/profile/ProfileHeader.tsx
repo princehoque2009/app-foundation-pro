@@ -57,18 +57,18 @@ export const ProfileHeader = ({ profile, userId, isOwner, postsCount, onEditClic
 
         <div className="px-4 sm:px-6 max-w-2xl mx-auto">
           <div className="relative flex items-center justify-between -mt-12 sm:-mt-14">
-            <button className="flex-1 text-center pt-14" onClick={() => openFollowersDialog("followers")}><div className="text-lg font-semibold tabular-nums">{profile?.followers_count || 0}</div><div className="text-xs text-muted-foreground">Followers</div></button>
+            <button className="flex-1 text-center pt-14" onClick={() => openFollowersDialog("followers")}><div className="text-lg font-semibold tabular-nums">{profile?.followers_count ?? 0}</div><div className="text-xs text-muted-foreground">Followers</div></button>
             <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="relative z-10">
-              <div className={cn("profile-avatar-ring rounded-full bg-background p-1 shadow-md", effects.hasNeonFrame && "ring-2 ring-fuchsia-500", theme === 'yellow' && "ring-2 ring-amber-400 shadow-[0_0_0_3px_rgba(251,191,36,0.3),0_0_24px_rgba(251,191,36,0.4)]", theme === 'mono' && "ring-2 ring-white dark:ring-black shadow-[0_0_0_4px_black]")} onClick={isOwner ? onEditClick : undefined}>
+              <div className={cn("profile-avatar-ring rounded-full bg-background p-1 shadow-md", theme === 'yellow' && "ring-2 ring-amber-400 shadow-[0_0_0_3px_rgba(251,191,36,0.3),0_0_24px_rgba(251,191,36,0.4)]", theme === 'mono' && "ring-2 ring-white dark:ring-black shadow-[0_0_0_4px_black]")} onClick={isOwner ? onEditClick : undefined}>
                 <Avatar className={cn("h-24 w-24 sm:h-28 sm:w-28", isOwner && "cursor-pointer")}><AvatarImage src={profile?.avatar_url || ""} className={cn(theme === 'mono' && "grayscale")} /><AvatarFallback><UserCircle className="h-12 w-12" /></AvatarFallback></Avatar>
               </div>
             </motion.div>
-            <button className="flex-1 text-center pt-14" onClick={() => openFollowersDialog("following")}><div className="text-lg font-semibold tabular-nums">{profile?.following_count || 0}</div><div className="text-xs text-muted-foreground">Following</div></button>
+            <button className="flex-1 text-center pt-14" onClick={() => openFollowersDialog("following")}><div className="text-lg font-semibold tabular-nums">{profile?.following_count ?? 0}</div><div className="text-xs text-muted-foreground">Following</div></button>
           </div>
 
           <motion.div initial={{ y: 10, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="mt-3 text-center">
             <div className="flex items-center justify-center gap-2 flex-wrap">
-              <h1 className={cn("profile-name text-xl sm:text-2xl font-semibold", theme === 'yellow' ? "bg-gradient-to-r from-amber-600 via-yellow-500 to-amber-400 bg-clip-text text-transparent" : "text-foreground")}>{profile?.display_name || profile?.username}</h1>
+              <h1 className={cn("profile-name text-xl sm:text-2xl font-semibold tracking-tight", theme === 'yellow' ? "bg-gradient-to-r from-amber-600 via-yellow-500 to-amber-400 bg-clip-text text-transparent" : "text-foreground")}>{profile?.display_name || profile?.username}</h1>
               {profile?.is_verified && <VerifiedBadge size="lg" />}<UserRolesDisplay userId={userId} size="sm" />
             </div>
             <div className="mt-1 text-sm text-muted-foreground">@{profile?.username}</div>
@@ -86,7 +86,7 @@ export const ProfileHeader = ({ profile, userId, isOwner, postsCount, onEditClic
           )}
         </div>
       </div>
-      <FollowersFollowingDialog open={isFollowersDialogOpen} onOpenChange={setIsFollowersDialogOpen} userId={userId} initialTab={followersDialogTab} followersCount={profile?.followers_count || 0} followingCount={profile?.following_count || 0} />
+      <FollowersFollowingDialog open={isFollowersDialogOpen} onOpenChange={setIsFollowersDialogOpen} userId={userId} initialTab={followersDialogTab} followersCount={profile?.followers_count ?? 0} followingCount={profile?.following_count ?? 0} />
     </>
   );
 };
