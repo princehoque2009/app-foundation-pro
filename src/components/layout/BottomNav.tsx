@@ -8,9 +8,7 @@ import { useScrollCollapse, usePrefersReducedMotion, SPRING } from "@/hooks/useS
 import { useCurrentProfile } from "@/hooks/useCurrentProfile";
 
 interface BottomNavProps {
-  /** Force collapsed (Reels pages instead of scrolling) */
   forceCollapsed?: boolean;
-  /** Dim to 50% opacity when idle */
   dimmed?: boolean;
 }
 
@@ -21,8 +19,8 @@ const ProfileAvatar = memo(
     return (
       <span
         className={cn(
-          "relative inline-flex items-center justify-center rounded-full overflow-hidden bg-muted transition-[box-shadow,width,height] duration-200",
-          active ? "ring-2 ring-primary" : "ring-[1.5px] ring-border"
+          "relative inline-flex items-center justify-center rounded-full overflow-hidden bg-muted transition-all duration-200",
+          active ? "ring-2 ring-primary ring-offset-1 ring-offset-background shadow-sm" : "ring-1 ring-border/60"
         )}
         style={{ width: size, height: size }}
       >
@@ -80,25 +78,25 @@ export const BottomNav = memo(({ forceCollapsed = false, dimmed = false }: Botto
           aria-current={isActive ? "page" : undefined}
           aria-label={item.label}
           className={cn(
-            "relative flex flex-col items-center justify-center gap-1 lg-press lg-focus rounded-full",
-            collapsed ? "h-11 w-[52px]" : "h-[52px] w-[62px]"
+            "relative flex flex-col items-center justify-center gap-1 lg-press lg-focus rounded-full transition-all",
+            collapsed ? "h-11 w-[52px]" : "h-[54px] w-[64px]"
           )}
         >
           {isActive && (
             <motion.span
               layoutId="bottomNavPill"
-              className="absolute inset-0 rounded-full bg-primary/10"
+              className="absolute inset-0 rounded-full bg-primary/[0.10] border border-primary/15 shadow-[inset_0_1px_0_hsl(var(--primary)/0.1)]"
               transition={reduced ? { duration: 0.15 } : SPRING}
             />
           )}
           {Icon ? (
             <Icon
               className={cn(
-                "relative transition-colors duration-200",
-                collapsed ? "h-[22px] w-[22px]" : "h-[21px] w-[21px]",
-                isActive ? "text-primary" : "text-muted-foreground"
+                "relative transition-all duration-200",
+                collapsed ? "h-[22px] w-[22px]" : "h-[22px] w-[22px]",
+                isActive ? "text-primary" : "text-muted-foreground/80"
               )}
-              strokeWidth={isActive ? 2.1 : 1.6}
+              strokeWidth={isActive ? 2.25 : 1.7}
             />
           ) : (
             <span className="relative">
@@ -108,8 +106,8 @@ export const BottomNav = memo(({ forceCollapsed = false, dimmed = false }: Botto
           {!collapsed && (
             <span
               className={cn(
-                "relative text-[10px] font-medium tracking-[0.2px] transition-colors duration-200",
-                isActive ? "text-primary font-semibold" : "text-muted-foreground"
+                "relative text-[10.5px] font-medium tracking-[0.15px] transition-colors duration-200",
+                isActive ? "text-primary font-semibold" : "text-muted-foreground/70"
               )}
             >
               {item.label}
@@ -123,14 +121,14 @@ export const BottomNav = memo(({ forceCollapsed = false, dimmed = false }: Botto
   return (
     <nav
       className="fixed bottom-0 left-0 right-0 z-50 safe-area-bottom pointer-events-none"
-      style={{ paddingBottom: "max(12px, env(safe-area-inset-bottom))" }}
+      style={{ paddingBottom: "max(16px, env(safe-area-inset-bottom))" }}
     >
       <div className="mx-auto max-w-screen-sm px-4">
         <motion.div
           layout
           transition={spring}
-          animate={{ opacity: dimmed ? 0.5 : 1 }}
-          className="lg-glass lg-sheen lg-pill pointer-events-auto mx-auto flex w-fit items-center gap-1 px-2 py-1.5"
+          animate={{ opacity: dimmed ? 0.5 : 1, y: dimmed ? 4 : 0 }}
+          className="lg-glass lg-sheen lg-pill pointer-events-auto mx-auto flex w-fit items-center gap-1.5 px-2.5 py-2 border border-white/40 dark:border-white/10 shadow-[0_20px_60px_-20px_rgba(0,0,0,0.3),0_8px_24px_-12px_rgba(0,0,0,0.15)] backdrop-blur-[32px]"
         >
           <AnimatePresence initial={false} mode="popLayout">
             {leading.map(renderItem)}
@@ -139,12 +137,13 @@ export const BottomNav = memo(({ forceCollapsed = false, dimmed = false }: Botto
           <motion.button
             layout
             whileTap={reduced ? undefined : { scale: 0.92 }}
+            whileHover={reduced ? undefined : { scale: 1.04, y: -1 }}
             transition={spring}
             onClick={() => navigate("/create")}
             aria-label="Create"
-            className="lg-fab lg-focus mx-1 flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-full"
+            className="lg-fab lg-focus mx-1 flex h-[54px] w-[54px] shrink-0 items-center justify-center rounded-full"
           >
-            <Plus className="h-6 w-6" strokeWidth={2.2} />
+            <Plus className="h-6 w-6" strokeWidth={2.4} />
           </motion.button>
 
           <AnimatePresence initial={false} mode="popLayout">
