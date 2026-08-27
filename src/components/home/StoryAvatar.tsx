@@ -35,21 +35,22 @@ export const StoryAvatar = ({
   const s = sizeClasses[size];
 
   return (
-    <div className={cn("relative flex flex-col items-center gap-1 flex-shrink-0 group", className)}>
+    <div className={cn("relative flex flex-col items-center gap-1.5 flex-shrink-0 group", className)}>
       <div className="relative">
-        {/* Perfect circular ring container */}
         <motion.button
           onClick={onClick}
           whileTap={{ scale: 0.94 }}
+          whileHover={{ scale: 1.03 }}
           className={cn(
             s.outer,
-            "rounded-full p-[3px] aspect-square transition-transform duration-200 group-hover:scale-105 flex items-center justify-center",
-            hasActiveStory && hasUnviewedStory && "story-ring",
-            hasActiveStory && !hasUnviewedStory && "bg-muted",
-            !hasActiveStory && "bg-transparent"
+            "rounded-full p-[3.5px] aspect-square flex items-center justify-center transition-all duration-300",
+            hasActiveStory && hasUnviewedStory && "story-ring shadow-[0_2px_12px_hsl(var(--primary)/0.25)]",
+            hasActiveStory && !hasUnviewedStory && "bg-muted-foreground/20",
+            !hasActiveStory && isAddStory && "bg-gradient-to-br from-border to-border/50 p-[1.5px]",
+            !hasActiveStory && !isAddStory && "bg-transparent"
           )}
         >
-          <Avatar className={cn(s.avatar, "border-[2px] border-background aspect-square")}>
+          <Avatar className={cn(s.avatar, "border-[3px] border-background aspect-square shadow-sm")}>
             <AvatarImage src={imageUrl} alt={name} className="object-cover" />
             <AvatarFallback className="bg-muted text-muted-foreground">
               <UserCircle className={s.icon} />
@@ -57,7 +58,6 @@ export const StoryAvatar = ({
           </Avatar>
         </motion.button>
 
-        {/* SINGLE plus button — bottom-right, only for "Your Story" */}
         {isAddStory && (
           <button
             onClick={(e) => {
@@ -66,10 +66,11 @@ export const StoryAvatar = ({
             }}
             aria-label="Add to your story"
             className={cn(
-              "absolute -bottom-0.5 -right-0.5 rounded-full",
-              "bg-primary text-primary-foreground shadow-md",
-              "border-2 border-background",
-              "flex items-center justify-center z-10 hover:scale-110 transition-transform",
+              "absolute -bottom-1 -right-1 rounded-full",
+              "bg-primary text-primary-foreground shadow-[0_2px_8px_hsl(var(--primary)/0.4)]",
+              "border-[2.5px] border-background",
+              "flex items-center justify-center z-10",
+              "hover:scale-110 hover:shadow-[0_4px_12px_hsl(var(--primary)/0.5)] active:scale-95 transition-all duration-200",
               s.plusContainer
             )}
           >
@@ -80,10 +81,10 @@ export const StoryAvatar = ({
 
       <span
         className={cn(
-          "text-[11px] font-medium truncate text-center leading-tight",
-          "group-hover:text-foreground transition-colors",
+          "text-[11px] font-medium truncate text-center leading-tight tracking-tight",
+          "transition-colors duration-200",
           s.nameWidth,
-          isAddStory ? "text-foreground" : "text-muted-foreground"
+          isAddStory ? "text-foreground font-semibold" : hasUnviewedStory ? "text-foreground" : "text-muted-foreground"
         )}
       >
         {name}
