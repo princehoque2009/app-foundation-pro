@@ -38,7 +38,6 @@ export const Stories = () => {
     setViewerOpen(true);
   };
 
-  // DP click → view active story if exists, else open composer
   const handleOwnDpTap = () => {
     if (hasOwnStory) {
       const idx = storyGroups.findIndex(g => g.user.id === user?.id);
@@ -48,20 +47,19 @@ export const Stories = () => {
     }
   };
 
-  // + icon click → always opens composer to append new story
   const handleAddStory = () => {
     setComposerOpen(true);
   };
 
   return (
     <>
-      <div className="relative py-3">
-        <div className="flex gap-3.5 overflow-x-auto px-4 scrollbar-hide">
-          {/* Your Story — single + icon (built into StoryAvatar) */}
+      <div className="stories-bar relative py-4 bg-card/40 backdrop-blur-sm">
+        <div className="flex gap-4 overflow-x-auto px-4 scrollbar-hide">
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.3 }}
+            className="shrink-0"
           >
             <StoryAvatar
               imageUrl={currentUserProfile?.avatar_url || user?.user_metadata?.avatar_url}
@@ -74,7 +72,6 @@ export const Stories = () => {
             />
           </motion.div>
 
-          {/* Other users */}
           {!isLoading && storyGroups
             .filter(g => g.user.id !== user?.id)
             .map((group, index) => {
@@ -85,6 +82,7 @@ export const Stories = () => {
                   initial={{ opacity: 0, scale: 0.9 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ duration: 0.3, delay: index * 0.04 }}
+                  className="shrink-0"
                 >
                   <StoryAvatar
                     imageUrl={group.user.avatar_url || undefined}
@@ -98,9 +96,9 @@ export const Stories = () => {
             })}
 
           {isLoading && [...Array(5)].map((_, i) => (
-            <div key={i} className="flex flex-col items-center gap-1.5 flex-shrink-0 animate-pulse">
+            <div key={i} className="flex flex-col items-center gap-2 flex-shrink-0 animate-pulse">
               <div className="h-[72px] w-[72px] rounded-full bg-muted" />
-              <div className="h-3 w-12 rounded bg-muted" />
+              <div className="h-3 w-12 rounded-full bg-muted" />
             </div>
           ))}
         </div>
