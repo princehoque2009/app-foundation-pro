@@ -51,17 +51,15 @@ export const ProfileHeader = ({ profile, userId, isOwner, postsCount, onEditClic
     <>
       <div className={cn("relative pb-4", isVerifiedTheme && `profile-theme-${theme}`, theme === 'yellow' && "bg-gradient-to-b from-amber-50/50 to-yellow-50/30 dark:from-amber-950/10", theme === 'mono' && "bg-gradient-to-b from-zinc-50 to-white dark:from-zinc-900 dark:to-black")}>
         <div className={cn("profile-banner relative w-full overflow-hidden bg-muted h-[180px] sm:h-[220px] md:h-[260px] lg:h-[300px] xl:h-[320px] lg:rounded-[24px] lg:max-w-[1024px] lg:mx-auto lg:border lg:shadow-sm", theme === 'yellow' ? "lg:border-amber-300/50 border-amber-200 shadow-[0_0_0_1px_rgba(251,191,36,0.2),0_8px_24px_-8px_rgba(251,191,36,0.3)]" : "lg:border-border/50", theme === 'mono' && "grayscale contrast-[1.05]")}>
-          {isOwner ? <CoverPhotoUploader userId={userId} currentCoverUrl={profile?.cover_photo_url} isOwner /> : profile?.cover_photo_url ? <img src={optimizeCloudinaryUrl(profile.cover_photo_url, "c_fill,ar_3:1,g_auto,w_1200")} alt="cover" className={cn("w-full h-full object-cover", theme === 'mono' && "grayscale")} /> : <div className={cn("absolute inset-0", theme === 'yellow' ? "bg-gradient-to-br from-amber-100 via-yellow-50 to-orange-50" : theme === 'mono' ? "bg-gradient-to-br from-zinc-100 to-white dark:from-zinc-900 dark:to-black" : "bg-gradient-to-br from-muted to-background")} />}
-          <div className="pointer-events-none absolute inset-x-0 bottom-0 h-2/5 bg-gradient-to-b from-transparent to-background" />
-          {isVerifiedTheme && theme === 'yellow' && <div className="absolute top-3 left-3 px-2.5 py-1 rounded-full bg-gradient-to-r from-amber-400 to-yellow-400 text-black text-[10px] font-bold">★ GOLD • VERIFIED</div>}
-          {isVerifiedTheme && theme === 'mono' && <div className="absolute top-3 left-3 px-2.5 py-1 rounded-full bg-black text-white dark:bg-white dark:text-black text-[10px] font-bold">MONO • VERIFIED</div>}
+          {isOwner ? <CoverPhotoUploader userId={userId} currentCoverUrl={profile?.cover_photo_url} isOwner /> : profile?.cover_photo_url ? <img src={optimizeCloudinaryUrl(profile.cover_photo_url, "c_fill,ar_3:1,g_auto,w_1200")} alt="cover" className={cn("w-full h-full object-cover", theme === 'mono' && "grayscale")} /> : <div className={cn("absolute inset-0", theme === 'yellow' ? "bg-gradient-to-br from-amber-100 via-yellow-50 to-orange-50 dark:from-amber-950/30" : theme === 'mono' ? "bg-gradient-to-br from-zinc-100 to-white dark:from-zinc-900 dark:to-black" : "bg-gradient-to-br from-muted to-background")} />}
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 h-2/5 bg-gradient-to-b from-transparent to-background lg:to-background/80" />
         </div>
 
         <div className="px-4 sm:px-6 max-w-2xl mx-auto">
           <div className="relative flex items-center justify-between -mt-12 sm:-mt-14">
             <button className="flex-1 text-center pt-14" onClick={() => openFollowersDialog("followers")}><div className="text-lg font-semibold tabular-nums">{profile?.followers_count || 0}</div><div className="text-xs text-muted-foreground">Followers</div></button>
             <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="relative z-10">
-              <div className={cn("profile-avatar-ring rounded-full bg-background p-1 shadow-md", theme === 'yellow' && "ring-2 ring-amber-400 shadow-[0_0_0_3px_rgba(251,191,36,0.3),0_0_24px_rgba(251,191,36,0.4)]", theme === 'mono' && "ring-2 ring-white dark:ring-black shadow-[0_0_0_4px_black]")} onClick={isOwner ? onEditClick : undefined}>
+              <div className={cn("profile-avatar-ring rounded-full bg-background p-1 shadow-md", effects.hasNeonFrame && "ring-2 ring-fuchsia-500", theme === 'yellow' && "ring-2 ring-amber-400 shadow-[0_0_0_3px_rgba(251,191,36,0.3),0_0_24px_rgba(251,191,36,0.4)]", theme === 'mono' && "ring-2 ring-white dark:ring-black shadow-[0_0_0_4px_black]")} onClick={isOwner ? onEditClick : undefined}>
                 <Avatar className={cn("h-24 w-24 sm:h-28 sm:w-28", isOwner && "cursor-pointer")}><AvatarImage src={profile?.avatar_url || ""} className={cn(theme === 'mono' && "grayscale")} /><AvatarFallback><UserCircle className="h-12 w-12" /></AvatarFallback></Avatar>
               </div>
             </motion.div>
@@ -75,7 +73,6 @@ export const ProfileHeader = ({ profile, userId, isOwner, postsCount, onEditClic
             </div>
             <div className="mt-1 text-sm text-muted-foreground">@{profile?.username}</div>
             {profile?.bio && <p className="text-sm pt-3 max-w-md mx-auto whitespace-pre-wrap">{profile.bio}</p>}
-            {profile?.social_links && <div className="pt-3 flex justify-center"><SocialLinksInline links={profile.social_links} /></div>}
             <div className="mt-4 text-xs text-muted-foreground"><span className="font-semibold text-foreground">{postsCount}</span> Posts</div>
           </motion.div>
 
