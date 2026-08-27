@@ -32,6 +32,13 @@ export const EditProfileDialog = ({ profile, open, onOpenChange }: EditProfileDi
   const [username, setUsername] = useState(profile?.username || "");
   const [bio, setBio] = useState(profile?.bio || "");
   const [country, setCountry] = useState(profile?.country || "");
+  const [profileTheme, setProfileTheme] = useState<'default' | 'yellow' | 'mono'>((profile as any)?.profile_theme || 'default');
+  const isVerified = !!profile?.is_verified;
+
+  React.useEffect(() => {
+    if ((profile as any)?.profile_theme) setProfileTheme((profile as any).profile_theme);
+  }, [profile?.id, (profile as any)?.profile_theme]);
+
   const [socialLinks, setSocialLinks] = useState<SocialLinksMap>(
     (profile?.social_links && typeof profile.social_links === "object") ? profile.social_links : {}
   );
@@ -47,6 +54,7 @@ export const EditProfileDialog = ({ profile, open, onOpenChange }: EditProfileDi
   const [avatarUploading, setAvatarUploading] = useState(false);
   const [bannerUploading, setBannerUploading] = useState(false);
   const [removeBanner, setRemoveBanner] = useState(false);
+  const [showBannerMenu, setShowBannerMenu] = useState(false);
 
   const currentAvatarUrl = avatarPreview || profile?.avatar_url || "";
   const currentBannerUrl = removeBanner ? null : (bannerPreview || profile?.cover_photo_url);
@@ -90,7 +98,7 @@ export const EditProfileDialog = ({ profile, open, onOpenChange }: EditProfileDi
         if (existingName) throw new Error("This display name is already in use.");
       }
 
-      const { error } = await supabase.from("profiles").update({
+      const updateData: any = {
         display_name: displayName,
         username: cleanedUsername,
         bio,
@@ -98,7 +106,9 @@ export const EditProfileDialog = ({ profile, open, onOpenChange }: EditProfileDi
         avatar_url,
         cover_photo_url,
         social_links: socialLinks as any,
-      }).eq("id", user?.id);
+      };
+      if (isVerified) updateData.profile_theme = profileTheme;
+      const { error } = await supabase.from("profiles").update(updateData).eq("id", user?.id);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -184,6 +194,45 @@ export const EditProfileDialog = ({ profile, open, onOpenChange }: EditProfileDi
                 <div><Label>Country</Label>
                   <Select value={country} onValueChange={setCountry}><SelectTrigger><SelectValue placeholder="Select country" /></SelectTrigger><SelectContent>{countries.map((c) => (<SelectItem key={c.code} value={c.name}><span className="flex items-center gap-2">{getCountryFlag(c.code)} {c.name}</span></SelectItem>))}</SelectContent></Select>
                 </div>
+                {isVerified && (
+                  <div className="rounded-[18px] border border-amber-200 bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-50 dark:from-amber-950/20 dark:via-yellow-950/15 dark:to-orange-950/10 p-4 space-y-4">
+                    <div className="flex items-center gap-2">
+                      <div className="h-7 w-7 rounded-full bg-gradient-to-br from-amber-400 to-yellow-500 flex items-center justify-center shadow-sm">👑</div>
+                      <div><div className="text-sm font-semibold">Verified Exclusive Themes</div><div className="text-[11px] text-muted-foreground">Only verified accounts can use these</div></div>
+                      <span className="ml-auto text-[10px] px-2.5 py-1 rounded-full bg-gradient-to-r from-amber-500 to-yellow-500 text-white font-bold">VERIFIED ONLY</span>
+                    </div>
+                    <div className="rounded-[14px] bg-background/80 border border-border/50 p-3">
+                      <div className="flex items-center justify-between mb-3">
+                        <span className="text-xs font-medium">Live Preview</span>
+                        {profileTheme !== 'default' && <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary text-primary-foreground">{profileTheme}</span>}
+                      </div>
+                      <div className={"rounded-xl overflow-hidden border transition-all " + (profileTheme === 'yellow' ? "border-amber-300 bg-gradient-to-br from-amber-50 to-yellow-50" : profileTheme === 'mono' ? "border-zinc-300 bg-gradient-to-br from-zinc-50 to-white" : "border-border bg-muted/30")}>
+                        <div className={"h-[68px] w-full relative " + (profileTheme === 'yellow' ? "bg-gradient-to-br from-amber-100 via-yellow-50 to-orange-50" : profileTheme === 'mono' ? "bg-gradient-to-br from-zinc-100 to-zinc-200" : "bg-muted")}>
+                          <div className="absolute -bottom-6 left-4 flex items-end gap-3">
+                            <div className={"rounded-full bg-background p-0.5 shadow-md " + (profileTheme === 'yellow' ? "ring-2 ring-amber-400" : profileTheme === 'mono' ? "ring-2 ring-background shadow-[0_0_0_3px_hsl(var(--foreground))]" : "ring-2 ring-background")}>
+                              <div className="h-12 w-12 rounded-full bg-muted" />
+                            </div>
+                            <div className={"text-[14px] font-bold " + (profileTheme === 'yellow' ? "bg-gradient-to-r from-amber-600 to-amber-400 bg-clip-text text-transparent" : "text-foreground")}>{displayName || "Your Name"}</div>
+                          </div>
+                        </div>
+                        <div className="pt-8 pb-3 px-4" />
+                      </div>
+                      <div className="grid grid-cols-3 gap-2 mt-3">
+                        {[
+                          { id: 'default', label: 'Default', sub: 'Normal' },
+                          { id: 'yellow', label: 'Gold', sub: 'Premium' },
+                          { id: 'mono', label: 'Mono', sub: 'B&W' },
+                        ].map((t) => (
+                          <button key={t.id} type="button" onClick={() => setProfileTheme(t.id as any)} className={"relative rounded-xl border p-3 text-left transition-all " + (profileTheme === t.id ? "border-primary bg-primary/5 ring-1 ring-primary" : "border-border hover:border-primary/50")}>
+                            <div className="text-xs font-medium">{t.label}</div>
+                            <div className="text-[10px] text-muted-foreground">{t.sub}</div>
+                            {profileTheme === t.id && <div className="absolute top-2 right-2 h-4 w-4 rounded-full bg-primary text-white flex items-center justify-center text-[10px]">✓</div>}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
                 <SocialLinksEditor value={socialLinks} onChange={setSocialLinks} />
               </div>
             </div>
@@ -196,3 +245,4 @@ export const EditProfileDialog = ({ profile, open, onOpenChange }: EditProfileDi
     </>
   );
 };
+
