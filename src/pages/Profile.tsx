@@ -30,15 +30,18 @@ const Profile = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("profiles")
-        .select("id, username, display_name, avatar_url, cover_photo_url, bio, date_of_birth, created_at, followers_count, following_count, country, is_verified, account_type, social_links")
+        .select("id, username, display_name, avatar_url, cover_photo_url, bio, date_of_birth, created_at, followers_count, following_count, country, is_verified, account_type, social_links, profile_theme")
         .eq("id", user?.id)
         .single();
       if (error) throw error;
       return data;
     },
     enabled: !!user?.id,
-    staleTime: PROFILE_STALE_TIME,
-    gcTime: 5 * 60_000,
+    staleTime: 0,
+    gcTime: 2 * 60_000,
+    refetchOnWindowFocus: true,
+    refetchOnMount: true,
+    refetchOnReconnect: true,
   });
 
   const { data: posts, isLoading: postsLoading } = useQuery({
@@ -53,8 +56,11 @@ const Profile = () => {
       return data;
     },
     enabled: !!user?.id,
-    staleTime: PROFILE_STALE_TIME,
-    gcTime: 5 * 60_000,
+    staleTime: 0,
+    gcTime: 2 * 60_000,
+    refetchOnWindowFocus: true,
+    refetchOnMount: true,
+    refetchOnReconnect: true,
   });
 
   const { data: pinnedPosts } = useQuery({
@@ -69,8 +75,11 @@ const Profile = () => {
       return data?.map(p => p.post_id) || [];
     },
     enabled: !!user?.id,
-    staleTime: PROFILE_STALE_TIME,
-    gcTime: 5 * 60_000,
+    staleTime: 0,
+    gcTime: 2 * 60_000,
+    refetchOnWindowFocus: true,
+    refetchOnMount: true,
+    refetchOnReconnect: true,
   });
 
   const totalReactions = useMemo(() => {
