@@ -1213,13 +1213,6 @@
     color: black !important;
     border-color: white !important;
   }
-  .profile-theme-mono {
-    background: linear-gradient(to bottom, hsl(0 0% 98%), hsl(0 0% 100%));
-  }
-  .dark .profile-theme-mono {
-    background: linear-gradient(to bottom, hsl(0 0% 8%), hsl(0 0% 10%));
-  }
-
   /* Verified badge exclusive glow */
   .verified-exclusive {
     position: relative;
