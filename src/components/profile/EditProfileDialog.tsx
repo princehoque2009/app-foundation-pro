@@ -49,7 +49,6 @@ export const EditProfileDialog = ({ profile, open, onOpenChange }: EditProfileDi
   const currentBannerUrl = removeBanner ? null : (bannerPreview || profile?.cover_photo_url);
   const isVerified = !!profile?.is_verified;
 
-  // FIX: Sync theme when profile changes (fixes cache stuck issue)
   const prevProfileId = React.useRef(profile?.id);
   React.useEffect(() => {
     if (profile?.id && profile.id !== prevProfileId.current) prevProfileId.current = profile.id;
@@ -82,15 +81,23 @@ export const EditProfileDialog = ({ profile, open, onOpenChange }: EditProfileDi
         setBannerUploading(false);
       }
       if (removeBanner) cover_photo_url = null;
-      if (username !== profile?.username) {
-        const { data: existingUser } = await supabase.from("profiles").select("id").eq("username", username).neq("id", user?.id).maybeSingle();
+
+      const cleanedUsername = username.replace(/^@/, '').trim().toLowerCase().replace(/[^a-z0-9_]/g, '_').replace(/__+/g, '_');
+      if (cleanedUsername.length < 3) throw new Error("Username must be at least 3 characters");
+      if (cleanedUsername.length > 30) throw new Error("Username max 30 chars");
+      if (!/^[a-z0-9_]+$/.test(cleanedUsername)) throw new Error("Only letters, numbers, underscore");
+
+      if (cleanedUsername !== profile?.username) {
+        const { data: existingUser } = await supabase.from("profiles").select("id").eq("username", cleanedUsername).neq("id", user?.id).maybeSingle();
         if (existingUser) throw new Error("This username is already taken.");
       }
-      if (displayName && displayName !== profile?.display_name) {
-        const { data: existingName } = await supabase.from("profiles").select("id").eq("display_name", displayName).neq("id", user?.id).maybeSingle();
-        if (existingName) throw new Error("This display name is already in use.");
-      }
-      const updateData: any = { display_name: displayName, username, bio, country, avatar_url, cover_photo_url, social_links: socialLinks as any };
+
+      const updateData: any = {
+        display_name: displayName,
+        username: cleanedUsername,
+        bio, country, avatar_url, cover_photo_url,
+        social_links: socialLinks as any,
+      };
       if (isVerified) updateData.profile_theme = profileTheme;
       const { error } = await supabase.from("profiles").update(updateData).eq("id", user?.id);
       if (error) throw error;
