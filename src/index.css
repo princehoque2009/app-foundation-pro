@@ -1197,7 +1197,7 @@
     --profile-accent: 0 0% 15%;
     --profile-bg: 0 0% 98%;
     --profile-border: 0 0% 85%;
-    filter: grayscale(0.1);
+    /* removed grayscale filter on wrapper to prevent all-black bug */
   }
   .dark .profile-theme-mono {
     --profile-accent: 0 0% 85%;
@@ -1205,11 +1205,14 @@
     --profile-border: 0 0% 20%;
   }
   .profile-theme-mono .profile-banner {
-    filter: grayscale(1) contrast(1.1);
-    border-color: hsl(0 0% 20% / 0.3) !important;
+    /* removed grayscale(1) that could cause black rendering */
+    border-color: hsl(0 0% 80% / 0.5) !important;
+  }
+  .dark .profile-theme-mono .profile-banner {
+    border-color: hsl(0 0% 25% / 0.5) !important;
   }
   .profile-theme-mono .profile-avatar-ring {
-    box-shadow: 0 0 0 2px white, 0 0 0 4px black, 0 4px 16px rgba(0,0,0,0.2) !important;
+    box-shadow: 0 0 0 2px hsl(var(--background)), 0 0 0 4px hsl(var(--foreground)), 0 4px 16px rgba(0,0,0,0.15) !important;
   }
   .profile-theme-mono .profile-name {
     font-family: 'Amorisa', 'Great Vibes', 'Allura', 'Dancing Script', cursive !important;
@@ -1226,10 +1229,11 @@
     text-shadow: 0 1px 3px hsl(0 0% 0% / 0.3);
   }
   .dark .profile-theme-mono .profile-avatar-ring {
-    box-shadow: 0 0 0 2px black, 0 0 0 4px white, 0 4px 16px rgba(255,255,255,0.15) !important;
+    box-shadow: 0 0 0 2px hsl(var(--background)), 0 0 0 4px hsl(var(--background)), 0 4px 16px rgba(0,0,0,0.2) !important;
   }
   .profile-theme-mono .profile-follow-btn {
-    background: black !important;
+    background: hsl(var(--foreground)) !important;
+    /* was black */
     color: white !important;
     border-color: black !important;
   }
@@ -1253,3 +1257,4 @@
     opacity: 0.3;
   }
 }
+
