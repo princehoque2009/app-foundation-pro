@@ -87,13 +87,7 @@ const Profile = () => {
   };
 
   if (profileError) {
-    return (
-      <MainLayout>
-        <div className="max-w-screen-lg mx-auto min-h-screen p-8 text-center">
-          <p className="text-red-500">Failed to load profile: {(profileError as any).message}</p>
-        </div>
-      </MainLayout>
-    );
+    return <MainLayout><div className="max-w-screen-lg mx-auto min-h-screen p-8 text-center"><p className="text-red-500">Failed: {(profileError as any).message}</p></div></MainLayout>;
   }
 
   return (
@@ -101,7 +95,7 @@ const Profile = () => {
       <Seo title="Your Profile on Prangon" path="/profile" />
       <div className="max-w-screen-lg mx-auto min-h-screen">
         <ProfileHeader profile={profile} userId={user?.id || ""} isOwner={true} postsCount={posts?.length || 0} onEditClick={() => setIsEditDialogOpen(true)} onAnalyticsClick={() => setShowAnalytics(!showAnalytics)} onAboutClick={() => setShowAbout(!showAbout)} isLoading={profileLoading} />
-        {showAnalytics && <div className="px-4 sm:px-6 py-4"><LiveInsights profileViews={Math.floor(Math.random()*500)+50} profileViewsChange={10} contentReach={totalReactions*3} contentReachChange={5} totalReactions={totalReactions} reactionsChange={10} totalShares={Math.floor(totalReactions*0.2)} sharesChange={5} /></div>}
+        {showAnalytics && <div className="px-4 sm:px-6 py-4"><LiveInsights profileViews={100} profileViewsChange={10} contentReach={totalReactions*3} contentReachChange={5} totalReactions={totalReactions} reactionsChange={10} totalShares={10} sharesChange={5} /></div>}
         {showAbout && <div className="px-4 sm:px-6 pb-4"><ProfileAboutSection bio={profile?.bio} dateOfBirth={profile?.date_of_birth} createdAt={profile?.created_at} postsCount={posts?.length||0} followersCount={profile?.followers_count??0} followingCount={profile?.following_count??0} country={profile?.country} isVerified={profile?.is_verified} accountType={profile?.account_type} displayName={profile?.display_name} username={profile?.username} socialLinks={profile?.social_links} /></div>}
         <ProfileTabs activeTab={activeTab} onTabChange={setActiveTab} tabs={tabs} />
         <div key={activeTab}>
