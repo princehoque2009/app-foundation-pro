@@ -9,12 +9,14 @@ export const useCurrentProfile = () => {
     queryFn: async () => {
       const { data } = await supabase
         .from("profiles")
-        .select("id, username, display_name, avatar_url")
+        .select("id, username, display_name, avatar_url, cover_photo_url, is_verified, profile_theme")
         .eq("id", user!.id)
         .maybeSingle();
       return data;
     },
     enabled: !!user?.id,
-    staleTime: 60_000,
+    staleTime: 0,
+    refetchOnWindowFocus: true,
+    refetchOnMount: true,
   });
 };
