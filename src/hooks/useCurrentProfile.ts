@@ -7,16 +7,14 @@ export const useCurrentProfile = () => {
   return useQuery({
     queryKey: ["current-profile", user?.id],
     queryFn: async () => {
-      const { data } = await supabase
-        .from("profiles")
-        .select("id, username, display_name, avatar_url, cover_photo_url, is_verified, profile_theme")
-        .eq("id", user!.id)
-        .maybeSingle();
+      if (!user?.id) return null;
+      const { data, error } = await supabase.from("profiles").select("*").eq("id", user.id).maybeSingle();
+      if (error) throw error;
       return data;
     },
     enabled: !!user?.id,
-    staleTime: 0,
-    refetchOnWindowFocus: true,
-    refetchOnMount: true,
+    staleTime: 1000 * 60 * 5,
+    gcTime: 1000 * 60 * 30,
+    refetchOnWindowFocus: false,
   });
 };
