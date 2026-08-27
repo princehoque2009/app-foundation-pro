@@ -28,11 +28,26 @@ const Profile = () => {
   const { data: profile, isLoading: profileLoading, error: profileError } = useQuery({
     queryKey: ["profile", user?.id],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("id, username, display_name, avatar_url, cover_photo_url, bio, date_of_birth, created_at, followers_count, following_count, country, is_verified, account_type, social_links, profile_theme")
-        .eq("id", user?.id)
-        .single();
+      // Try with profile_theme, fallback without it if column doesn't exist (prevents all-black crash)
+      let data, error;
+      try {
+        const res = await supabase
+          .from("profiles")
+          .select("id, username, display_name, avatar_url, cover_photo_url, bio, date_of_birth, created_at, followers_count, following_count, country, is_verified, account_type, social_links, profile_theme")
+          .eq("id", user?.id)
+          .single();
+        data = res.data; error = res.error;
+        if (error && error.message?.includes("profile_theme")) throw error;
+      } catch (e) {
+        console.warn("profile_theme column missing, fallback query", e);
+        const res2 = await supabase
+          .from("profiles")
+          .select("id, username, display_name, avatar_url, cover_photo_url, bio, date_of_birth, created_at, followers_count, following_count, country, is_verified, account_type, social_links")
+          .eq("id", user?.id)
+          .single();
+        data = res2.data; error = res2.error;
+        if (data) (data as any).profile_theme = 'default';
+      }
       if (error) throw error;
       return data;
     },
