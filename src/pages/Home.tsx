@@ -22,63 +22,32 @@ const Home = () => {
 
   return (
     <MainLayout>
-      <Seo
-        title="Prangon — Next-Generation Social Networking"
-        description="Share moments, create reels, join private Circles and chat in real time on Prangon, the next-generation social networking platform."
-        path="/"
-        jsonLd={[
-          { "@context": "https://schema.org", "@type": "WebSite", name: "Prangon", url: "https://prangon.lovable.app", potentialAction: { "@type": "SearchAction", target: "https://prangon.lovable.app/search?q={search_term_string}", "query-input": "required name=search_term_string" } },
-          { "@context": "https://schema.org", "@type": "Organization", name: "Prangon", url: "https://prangon.lovable.app", logo: "https://prangon.lovable.app/pwa-icon-512.png" },
-        ]}
-      />
+      <Seo title="Prangon — Next-Generation Social Networking" description="Share moments, create reels, join private Circles and chat in real time on Prangon." path="/" />
       <h1 className="sr-only">Prangon — share moments, reels and Circles with your people</h1>
-      <div className="bg-background min-h-screen select-none">
+      <div className="min-h-screen">
         {showStories && (
-          <div className="border-b border-border/70 py-3">
-            <div className="max-w-xl mx-auto px-3">
-              {isLoading ? <StorySkeleton /> : <Stories />}
-            </div>
+          <div className="max-w-[640px] mx-auto">
+            {isLoading ? <div className="p-4"><StorySkeleton /></div> : <Stories />}
           </div>
         )}
-
-        <SuggestedAccounts />
-
-        {/* Feed */}
-        <div className="max-w-xl mx-auto px-4 py-5">
-          <SmartFeedAd placement="home_feed" className="mb-6" />
+        <div className="max-w-[640px] mx-auto px-0 sm:px-3">
+          <div className="px-4 sm:px-0 py-2"><SuggestedAccounts /></div>
+        </div>
+        <div className="max-w-[640px] mx-auto px-3 sm:px-4 py-4 space-y-5">
+          <SmartFeedAd placement="home_feed" className="rounded-[20px] overflow-hidden" />
           {isLoading ? (
-            <div className="space-y-3">
-              <PostSkeleton />
-              <PostSkeleton />
-              <PostSkeleton />
-            </div>
+            <div className="space-y-5"><PostSkeleton /><PostSkeleton /><PostSkeleton /></div>
           ) : !posts || posts.length === 0 ? (
-            <div className="text-center py-16 border border-dashed border-border rounded-xl">
-              <p className="text-muted-foreground text-sm">{t("home.noPosts")}</p>
+            <div className="empty-state border border-dashed border-border/60 rounded-[28px] bg-card/50 backdrop-blur-sm py-20">
+              <div className="empty-state-icon"><span className="text-2xl">📸</span></div>
+              <p className="text-[15px] font-medium text-foreground">No posts yet</p>
+              <p className="text-sm text-muted-foreground mt-1 max-w-[260px] mx-auto">{t("home.noPosts")} Follow people to see their moments here.</p>
             </div>
           ) : (
             posts.map((post: any, index: number) => (
               <Fragment key={post.id}>
-                <PostCard
-                  id={post.id}
-                  author={{
-                    name: post.profiles?.display_name || post.profiles?.username || "Unknown",
-                    username: post.profiles?.username || "unknown",
-                    avatar: post.profiles?.avatar_url || undefined,
-                    isVerified: post.profiles?.is_verified ?? false,
-                    userId: post.user_id,
-                  }}
-                  content={post.caption || ""}
-                  image={post.media_type === "image" ? post.media_url || undefined : undefined}
-                  video={post.media_type === "video" ? post.media_url || undefined : undefined}
-                  mediaItems={post.post_media}
-                  likes={post.likes_count}
-                  comments={post.comments_count}
-                  timestamp={post.created_at}
-                />
-                {(index + 1) % AD_INTERVAL === 0 && index < posts.length - 1 && (
-                  <SmartFeedAd key={`ad-${index}`} placement="home_feed" className="mb-6" />
-                )}
+                <PostCard id={post.id} author={{ name: post.profiles?.display_name || post.profiles?.username || "Unknown", username: post.profiles?.username || "unknown", avatar: post.profiles?.avatar_url || undefined, isVerified: post.profiles?.is_verified ?? false, userId: post.user_id, }} content={post.caption || ""} image={post.media_type === "image" ? post.media_url || undefined : undefined} video={post.media_type === "video" ? post.media_url || undefined : undefined} mediaItems={post.post_media} likes={post.likes_count} comments={post.comments_count} timestamp={post.created_at} />
+                {(index + 1) % AD_INTERVAL === 0 && index < posts.length - 1 && <SmartFeedAd key={`ad-${index}`} placement="home_feed" className="rounded-[28px] overflow-hidden border border-border/50" />}
               </Fragment>
             ))
           )}
@@ -87,6 +56,4 @@ const Home = () => {
     </MainLayout>
   );
 };
-
 export default Home;
-
