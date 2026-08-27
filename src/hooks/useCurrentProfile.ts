@@ -5,7 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 export const useCurrentProfile = () => {
   const { user } = useAuth();
   return useQuery({
-    queryKey: ["profile", user?.id],
+    queryKey: ["current-profile", user?.id],
     queryFn: async () => {
       const { data } = await supabase
         .from("profiles")
