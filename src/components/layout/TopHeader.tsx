@@ -24,11 +24,13 @@ const IconLink = ({
   active?: boolean;
 }) => {
   const cls = cn(
-    "relative flex items-center justify-center h-11 w-11 rounded-full lg-press lg-focus transition-colors",
-    active ? "text-primary bg-primary/10" : "text-muted-foreground hover:text-foreground hover:bg-muted/70"
+    "relative flex items-center justify-center h-10 w-10 rounded-full lg-press lg-focus transition-all duration-200",
+    active 
+      ? "text-primary bg-primary/12 ring-1 ring-primary/20" 
+      : "text-muted-foreground hover:text-foreground hover:bg-muted/80 active:bg-muted"
   );
   const badge = count > 0 && (
-    <span className="absolute top-1.5 right-1.5 min-w-[16px] h-[16px] px-1 rounded-full bg-primary text-primary-foreground text-[9px] font-bold flex items-center justify-center ring-2 ring-background">
+    <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center ring-2 ring-background shadow-sm animate-bounce-in">
       {count > 99 ? "99+" : count}
     </span>
   );
@@ -68,7 +70,7 @@ export const TopHeader = memo(() => {
       key: "search",
       node: (
         <IconLink to="/search" label="Search" active={location.pathname === "/search"}>
-          <Search className="h-[21px] w-[21px]" />
+          <Search className="h-[20px] w-[20px]" strokeWidth={1.75} />
         </IconLink>
       ),
     },
@@ -76,7 +78,7 @@ export const TopHeader = memo(() => {
       key: "friends",
       node: (
         <IconLink to="/friends" label="Followers" active={location.pathname === "/friends"}>
-          <Users className="h-[21px] w-[21px]" />
+          <Users className="h-[20px] w-[20px]" strokeWidth={1.75} />
         </IconLink>
       ),
     },
@@ -84,20 +86,21 @@ export const TopHeader = memo(() => {
       key: "menu",
       node: (
         <IconLink onClick={() => navigate("/menu")} label="Menu">
-          <MenuIcon className="h-[21px] w-[21px]" />
+          <MenuIcon className="h-[20px] w-[20px]" strokeWidth={1.75} />
         </IconLink>
       ),
     },
   ];
 
   return (
-    <header className="sticky top-0 z-40 pt-2 pb-1 px-3">
+    <header className="sticky top-0 z-40 pt-3 pb-2 px-3">
       <motion.div
         layout
         transition={spring}
         className={cn(
-          "lg-glass lg-sheen lg-pill mx-auto flex max-w-screen-xl items-center justify-between gap-3 pl-3 pr-2",
-          collapsed ? "h-12" : "h-14"
+          "lg-glass lg-sheen lg-pill mx-auto flex max-w-[720px] items-center justify-between gap-3 pl-3.5 pr-2 border border-white/40 shadow-[0_8px_32px_-12px_rgba(0,0,0,0.12),0_2px_8px_-2px_rgba(0,0,0,0.06)]",
+          collapsed ? "h-[48px]" : "h-[56px]",
+          "dark:border-white/10"
         )}
       >
         <div className="flex min-w-0 shrink-0 items-center gap-1">
@@ -105,16 +108,16 @@ export const TopHeader = memo(() => {
             <button
               onClick={() => (window.history.length > 1 ? navigate(-1) : navigate("/"))}
               aria-label="Back"
-              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-foreground hover:bg-muted/70 lg-press lg-focus"
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-foreground hover:bg-muted/80 lg-press lg-focus transition-colors"
             >
-              <ArrowLeft className="h-5 w-5" />
+              <ArrowLeft className="h-[20px] w-[20px]" strokeWidth={2} />
             </button>
           )}
-          <Link to="/" className="flex shrink-0 items-center gap-2 pl-1 lg-press lg-focus rounded-full">
+          <Link to="/" className="flex shrink-0 items-center gap-2 pl-1 lg-press lg-focus rounded-full group">
             <img
               src={prangonLogo}
               alt="Prangon"
-              className="pointer-events-none h-8 w-auto shrink-0 select-none object-contain object-left"
+              className="pointer-events-none h-[30px] w-auto shrink-0 select-none object-contain object-left transition-transform duration-200 group-hover:scale-[1.02]"
               decoding="async"
               draggable={false}
               onContextMenu={(e) => e.preventDefault()}
@@ -122,7 +125,7 @@ export const TopHeader = memo(() => {
           </Link>
         </div>
 
-        <div className="flex shrink-0 items-center gap-0.5">
+        <div className="flex shrink-0 items-center gap-1">
           <AnimatePresence initial={false} mode="popLayout">
             {!collapsed &&
               secondary.slice(0, 2).map((item) => (
@@ -140,11 +143,13 @@ export const TopHeader = memo(() => {
               ))}
           </AnimatePresence>
 
+          <div className="h-6 w-px bg-border/60 mx-1 hidden sm:block" />
+
           <IconLink to="/messages" label="Messages" count={unreadMessages}>
-            <MessageCircle className="h-[21px] w-[21px]" />
+            <MessageCircle className="h-[20px] w-[20px]" strokeWidth={1.75} />
           </IconLink>
           <IconLink to="/notifications" label="Notifications" count={unreadCount}>
-            <Bell className="h-[21px] w-[21px]" />
+            <Bell className="h-[20px] w-[20px]" strokeWidth={1.75} />
           </IconLink>
 
           <AnimatePresence initial={false} mode="popLayout">
