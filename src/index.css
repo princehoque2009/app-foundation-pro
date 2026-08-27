@@ -1,4 +1,15 @@
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Poppins:wght@500;600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Great+Vibes&family=Allura&family=Dancing+Script:wght@500;700&display=swap");
+/* Amorisa Font - Custom for Verified Mono Theme */
+@font-face {
+  font-family: 'Amorisa';
+  src: url('https://cdn.jsdelivr.net/gh/cdnfonts/Amorisa@main/Amorisa.woff') format('woff'),
+       url('https://db.onlinewebfonts.com/t/2b5cf5d5f6a6e8e7b6e5a4d3c2b1a0f9.eot') format('embedded-opentype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -1199,6 +1210,20 @@
   }
   .profile-theme-mono .profile-avatar-ring {
     box-shadow: 0 0 0 2px white, 0 0 0 4px black, 0 4px 16px rgba(0,0,0,0.2) !important;
+  }
+  .profile-theme-mono .profile-name {
+    font-family: 'Amorisa', 'Great Vibes', 'Allura', 'Dancing Script', cursive !important;
+    font-weight: 400 !important;
+    font-size: 1.35em !important;
+    letter-spacing: 0.03em !important;
+    background: none !important;
+    -webkit-text-fill-color: initial !important;
+    color: hsl(var(--foreground)) !important;
+    text-shadow: 0 1px 2px hsl(0 0% 0% / 0.08);
+  }
+  .dark .profile-theme-mono .profile-name {
+    color: hsl(0 0% 98%) !important;
+    text-shadow: 0 1px 3px hsl(0 0% 0% / 0.3);
   }
   .dark .profile-theme-mono .profile-avatar-ring {
     box-shadow: 0 0 0 2px black, 0 0 0 4px white, 0 4px 16px rgba(255,255,255,0.15) !important;
