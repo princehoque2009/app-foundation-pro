@@ -72,16 +72,26 @@ export const ProfileHeader = ({
     );
   }
 
-  const isGifCover = profile?.cover_photo_url?.toLowerCase().includes('.gif');
+  // Dual banner logic: normal vs nitro
+  const normalCover = profile?.cover_photo_url;
+  const nitroCover = (profile as any)?.nitro_cover_url;
+  const activeCover = theme === 'nitro' ? (nitroCover || normalCover) : normalCover;
+  const isGifCover = activeCover?.toLowerCase().includes('.gif');
 
   return (
     <>
       <div className={cn("relative pb-4", isVerifiedTheme && `profile-theme-${theme}`)}>
         <div className={cn("profile-banner relative w-full overflow-hidden bg-muted h-[180px] sm:h-[220px] md:h-[260px] lg:h-[300px] xl:h-[320px] lg:rounded-[24px] lg:max-w-[1024px] lg:mx-auto lg:border lg:shadow-sm", theme === 'yellow' ? "lg:border-amber-300/50 border-amber-200 shadow-[0_0_0_1px_rgba(251,191,36,0.2),0_8px_24px_-8px_rgba(251,191,36,0.3)]" : theme === 'nitro' ? "lg:border-zinc-300/50 border-white/20" : "lg:border-border/50")}>
           {isOwner ? (
-            <CoverPhotoUploader userId={userId} currentCoverUrl={profile?.cover_photo_url} isOwner theme={theme} />
-          ) : profile?.cover_photo_url ? (
-            <img src={isGifCover ? profile.cover_photo_url : optimizeCloudinaryUrl(profile.cover_photo_url, "c_fill,ar_3:1,g_auto,w_1200")} alt="cover" className={cn("w-full h-full object-cover", theme === 'mono' && "grayscale")} />
+            <CoverPhotoUploader 
+              userId={userId} 
+              currentCoverUrl={normalCover} 
+              currentNitroCoverUrl={nitroCover}
+              isOwner 
+              theme={theme} 
+            />
+          ) : activeCover ? (
+            <img src={isGifCover ? activeCover : optimizeCloudinaryUrl(activeCover, "c_fill,ar_3:1,g_auto,w_1200")} alt="cover" className={cn("w-full h-full object-cover", theme === 'mono' && "grayscale")} />
           ) : (
             <div className={cn("absolute inset-0", theme === 'yellow' ? "bg-gradient-to-br from-amber-100 via-yellow-50 to-orange-50 dark:from-amber-950/30 dark:via-yellow-950/20 dark:to-orange-950/20" : theme === 'mono' ? "bg-gradient-to-br from-zinc-100 via-zinc-200 to-zinc-300 dark:from-zinc-800 dark:via-zinc-700 dark:to-zinc-900" : theme === 'nitro' ? "bg-gradient-to-br from-zinc-900 via-black to-zinc-800" : "bg-gradient-to-br from-muted via-background to-muted")} />
           )}
