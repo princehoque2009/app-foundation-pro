@@ -62,6 +62,8 @@ const Favourites = () => {
                       avatar: post.profiles?.avatar_url,
                       username: post.profiles?.username || "unknown",
                       isVerified: post.profiles?.is_verified,
+                      profileTheme: (post.profiles as any)?.profile_theme || "default",
+                      userId: post.user_id,
                     }}
                     content={post.caption || ""}
                     image={post.media_type === "image" ? post.media_url : undefined}
