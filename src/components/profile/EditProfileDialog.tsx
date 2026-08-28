@@ -303,4 +303,87 @@ export const EditProfileDialog = ({ profile, open, onOpenChange }: EditProfileDi
               </div>
 
               <div className="space-y-4">
-                <div><Label>Display 
+                <div><Label>Display Name</Label><Input value={displayName} onChange={(e) => setDisplayName(e.target.value)} placeholder="Your name" /></div>
+                <div><Label>Username</Label><Input value={username} onChange={(e) => setUsername(e.target.value)} placeholder="username" /></div>
+                <div><Label>Bio</Label><Textarea value={bio} onChange={(e) => setBio(e.target.value)} placeholder="Tell about yourself" rows={3} /></div>
+                <div><Label>Country</Label>
+                  <Select value={country} onValueChange={setCountry}><SelectTrigger><SelectValue placeholder="Select country" /></SelectTrigger><SelectContent>{countries.map((c) => (<SelectItem key={c.code} value={c.name}><span className="flex items-center gap-2">{getCountryFlag(c.code)} {c.name}</span></SelectItem>))}</SelectContent></Select>
+                </div>
+                {isVerified && (
+                  <div className="rounded-[18px] border border-zinc-200 dark:border-zinc-800 bg-gradient-to-br from-zinc-50 via-white to-zinc-50 dark:from-zinc-900 dark:via-black dark:to-zinc-900 p-4 space-y-4">
+                    <div className="flex items-center gap-2">
+                      <div className="h-7 w-7 rounded-full bg-black text-white flex items-center justify-center shadow-sm text-xs">⚡</div>
+                      <div><div className="text-sm font-semibold">Verified Themes</div><div className="text-[11px] text-muted-foreground">Themes only for verified users</div></div>
+                    </div>
+                    <div className="rounded-[14px] bg-background/80 border border-border/50 p-3">
+                      <div className="flex items-center justify-between mb-3">
+                        <span className="text-xs font-medium">Live Preview</span>
+                        {profileTheme !== 'default' && <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary text-primary-foreground">{profileTheme}</span>}
+                      </div>
+                      <div className={"rounded-xl overflow-hidden border transition-all " + (profileTheme === 'yellow' ? "border-amber-300 bg-gradient-to-br from-amber-50 to-yellow-50" : profileTheme === 'mono' ? "border-zinc-400 bg-zinc-100" : profileTheme === 'nitro' ? "border-zinc-800 bg-black" : "border-border bg-muted/30")}>
+                        <div className={"h-[68px] w-full relative " + (profileTheme === 'yellow' ? "bg-gradient-to-br from-amber-100 to-yellow-50" : profileTheme === 'mono' ? "bg-zinc-200" : profileTheme === 'nitro' ? "bg-black" : "bg-muted")}>
+                          <div className="absolute -bottom-6 left-4 flex items-end gap-3">
+                            <div className={"rounded-full bg-background p-0.5 shadow-md " + (profileTheme === 'yellow' ? "ring-2 ring-amber-400" : profileTheme === 'mono' ? "ring-2 ring-white shadow-[0_0_0_3px_black]" : profileTheme === 'nitro' ? "nitro-avatar-ring !p-[2px]" : "ring-2 ring-background")}>
+                              <div className="h-12 w-12 rounded-full bg-muted" />
+                            </div>
+                            <div className={"text-[14px] font-bold " + (profileTheme === 'yellow' ? "text-amber-600" : profileTheme === 'nitro' ? "text-white" : "text-foreground")}>{displayName || "Your Name"}</div>
+                          </div>
+                        </div>
+                        <div className="pt-8 pb-3 px-4">
+                          {profileTheme === 'nitro' && <div className="text-[10px] text-white/60">GIF • Animated ring • B&W badge • Separate banner</div>}
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2 mt-3">
+                        {[
+                          { id: 'default', label: 'Default', sub: 'Normal', locked: false },
+                          { id: 'yellow', label: 'Gold', sub: 'Premium', locked: false },
+                          { id: 'mono', label: 'Platinum', sub: 'Mono', locked: false },
+                          { id: 'nitro', label: 'Nitro', sub: isNitroUnlocked ? 'Unlocked' : 'Locked', locked: !isNitroUnlocked },
+                        ].map((t) => (
+                          <button key={t.id} type="button" onClick={() => handleThemeSelect(t.id as any)} className={"relative rounded-xl border p-3 text-left transition-all " + (profileTheme === t.id ? "border-primary bg-primary/5 ring-1 ring-primary" : "border-border hover:border-primary/50")}>
+                            <div className="flex items-center gap-1.5">
+                              <div className="text-xs font-medium">{t.label}</div>
+                              {t.id === 'nitro' && (isNitroUnlocked ? <Unlock className="h-3 w-3 text-green-600" /> : <Lock className="h-3 w-3 text-zinc-500" />)}
+                            </div>
+                            <div className="text-[10px] text-muted-foreground">{t.sub}</div>
+                            {profileTheme === t.id && <div className="absolute top-2 right-2 h-4 w-4 rounded-full bg-primary text-white flex items-center justify-center text-[10px]">✓</div>}
+                            {t.locked && t.id === 'nitro' && <div className="absolute inset-0 bg-background/60 backdrop-blur-[0.5px] rounded-xl flex items-center justify-center"><Lock className="h-4 w-4" /></div>}
+                          </button>
+                        ))}
+                      </div>
+                      {profileTheme === 'nitro' && isNitroUnlocked && <div className="mt-3 text-[11px] p-2 rounded-lg bg-black text-white text-center">⚡ Nitro: separate banner • B&W badge • Animated ring</div>}
+                    </div>
+                  </div>
+                )}
+                <SocialLinksEditor value={socialLinks} onChange={setSocialLinks} />
+              </div>
+            </div>
+          </ScrollArea>
+          <div className="p-6 pt-3 flex justify-end gap-2 border-t"><Button variant="outline" onClick={() => onOpenChange(false)} disabled={isSaving}>Cancel</Button><Button onClick={() => updateProfileMutation.mutate()} disabled={isSaving}>{isSaving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}Save</Button></div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showNitroPinDialog} onOpenChange={(o) => { setShowNitroPinDialog(o); if (!o) setNitroPinInput(""); }}>
+        <DialogContent className="max-w-sm rounded-[20px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2"><Lock className="h-4 w-4" /> Locked Theme</DialogTitle>
+            <DialogDescription>Authentication required</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div>
+              <Label>PIN</Label>
+              <Input type="password" value={nitroPinInput} onChange={(e) => setNitroPinInput(e.target.value)} placeholder="••••••••" onKeyDown={(e) => { if (e.key === 'Enter') handleNitroPinSubmit(); }} autoFocus />
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => { setShowNitroPinDialog(false); setNitroPinInput(""); }}>Cancel</Button>
+              <Button onClick={handleNitroPinSubmit}><Unlock className="h-4 w-4 mr-1" /> Unlock</Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {avatarCropSrc && <ImageCropDialog open={!!avatarCropSrc} onOpenChange={(o) => !o && setAvatarCropSrc(null)} imageSrc={avatarCropSrc} onCropComplete={handleAvatarCropComplete} aspectRatio={1} />}
+      {bannerCropSrc && <ImageCropDialog open={!!bannerCropSrc} onOpenChange={(o) => !o && setBannerCropSrc(null)} imageSrc={bannerCropSrc} onCropComplete={handleBannerCropComplete} aspectRatio={3} />}
+    </>
+  );
+};
