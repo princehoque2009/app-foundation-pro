@@ -29,21 +29,8 @@ import { MessageCircle, Share2, Bookmark } from "lucide-react";
 
 interface PostCardProps {
   id: string;
-  author: {
-    name: string;
-    avatar?: string;
-    username: string;
-    isVerified?: boolean;
-    userId?: string;
-    profileTheme?: string | null;
-  };
-  content: string;
-  image?: string;
-  video?: string;
-  mediaItems?: PostMedia[];
-  likes: number;
-  comments: number;
-  timestamp: string;
+  author: { name: string; avatar?: string; username: string; isVerified?: boolean; userId?: string; profileTheme?: string | null; };
+  content: string; image?: string; video?: string; mediaItems?: PostMedia[]; likes: number; comments: number; timestamp: string;
 }
 
 export const PostCard = ({ id, author, content, image, video, mediaItems, likes, comments, timestamp }: PostCardProps) => {
@@ -51,8 +38,7 @@ export const PostCard = ({ id, author, content, image, video, mediaItems, likes,
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showHeartAnimation, setShowHeartAnimation] = useState(false);
   const [showReactionBreakdown, setShowReactionBreakdown] = useState(false);
-  const navigate = useNavigate();
-  const queryClient = useQueryClient();
+  const navigate = useNavigate(); const queryClient = useQueryClient();
   const { data: userRoles } = useUserRoles({ userId: author.userId });
   const { effects: authorEffects } = useActiveEffects(author.userId);
   const [isImageLoaded, setIsImageLoaded] = useState(false);
@@ -62,47 +48,33 @@ export const PostCard = ({ id, author, content, image, video, mediaItems, likes,
   const { data: isSaved } = useIsPostSaved(id);
   const recordView = useRecordPostView();
   useEffect(() => { recordView.mutate(id); }, [id]);
-  const isLiked = !!reactionData?.myReaction;
-  const myReaction = (reactionData?.myReaction as any) || null;
+  const isLiked = !!reactionData?.myReaction; const myReaction = (reactionData?.myReaction as any) || null;
   const theme = (author.profileTheme as any) || 'default';
   const isGold = author.isVerified && theme === 'yellow';
   const isPlatinum = author.isVerified && theme === 'mono';
-  const handleReact = (key: any) => {
-    if (key && !myReaction) { setShowHeartAnimation(true); setTimeout(() => setShowHeartAnimation(false), 800); }
-    toggleReaction.mutate({ reaction: key, currentReaction: myReaction });
-  };
-  const handleDoubleTap = () => {
-    if (!isLiked) { setShowHeartAnimation(true); setTimeout(() => setShowHeartAnimation(false), 800); toggleReaction.mutate({ reaction: "love" as any, currentReaction: myReaction }); }
-  };
+  const handleReact = (key: any) => { if (key && !myReaction) { setShowHeartAnimation(true); setTimeout(() => setShowHeartAnimation(false), 800); } toggleReaction.mutate({ reaction: key, currentReaction: myReaction }); };
+  const handleDoubleTap = () => { if (!isLiked) { setShowHeartAnimation(true); setTimeout(() => setShowHeartAnimation(false), 800); toggleReaction.mutate({ reaction: "love" as any, currentReaction: myReaction }); } };
   const handleProfileClick = () => { if (author.userId) navigate(`/profile/${author.userId}`); };
-  const handleDelete = async () => {
-    if (!confirm("Are you sure you want to delete this post?")) return;
-    try { const { error } = await supabase.from("posts").delete().eq("id", id); if (error) throw error; queryClient.invalidateQueries({ queryKey: ["posts"] }); queryClient.invalidateQueries({ queryKey: ["user-posts"] }); toast({ title: "Post deleted" }); } catch { toast({ title: "Error", description: "Failed to delete post.", variant: "destructive" }); }
-  };
+  const handleDelete = async () => { if (!confirm("Are you sure you want to delete this post?")) return; try { const { error } = await supabase.from("posts").delete().eq("id", id); if (error) throw error; queryClient.invalidateQueries({ queryKey: ["posts"] }); queryClient.invalidateQueries({ queryKey: ["user-posts"] }); toast({ title: "Post deleted" }); } catch { toast({ title: "Error", variant: "destructive" }); } };
   const handleEdit = () => setShowEditDialog(true);
-  const handleShare = async () => {
-    const postUrl = `${window.location.origin}/post/${id}`;
-    if (navigator.share) { try { await navigator.share({ title: 'Check out this post on Prangon', text: content, url: postUrl }); } catch {} } else { await navigator.clipboard.writeText(postUrl); toast({ title: "Link copied" }); }
-  };
+  const handleShare = async () => { const postUrl = `${window.location.origin}/post/${id}`; if (navigator.share) { try { await navigator.share({ title: 'Check out this post on Prangon', text: content, url: postUrl }); } catch {} } else { await navigator.clipboard.writeText(postUrl); toast({ title: "Link copied" }); } };
   const likeCount = reactionData?.totalCount || likes;
   return (
     <>
       <article className={cn(
         "group relative mb-5 rounded-[28px] border bg-card shadow-sm transition-all duration-300 hover:shadow-md hover:-translate-y-[1px] animate-fade-in overflow-hidden",
         !isGold && !isPlatinum && "border-border/60 hover:border-border/80",
-        isGold && "border-amber-200/70 dark:border-amber-800/40 bg-gradient-to-br from-amber-50/70 via-card to-card dark:from-amber-950/10 dark:via-card dark:to-card shadow-[0_0_0_1px_rgba(251,191,36,0.12),0_4px_16px_-4px_rgba(251,191,36,0.20)] hover:shadow-[0_0_0_1px_rgba(251,191,36,0.18),0_8px_24px_-6px_rgba(251,191,36,0.28)] hover:border-amber-300/60",
-        isPlatinum && "border-zinc-300/60 dark:border-zinc-700/60 bg-gradient-to-br from-zinc-50/80 via-card to-card dark:from-zinc-900/50 dark:via-card dark:to-card shadow-[0_0_0_1px_rgba(0,0,0,0.06),0_4px_16px_-4px_rgba(0,0,0,0.12)] dark:shadow-[0_0_0_1px_rgba(255,255,255,0.06),0_4px_16px_-4px_rgba(0,0,0,0.3)] hover:border-zinc-400/60"
+        isGold && "border-amber-200/60 dark:border-amber-800/30 bg-card hover:border-amber-300/50",
+        isPlatinum && "border-zinc-300/50 dark:border-zinc-700/50 bg-card hover:border-zinc-400/50"
       )}>
-        {isGold && <div className="absolute top-0 left-6 right-6 h-[2px] bg-gradient-to-r from-amber-300 via-yellow-400 to-amber-300 rounded-full opacity-70" />}
-        {isPlatinum && <div className="absolute top-0 left-6 right-6 h-[2px] bg-gradient-to-r from-zinc-300 via-zinc-100 to-zinc-300 dark:from-zinc-600 dark:via-zinc-300 dark:to-zinc-600 rounded-full opacity-60" />}
         <div className="flex items-center gap-3 p-4 pb-3">
           <div className="flex items-center gap-3 cursor-pointer group/avatar min-w-0 flex-1" onClick={handleProfileClick}>
             <div className="relative">
               <Avatar className={cn(
                 "h-11 w-11 shrink-0 ring-1 transition-all duration-200 group-hover/avatar:scale-[1.03]",
                 !isGold && !isPlatinum && "ring-border/50 group-hover/avatar:ring-border",
-                isGold && "ring-2 ring-amber-400 shadow-[0_0_0_3px_rgba(251,191,36,0.15),0_2px_8px_rgba(251,191,36,0.2)]",
-                isPlatinum && "ring-2 ring-zinc-300 dark:ring-zinc-600 shadow-[0_0_0_2px_white,0_0_0_4px_black,0_2px_8px_rgba(0,0,0,0.12)] dark:shadow-[0_0_0_2px_black,0_0_0_4px_white,0_2px_8px_rgba(255,255,255,0.1)]"
+                isGold && "ring-2 ring-amber-400",
+                isPlatinum && "ring-2 ring-zinc-300 dark:ring-zinc-600"
               )}>
                 <AvatarImage src={author.avatar || undefined} alt={author.name} className="object-cover" />
                 <AvatarFallback className="bg-muted text-muted-foreground"><span className="text-xs font-medium">?</span></AvatarFallback>
@@ -119,8 +91,6 @@ export const PostCard = ({ id, author, content, image, video, mediaItems, likes,
                 )}>{author.name}</span>
                 {author.isVerified && <VerifiedBadge size="sm" />}
                 {userRoles && userRoles.length > 0 && <UserRoleBadges roles={userRoles as any} size="sm" />}
-                {isGold && <span className="inline-flex h-4 px-1.5 items-center rounded-full bg-gradient-to-r from-amber-400 to-yellow-500 text-[8px] font-bold text-white shadow-sm">GOLD</span>}
-                {isPlatinum && <span className="inline-flex h-4 px-1.5 items-center rounded-full bg-gradient-to-r from-zinc-500 to-zinc-400 text-[8px] font-bold text-white shadow-sm">PLATINUM</span>}
               </div>
               <div className="flex items-center gap-1.5 text-[12px] text-muted-foreground">
                 <span className="truncate max-w-[110px]">@{author.username}</span>
@@ -143,24 +113,8 @@ export const PostCard = ({ id, author, content, image, video, mediaItems, likes,
             {video && <PrangonVideoPlayer src={video} className="w-full max-h-[560px]" compact />}
           </div>
         )}
-        {likeCount > 0 && (
-          <div className="px-4 pt-3">
-            <button onClick={() => setShowReactionBreakdown(true)} className={cn("reaction-pill lg-press", isGold && "bg-amber-50/80 border-amber-200/50 dark:bg-amber-950/20", isPlatinum && "bg-zinc-50/80 border-zinc-200/60 dark:bg-zinc-900/60")}>
-              <span className="flex -space-x-1">{Object.entries(reactionData?.counts || {}).filter(([_, c]) => (c as number) > 0).sort((a, b) => (b[1] as number) - (a[1] as number)).slice(0, 3).map(([key]) => <span key={key} className="text-[14px] leading-none">{getReactionMeta(key).emoji}</span>)}</span>
-              <span className="tabular-nums text-foreground/80">{likeCount}</span>
-            </button>
-          </div>
-        )}
-        <div className="p-2.5 pt-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-1">
-              <ReactionTrayButton currentReaction={myReaction} count={likeCount} onReact={handleReact} disabled={toggleReaction.isPending} />
-              <Button variant="ghost" size="sm" className="h-9 gap-1.5 rounded-full px-3 text-muted-foreground hover:text-foreground hover:bg-muted/80" onClick={() => setShowComments(true)}><MessageCircle className="h-[20px] w-[20px]" strokeWidth={1.75} />{comments > 0 && <span className="text-[13px] font-semibold tabular-nums">{comments}</span>}</Button>
-              <Button variant="ghost" size="sm" className="h-9 rounded-full px-3 text-muted-foreground hover:text-foreground hover:bg-muted/80" onClick={handleShare}><Share2 className="h-[19px] w-[19px]" strokeWidth={1.75} /></Button>
-            </div>
-            <Button variant="ghost" size="sm" className="h-9 w-9 rounded-full hover:bg-muted/80" onClick={() => { if (isSaved) unsavePost.mutate(id); else savePost.mutate(id); }}><Bookmark className={cn("h-[19px] w-[19px]", isSaved ? "fill-primary text-primary" : "text-muted-foreground")} strokeWidth={isSaved ? 2 : 1.75} /></Button>
-          </div>
-        </div>
+        {likeCount > 0 && <div className="px-4 pt-3"><button onClick={() => setShowReactionBreakdown(true)} className="reaction-pill lg-press"><span className="flex -space-x-1">{Object.entries(reactionData?.counts || {}).filter(([_, c]) => (c as number) > 0).sort((a, b) => (b[1] as number) - (a[1] as number)).slice(0, 3).map(([key]) => <span key={key} className="text-[14px] leading-none">{getReactionMeta(key).emoji}</span>)}</span><span className="tabular-nums text-foreground/80">{likeCount}</span></button></div>}
+        <div className="p-2.5 pt-3"><div className="flex items-center justify-between"><div className="flex items-center gap-1"><ReactionTrayButton currentReaction={myReaction} count={likeCount} onReact={handleReact} disabled={toggleReaction.isPending} /><Button variant="ghost" size="sm" className="h-9 gap-1.5 rounded-full px-3 text-muted-foreground hover:text-foreground hover:bg-muted/80" onClick={() => setShowComments(true)}><MessageCircle className="h-[20px] w-[20px]" strokeWidth={1.75} />{comments > 0 && <span className="text-[13px] font-semibold tabular-nums">{comments}</span>}</Button><Button variant="ghost" size="sm" className="h-9 rounded-full px-3 text-muted-foreground hover:text-foreground hover:bg-muted/80" onClick={handleShare}><Share2 className="h-[19px] w-[19px]" strokeWidth={1.75} /></Button></div><Button variant="ghost" size="sm" className="h-9 w-9 rounded-full hover:bg-muted/80" onClick={() => { if (isSaved) unsavePost.mutate(id); else savePost.mutate(id); }}><Bookmark className={cn("h-[19px] w-[19px]", isSaved ? "fill-primary text-primary" : "text-muted-foreground")} strokeWidth={isSaved ? 2 : 1.75} /></Button></div></div>
       </article>
       <CommentsDialog postId={id} open={showComments} onOpenChange={setShowComments} />
       <EditPostDialog postId={id} currentCaption={content} currentMediaUrl={image || video} currentMediaType={video ? "video" : image ? "image" : undefined} open={showEditDialog} onOpenChange={setShowEditDialog} />
