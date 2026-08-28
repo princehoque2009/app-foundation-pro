@@ -72,16 +72,18 @@ export const ProfileHeader = ({
     );
   }
 
+  const isGifCover = profile?.cover_photo_url?.toLowerCase().includes('.gif');
+
   return (
     <>
       <div className={cn("relative pb-4", isVerifiedTheme && `profile-theme-${theme}`)}>
-        <div className={cn("profile-banner relative w-full overflow-hidden bg-muted h-[180px] sm:h-[220px] md:h-[260px] lg:h-[300px] xl:h-[320px] lg:rounded-[24px] lg:max-w-[1024px] lg:mx-auto lg:border lg:shadow-sm", theme === 'yellow' ? "lg:border-amber-300/50 border-amber-200 shadow-[0_0_0_1px_rgba(251,191,36,0.2),0_8px_24px_-8px_rgba(251,191,36,0.3)]" : "lg:border-border/50")}>
+        <div className={cn("profile-banner relative w-full overflow-hidden bg-muted h-[180px] sm:h-[220px] md:h-[260px] lg:h-[300px] xl:h-[320px] lg:rounded-[24px] lg:max-w-[1024px] lg:mx-auto lg:border lg:shadow-sm", theme === 'yellow' ? "lg:border-amber-300/50 border-amber-200 shadow-[0_0_0_1px_rgba(251,191,36,0.2),0_8px_24px_-8px_rgba(251,191,36,0.3)]" : theme === 'nitro' ? "lg:border-zinc-300/50 border-white/20" : "lg:border-border/50")}>
           {isOwner ? (
-            <CoverPhotoUploader userId={userId} currentCoverUrl={profile?.cover_photo_url} isOwner />
+            <CoverPhotoUploader userId={userId} currentCoverUrl={profile?.cover_photo_url} isOwner theme={theme} />
           ) : profile?.cover_photo_url ? (
-            <img src={optimizeCloudinaryUrl(profile.cover_photo_url, "c_fill,ar_3:1,g_auto,w_1200")} alt="cover" className={cn("w-full h-full object-cover", theme === 'mono' && "grayscale")} />
+            <img src={isGifCover ? profile.cover_photo_url : optimizeCloudinaryUrl(profile.cover_photo_url, "c_fill,ar_3:1,g_auto,w_1200")} alt="cover" className={cn("w-full h-full object-cover", theme === 'mono' && "grayscale")} />
           ) : (
-            <div className={cn("absolute inset-0", theme === 'yellow' ? "bg-gradient-to-br from-amber-100 via-yellow-50 to-orange-50 dark:from-amber-950/30 dark:via-yellow-950/20 dark:to-orange-950/20" : theme === 'mono' ? "bg-gradient-to-br from-zinc-100 via-zinc-200 to-zinc-300 dark:from-zinc-800 dark:via-zinc-700 dark:to-zinc-900" : "bg-gradient-to-br from-muted via-background to-muted")} />
+            <div className={cn("absolute inset-0", theme === 'yellow' ? "bg-gradient-to-br from-amber-100 via-yellow-50 to-orange-50 dark:from-amber-950/30 dark:via-yellow-950/20 dark:to-orange-950/20" : theme === 'mono' ? "bg-gradient-to-br from-zinc-100 via-zinc-200 to-zinc-300 dark:from-zinc-800 dark:via-zinc-700 dark:to-zinc-900" : theme === 'nitro' ? "bg-gradient-to-br from-zinc-900 via-black to-zinc-800" : "bg-gradient-to-br from-muted via-background to-muted")} />
           )}
           <div className="pointer-events-none absolute inset-x-0 bottom-0 h-2/5 bg-gradient-to-b from-transparent to-background/60 lg:to-background/40" />
         </div>
@@ -94,7 +96,11 @@ export const ProfileHeader = ({
             </button>
 
             <div className="relative z-10">
-              <div className={cn("profile-avatar-ring rounded-full bg-background p-1 shadow-md", theme === 'yellow' && "ring-2 ring-amber-400 shadow-[0_0_0_3px_rgba(251,191,36,0.3),0_0_24px_rgba(251,191,36,0.4)]", theme === 'mono' && "ring-2 ring-zinc-300 dark:ring-zinc-600 shadow-[0_0_0_3px_white,0_0_0_6px_black,0_0_20px_rgba(0,0,0,0.15),0_0_40px_rgba(255,255,255,0.2)] dark:shadow-[0_0_0_3px_black,0_0_0_6px_white,0_0_20px_rgba(255,255,255,0.15)]")} onClick={isOwner ? onEditClick : undefined}>
+              <div className={cn("profile-avatar-ring rounded-full bg-background p-1 shadow-md", 
+                theme === 'yellow' && "ring-2 ring-amber-400 shadow-[0_0_0_3px_rgba(251,191,36,0.3),0_0_24px_rgba(251,191,36,0.4)]", 
+                theme === 'mono' && "ring-2 ring-zinc-300 dark:ring-zinc-600 shadow-[0_0_0_3px_white,0_0_0_6px_black,0_0_20px_rgba(0,0,0,0.15),0_0_40px_rgba(255,255,255,0.2)] dark:shadow-[0_0_0_3px_black,0_0_0_6px_white,0_0_20px_rgba(255,255,255,0.15)]",
+                theme === 'nitro' && "nitro-avatar-ring"
+              )} onClick={isOwner ? onEditClick : undefined}>
                 <Avatar className={cn("h-24 w-24 sm:h-28 sm:w-28", isOwner && "cursor-pointer")}>
                   <AvatarImage src={profile?.avatar_url || ""} alt={profile?.display_name || profile?.username} className={cn("object-cover", theme === 'mono' && "grayscale")} />
                   <AvatarFallback className="bg-muted"><UserCircle className="h-12 w-12" /></AvatarFallback>
@@ -110,8 +116,11 @@ export const ProfileHeader = ({
 
           <div className="mt-3 text-center">
             <div className="flex items-center justify-center gap-2 flex-wrap">
-              <h1 className={cn("profile-name text-xl sm:text-2xl font-semibold tracking-tight", theme === 'yellow' ? "bg-gradient-to-r from-amber-600 via-yellow-500 to-amber-400 bg-clip-text text-transparent" : theme === 'mono' ? "bg-gradient-to-r from-zinc-700 via-zinc-500 to-zinc-300 dark:from-zinc-200 dark:via-white dark:to-zinc-400 bg-clip-text text-transparent" : "text-foreground")}>{profile?.display_name || profile?.username}</h1>
-              {profile?.is_verified && <VerifiedBadge size="lg" />}
+              <h1 className={cn("profile-name text-xl sm:text-2xl font-semibold tracking-tight", 
+                theme === 'yellow' ? "bg-gradient-to-r from-amber-600 via-yellow-500 to-amber-400 bg-clip-text text-transparent" : 
+                theme === 'mono' ? "bg-gradient-to-r from-zinc-700 via-zinc-500 to-zinc-300 dark:from-zinc-200 dark:via-white dark:to-zinc-400 bg-clip-text text-transparent" : 
+                theme === 'nitro' ? "text-white dark:text-white" : "text-foreground")}>{profile?.display_name || profile?.username}</h1>
+              {profile?.is_verified && <VerifiedBadge size="lg" theme={theme} />}
               <UserRolesDisplay userId={userId} size="sm" />
             </div>
             <div className="mt-1 text-sm text-muted-foreground">@{profile?.username}</div>
