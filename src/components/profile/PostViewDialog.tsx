@@ -81,6 +81,9 @@ export const PostViewDialog = ({ postId, open, onOpenChange }: PostViewDialogPro
               name: post.profiles.display_name || post.profiles.username || "Unknown",
               avatar: post.profiles.avatar_url || "",
               username: post.profiles.username || "unknown",
+              isVerified: (post.profiles as any).is_verified || false,
+              userId: post.user_id,
+              profileTheme: (post.profiles as any).profile_theme || "default",
             }}
             content={post.caption || ""}
             image={post.media_type === "image" ? post.media_url || "" : undefined}
