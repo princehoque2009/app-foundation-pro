@@ -53,43 +53,94 @@ export const PostCard = ({ id, author, content, image, video, mediaItems, likes,
   const [showReactionBreakdown, setShowReactionBreakdown] = useState(false);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+
   const { data: userRoles } = useUserRoles({ userId: author.userId });
   const { effects: authorEffects } = useActiveEffects(author.userId);
   const [isImageLoaded, setIsImageLoaded] = useState(false);
+
   const { data: reactionData } = usePostReactions(id);
   const toggleReaction = useToggleReaction(id);
   const { savePost, unsavePost } = useSavedPosts();
   const { data: isSaved } = useIsPostSaved(id);
   const recordView = useRecordPostView();
-  useEffect(() => { recordView.mutate(id); }, [id]);
+
+  useEffect(() => {
+    recordView.mutate(id);
+  }, [id]);
+
   const isLiked = !!reactionData?.myReaction;
   const myReaction = (reactionData?.myReaction as any) || null;
+
   const theme = (author.profileTheme as any) || 'default';
   const isGold = author.isVerified && theme === 'yellow';
   const isPlatinum = author.isVerified && theme === 'mono';
-  const handleReact = (key: any) => { if (key && !myReaction) { setShowHeartAnimation(true); setTimeout(() => setShowHeartAnimation(false), 800); } toggleReaction.mutate({ reaction: key, currentReaction: myReaction }); };
-  const handleDoubleTap = () => { if (!isLiked) { setShowHeartAnimation(true); setTimeout(() => setShowHeartAnimation(false), 800); toggleReaction.mutate({ reaction: "love" as any, currentReaction: myReaction }); } };
-  const handleProfileClick = () => { if (author.userId) navigate(`/profile/${author.userId}`); };
-  const handleDelete = async () => { if (!confirm("Are you sure you want to delete this post?")) return; try { const { error } = await supabase.from("posts").delete().eq("id", id); if (error) throw error; queryClient.invalidateQueries({ queryKey: ["posts"] }); queryClient.invalidateQueries({ queryKey: ["user-posts"] }); toast({ title: "Post deleted" }); } catch { toast({ title: "Error", variant: "destructive" }); } };
+  const isNitro = author.isVerified && theme === 'nitro';
+
+  const handleReact = (key: any) => {
+    if (key && !myReaction) {
+      setShowHeartAnimation(true);
+      setTimeout(() => setShowHeartAnimation(false), 800);
+    }
+    toggleReaction.mutate({ reaction: key, currentReaction: myReaction });
+  };
+
+  const handleDoubleTap = () => {
+    if (!isLiked) {
+      setShowHeartAnimation(true);
+      setTimeout(() => setShowHeartAnimation(false), 800);
+      toggleReaction.mutate({ reaction: "love" as any, currentReaction: myReaction });
+    }
+  };
+
+  const handleProfileClick = () => {
+    if (author.userId) navigate(`/profile/${author.userId}`);
+  };
+
+  const handleDelete = async () => {
+    if (!confirm("Are you sure you want to delete this post?")) return;
+    try {
+      const { error } = await supabase.from("posts").delete().eq("id", id);
+      if (error) throw error;
+      queryClient.invalidateQueries({ queryKey: ["posts"] });
+      queryClient.invalidateQueries({ queryKey: ["user-posts"] });
+      toast({ title: "Post deleted", description: "Your post has been deleted successfully" });
+    } catch (error) {
+      toast({ title: "Error", description: "Failed to delete post.", variant: "destructive" });
+    }
+  };
+
   const handleEdit = () => setShowEditDialog(true);
-  const handleShare = async () => { const postUrl = `${window.location.origin}/post/${id}`; if (navigator.share) { try { await navigator.share({ title: 'Check out this post on Prangon', text: content, url: postUrl }); } catch {} } else { await navigator.clipboard.writeText(postUrl); toast({ title: "Link copied" }); } };
+
+  const handleShare = async () => {
+    const postUrl = `${window.location.origin}/post/${id}`;
+    if (navigator.share) {
+      try { await navigator.share({ title: 'Check out this post on Prangon', text: content, url: postUrl }); } catch {}
+    } else {
+      await navigator.clipboard.writeText(postUrl);
+      toast({ title: "Link copied", description: "Post link copied to clipboard" });
+    }
+  };
+
   const likeCount = reactionData?.totalCount || likes;
+
   return (
     <>
       <article className={cn(
         "group relative mb-5 rounded-[28px] border bg-card shadow-sm transition-all duration-300 hover:shadow-md hover:-translate-y-[1px] animate-fade-in overflow-hidden",
-        !isGold && !isPlatinum && "border-border/60 hover:border-border/80",
+        !isGold && !isPlatinum && !isNitro && "border-border/60 hover:border-border/80",
         isGold && "border-amber-200/60 dark:border-amber-800/30 bg-card hover:border-amber-300/50",
-        isPlatinum && "border-zinc-300/50 dark:border-zinc-700/50 bg-card hover:border-zinc-400/50"
+        isPlatinum && "border-zinc-300/50 dark:border-zinc-700/50 bg-card hover:border-zinc-400/50",
+        isNitro && "border-zinc-800/50 dark:border-white/15 bg-card dark:bg-zinc-900/50 hover:border-zinc-700 dark:hover:border-white/20 shadow-[0_0_0_1px_rgba(255,255,255,0.05),0_4px_20px_rgba(0,0,0,0.08)] dark:shadow-[0_0_0_1px_rgba(255,255,255,0.08),0_8px_24px_rgba(0,0,0,0.4)]"
       )}>
         <div className="flex items-center gap-3 p-4 pb-3">
           <div className="flex items-center gap-3 cursor-pointer group/avatar min-w-0 flex-1" onClick={handleProfileClick}>
             <div className="relative">
               <Avatar className={cn(
                 "h-11 w-11 shrink-0 ring-1 transition-all duration-200 group-hover/avatar:scale-[1.03]",
-                !isGold && !isPlatinum && "ring-border/50 group-hover/avatar:ring-border",
+                !isGold && !isPlatinum && !isNitro && "ring-border/50 group-hover/avatar:ring-border",
                 isGold && "ring-2 ring-amber-400",
-                isPlatinum && "ring-2 ring-zinc-300 dark:ring-zinc-600 shadow-[0_0_0_2px_hsl(var(--background)),0_0_0_4px_black] dark:shadow-[0_0_0_2px_hsl(var(--background)),0_0_0_4px_white]"
+                isPlatinum && "ring-2 ring-zinc-300 dark:ring-zinc-600 shadow-[0_0_0_2px_hsl(var(--background)),0_0_0_4px_black] dark:shadow-[0_0_0_2px_hsl(var(--background)),0_0_0_4px_white]",
+                isNitro && "ring-2 ring-white dark:ring-white shadow-[0_0_0_2px_hsl(var(--background)),0_0_0_4px_black] dark:shadow-[0_0_0_2px_hsl(var(--background)),0_0_0_4px_white] nitro-avatar-ring !p-[2px]"
               )}>
                 <AvatarImage src={author.avatar || undefined} alt={author.name} className="object-cover" />
                 <AvatarFallback className="bg-muted text-muted-foreground"><span className="text-xs font-medium">?</span></AvatarFallback>
@@ -98,13 +149,14 @@ export const PostCard = ({ id, author, content, image, video, mediaItems, likes,
             <div className="min-w-0 flex flex-col gap-0.5">
               <div className="flex items-center gap-1.5 flex-wrap">
                 <span className={cn(
-                  "font-semibold text-[14.5px] leading-tight truncate transition-colors tracking-tight",
+                  "font-semibold text-[14.5px] leading-tight truncate group-hover/avatar:text-primary transition-colors tracking-tight",
                   authorEffects.hasRainbowName ? "bg-gradient-to-r from-red-500 via-yellow-500 via-green-500 via-blue-500 to-purple-500 bg-clip-text text-transparent" : "",
-                  !isGold && !isPlatinum && !authorEffects.hasRainbowName && "text-foreground",
+                  !isGold && !isPlatinum && !isNitro && !authorEffects.hasRainbowName && "text-foreground",
                   isGold && "bg-gradient-to-r from-amber-600 via-yellow-500 to-amber-400 bg-clip-text text-transparent",
-                  isPlatinum && "bg-gradient-to-r from-zinc-700 via-zinc-500 to-zinc-300 dark:from-zinc-200 dark:via-white dark:to-zinc-400 bg-clip-text text-transparent"
+                  isPlatinum && "bg-gradient-to-r from-zinc-700 via-zinc-500 to-zinc-300 dark:from-zinc-200 dark:via-white dark:to-zinc-400 bg-clip-text text-transparent",
+                  isNitro && "text-zinc-900 dark:text-white"
                 )}>{author.name}</span>
-                {author.isVerified && <VerifiedBadge size="sm" />}
+                {author.isVerified && <VerifiedBadge size="sm" theme={theme} />}
                 {userRoles && userRoles.length > 0 && <UserRoleBadges roles={userRoles as any} size="sm" />}
               </div>
               <div className="flex items-center gap-1.5 text-[12px] text-muted-foreground">
@@ -120,11 +172,11 @@ export const PostCard = ({ id, author, content, image, video, mediaItems, likes,
         {mediaItems && mediaItems.length > 0 ? (
           <div className="relative bg-muted/30 cursor-pointer overflow-hidden select-none border-y border-border/40" onDoubleClick={handleDoubleTap} onContextMenu={(e) => e.preventDefault()}>
             <MediaCarousel media={mediaItems} onDoubleClick={handleDoubleTap} />
-            <AnimatePresence>{showHeartAnimation && <motion.div initial={{ scale: 0, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 1.8, opacity: 0 }} transition={{ duration: 0.5 }} className="absolute inset-0 flex items-center justify-center pointer-events-none z-10"><span className="text-7xl drop-shadow-2xl">{getReactionMeta(myReaction || "love").emoji}</span></motion.div>}</AnimatePresence>
+            <AnimatePresence>{showHeartAnimation && <motion.div initial={{ scale: 0, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 1.8, opacity: 0 }} transition={{ duration: 0.5, ease: "easeOut" }} className="absolute inset-0 flex items-center justify-center pointer-events-none z-10"><span className="text-7xl drop-shadow-2xl">{getReactionMeta(myReaction || "love").emoji}</span></motion.div>}</AnimatePresence>
           </div>
         ) : (image || video) && (
           <div className="relative bg-muted/30 cursor-pointer overflow-hidden select-none border-y border-border/40" onDoubleClick={handleDoubleTap} onContextMenu={(e) => e.preventDefault()}>
-            {image && <><img src={image} alt="Post" className={cn("w-full object-cover max-h-[560px]", isImageLoaded ? "opacity-100" : "opacity-0 h-0")} loading="lazy" onLoad={() => setIsImageLoaded(true)} draggable={false} /></>}
+            {image && <><img src={image} alt="Post" className={cn("w-full object-cover max-h-[560px] transition-opacity duration-300", isImageLoaded ? "opacity-100" : "opacity-0 h-0")} loading="lazy" onLoad={() => setIsImageLoaded(true)} draggable={false} /></>}
             {video && <PrangonVideoPlayer src={video} className="w-full max-h-[560px]" compact />}
           </div>
         )}
