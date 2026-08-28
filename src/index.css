@@ -1,4 +1,15 @@
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Poppins:wght@500;600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Great+Vibes&family=Allura&family=Dancing+Script:wght@500;700&display=swap");
+/* Amorisa Font - Custom for Verified Mono Theme */
+@font-face {
+  font-family: 'Amorisa';
+  src: url('https://cdn.jsdelivr.net/gh/cdnfonts/Amorisa@main/Amorisa.woff') format('woff'),
+       url('https://db.onlinewebfonts.com/t/2b5cf5d5f6a6e8e7b6e5a4d3c2b1a0f9.eot') format('embedded-opentype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -92,7 +103,7 @@
   }
 
   .dark {
-    --background: 0 0% 10%; /* fixed from 7% black */
+    --background: 0 0% 7%;
     --foreground: 0 0% 98%;
 
     --card: 0 0% 12%;
@@ -462,8 +473,8 @@
 
   .glass-card {
     background: hsl(var(--card) / 0.85);
-    backdrop-filter: blur(16px) saturate(160%);
-    -webkit-backdrop-filter: blur(16px) saturate(160%);
+    backdrop-filter: blur(20px) saturate(160%);
+    -webkit-backdrop-filter: blur(20px) saturate(160%);
     border: 1px solid hsl(var(--border) / 0.6);
     box-shadow: var(--shadow-md);
   }
@@ -664,7 +675,7 @@
     --glass-border: 0 0% 100%;
     --glass-border-opacity: 0.55;
     --glass-shade: 240 6% 6%;
-    --glass-blur: 16px; /* reduced blur */
+    --glass-blur: 22px;
   }
   .dark {
     --glass-bg: 0 0% 12%;
@@ -694,8 +705,8 @@
   /* Top / bottom navigation bars */
   .lg-nav {
     background-color: hsl(var(--glass-bg) / 0.78);
-    -webkit-backdrop-filter: blur(16px) saturate(180%);
-    backdrop-filter: blur(16px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    backdrop-filter: blur(20px) saturate(180%);
     border-bottom: 1px solid hsl(var(--border) / 0.6);
   }
   .dark .lg-nav { background-color: hsl(var(--glass-bg) / 0.72); }
@@ -703,8 +714,8 @@
   /* Floating bars (bottom nav, tab bars) */
   .lg-bar {
     background-color: hsl(var(--glass-bg) / 0.80);
-    -webkit-backdrop-filter: blur(16px) saturate(190%);
-    backdrop-filter: blur(16px) saturate(190%);
+    -webkit-backdrop-filter: blur(24px) saturate(190%);
+    backdrop-filter: blur(24px) saturate(190%);
     border: 1px solid hsl(var(--border) / 0.55);
     box-shadow:
       inset 0 1px 0 hsl(0 0% 100% / 0.4),
@@ -728,8 +739,8 @@
   /* Bottom sheets & modals */
   .lg-sheet {
     background-color: hsl(var(--glass-bg) / 0.88);
-    -webkit-backdrop-filter: blur(16px) saturate(180%);
-    backdrop-filter: blur(16px) saturate(180%);
+    -webkit-backdrop-filter: blur(28px) saturate(180%);
+    backdrop-filter: blur(28px) saturate(180%);
     border: 1px solid hsl(var(--border) / 0.6);
     box-shadow: 0 -8px 40px -12px hsl(var(--glass-shade) / 0.35);
   }
@@ -802,7 +813,7 @@
   :root {
     /* content-aware intensity: raised by useScrollCollapse */
     --lg-intensity: 0;
-    --lg-blur-base: 16px; /* reduced blur */
+    --lg-blur-base: 24px;
     --lg-rim: 0 0% 0%;
   }
 
@@ -811,8 +822,8 @@
     position: relative;
     isolation: isolate;
     background-color: hsl(var(--glass-bg) / calc(0.46 + var(--lg-intensity) * 0.16));
-    -webkit-backdrop-filter: blur(16px) saturate(200%) brightness(1.06);
-    backdrop-filter: blur(16px) saturate(200%) brightness(1.06);
+    -webkit-backdrop-filter: blur(calc(var(--lg-blur-base) + var(--lg-intensity) * 10px)) saturate(200%) brightness(1.06);
+    backdrop-filter: blur(calc(var(--lg-blur-base) + var(--lg-intensity) * 10px)) saturate(200%) brightness(1.06);
     border: 1px solid hsl(0 0% 100% / 0.42);
     box-shadow:
       0 0 0 0.5px hsl(var(--lg-rim) / 0.05),
@@ -877,8 +888,8 @@
   /* More opaque variant for chips floating over video */
   .lg-glass-strong {
     background-color: hsl(0 0% 8% / 0.34);
-    -webkit-backdrop-filter: blur(16px) saturate(190%);
-    backdrop-filter: blur(16px) saturate(190%);
+    -webkit-backdrop-filter: blur(22px) saturate(190%);
+    backdrop-filter: blur(22px) saturate(190%);
     border: 1px solid hsl(0 0% 100% / 0.26);
     box-shadow:
       inset 0 1px 0 hsl(0 0% 100% / 0.28),
@@ -908,13 +919,13 @@
 @layer utilities {
   /* Enhanced glass - more premium blur */
   :root {
-    --lg-blur-base: 16px; /* reduced blur */
+    --lg-blur-base: 32px;
     --lg-intensity: 0;
   }
 
   .lg-glass {
-    backdrop-filter: blur(16px) saturate(210%) brightness(1.08);
-    -webkit-backdrop-filter: blur(16px) saturate(210%) brightness(1.08);
+    backdrop-filter: blur(calc(var(--lg-blur-base) + var(--lg-intensity) * 12px)) saturate(210%) brightness(1.08);
+    -webkit-backdrop-filter: blur(calc(var(--lg-blur-base) + var(--lg-intensity) * 12px)) saturate(210%) brightness(1.08);
     background-color: hsl(var(--glass-bg) / calc(0.52 + var(--lg-intensity) * 0.18));
     border: 1px solid hsl(0 0% 100% / 0.48);
     box-shadow:
@@ -1124,7 +1135,7 @@
 
 /* Dark mode refinements */
 .dark {
-  --background: 0 0% 10%; /* fixed from 7% black */
+  --background: 0 0% 7%;
 }
 .dark body {
   background-image: 
@@ -1140,14 +1151,23 @@
 }
 
 /* ============================================================
-   VERIFIED EXCLUSIVE THEMES - Added to working index.css
-   Safe version - no black screen, no custom font, build-safe
+   VERIFIED EXCLUSIVE THEMES - Yellow Gold & Mono B&W
+   Only for is_verified users
    ============================================================ */
 @layer utilities {
-  /* Gold Theme */
+  /* Yellow Gold Theme */
   .profile-theme-yellow {
     --profile-accent: 45 100% 55%;
+    --profile-accent-foreground: 0 0% 10%;
+    --profile-bg: 48 100% 96%;
+    --profile-border: 45 90% 70%;
   }
+  .dark .profile-theme-yellow {
+    --profile-accent: 45 95% 60%;
+    --profile-bg: 45 30% 12%;
+    --profile-border: 45 70% 40%;
+  }
+
   .profile-theme-yellow .profile-banner {
     border-color: hsl(45 90% 60% / 0.5) !important;
     box-shadow: 0 0 0 1px hsl(45 100% 55% / 0.2), 0 8px 24px -8px hsl(45 100% 55% / 0.3) !important;
@@ -1161,52 +1181,75 @@
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }
+  .profile-theme-yellow .profile-follow-btn {
+    background: linear-gradient(135deg, #f59e0b, #fbbf24) !important;
+    color: black !important;
+    border-color: #f59e0b !important;
+    box-shadow: 0 4px 16px hsl(45 100% 55% / 0.35) !important;
+  }
+  .profile-theme-yellow .profile-badge {
+    background: linear-gradient(135deg, #f59e0b, #fbbf24) !important;
+    color: black !important;
+  }
 
-  /* Platinum Chrome - Cool Mono - visually cool like Gold */
+  /* Mono Black & White Theme */
+  .profile-theme-mono {
+    --profile-accent: 0 0% 15%;
+    --profile-bg: 0 0% 98%;
+    --profile-border: 0 0% 85%;
+    filter: grayscale(0.1);
+  }
+  .dark .profile-theme-mono {
+    --profile-accent: 0 0% 85%;
+    --profile-bg: 0 0% 8%;
+    --profile-border: 0 0% 20%;
+  }
   .profile-theme-mono .profile-banner {
-    border-color: hsl(0 0% 75% / 0.6) !important;
-    box-shadow: 0 0 0 1px hsl(0 0% 85% / 0.3), 0 8px 24px -8px hsl(0 0% 0% / 0.15) !important;
-    position: relative;
-  }
-  .profile-theme-mono .profile-banner::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(105deg, transparent 20%, hsl(0 0% 100% / 0.4) 40%, transparent 60%);
-    pointer-events: none;
-    opacity: 0.5;
-  }
-  .dark .profile-theme-mono .profile-banner {
-    border-color: hsl(0 0% 30% / 0.6) !important;
-    box-shadow: 0 0 0 1px hsl(0 0% 100% / 0.1), 0 8px 24px -8px hsl(0 0% 0% / 0.4) !important;
+    filter: grayscale(1) contrast(1.1);
+    border-color: hsl(0 0% 20% / 0.3) !important;
   }
   .profile-theme-mono .profile-avatar-ring {
-    background: linear-gradient(135deg, #fff, #e5e5e5, #a3a3a3) !important;
-    padding: 3px !important;
-    box-shadow: 0 0 0 2px hsl(var(--background)), 0 0 0 4px hsl(0 0% 15%), 0 0 20px hsl(0 0% 0% / 0.2), 0 0 40px hsl(0 0% 100% / 0.15) !important;
-  }
-  .dark .profile-theme-mono .profile-avatar-ring {
-    background: linear-gradient(135deg, #52525b, #27272a, #18181b) !important;
-    box-shadow: 0 0 0 2px hsl(var(--background)), 0 0 0 4px hsl(0 0% 85%), 0 0 20px hsl(0 0% 100% / 0.15) !important;
-  }
-  .profile-theme-mono .profile-avatar-ring > * {
-    background: hsl(var(--background));
-    border-radius: 9999px;
+    box-shadow: 0 0 0 2px white, 0 0 0 4px black, 0 4px 16px rgba(0,0,0,0.2) !important;
   }
   .profile-theme-mono .profile-name {
-    background: linear-gradient(135deg, #52525b, #a1a1aa, #d4d4d8, #a1a1aa, #52525b) !important;
-    -webkit-background-clip: text !important;
-    -webkit-text-fill-color: transparent !important;
-    background-clip: text !important;
-    background-size: 200% 100% !important;
-    font-weight: 700 !important;
-    letter-spacing: -0.02em !important;
-    filter: drop-shadow(0 1px 1px hsl(0 0% 0% / 0.1));
+    font-family: 'Amorisa', 'Great Vibes', 'Allura', 'Dancing Script', cursive !important;
+    font-weight: 400 !important;
+    font-size: 1.35em !important;
+    letter-spacing: 0.03em !important;
+    background: none !important;
+    -webkit-text-fill-color: initial !important;
+    color: hsl(var(--foreground)) !important;
+    text-shadow: 0 1px 2px hsl(0 0% 0% / 0.08);
   }
   .dark .profile-theme-mono .profile-name {
-    background: linear-gradient(135deg, #e4e4e7, #fafafa, #a1a1aa, #fafafa, #e4e4e7) !important;
-    -webkit-background-clip: text !important;
-    -webkit-text-fill-color: transparent !important;
-    background-clip: text !important;
+    color: hsl(0 0% 98%) !important;
+    text-shadow: 0 1px 3px hsl(0 0% 0% / 0.3);
+  }
+  .dark .profile-theme-mono .profile-avatar-ring {
+    box-shadow: 0 0 0 2px black, 0 0 0 4px white, 0 4px 16px rgba(255,255,255,0.15) !important;
+  }
+  .profile-theme-mono .profile-follow-btn {
+    background: black !important;
+    color: white !important;
+    border-color: black !important;
+  }
+  .dark .profile-theme-mono .profile-follow-btn {
+    background: white !important;
+    color: black !important;
+    border-color: white !important;
+  }
+  /* Verified badge exclusive glow */
+  .verified-exclusive {
+    position: relative;
+  }
+  .verified-exclusive::after {
+    content: '';
+    position: absolute;
+    inset: -2px;
+    border-radius: inherit;
+    background: linear-gradient(135deg, #f59e0b, #fbbf24);
+    z-index: -1;
+    filter: blur(8px);
+    opacity: 0.3;
   }
 }
