@@ -69,6 +69,21 @@ const Messages = () => {
 
   useSelfPresence();
 
+  // Instagram Direct desktop: prevent page scroll, only panels scroll
+  useEffect(() => {
+    const isDesktop = window.innerWidth >= 768;
+    if (isDesktop) {
+      const prevHtmlOverflow = document.documentElement.style.overflow;
+      const prevBodyOverflow = document.body.style.overflow;
+      document.documentElement.style.overflow = "hidden";
+      document.body.style.overflow = "hidden";
+      return () => {
+        document.documentElement.style.overflow = prevHtmlOverflow;
+        document.body.style.overflow = prevBodyOverflow;
+      };
+    }
+  }, []);
+
   useEffect(() => {
     const friendId = searchParams.get("friend");
     if (friendId) {
@@ -255,8 +270,8 @@ const Messages = () => {
 
   const renderChatsScreen = () => (
     <>
-      {/* Glass header */}
-      <header className="sticky top-0 z-20 bg-background/[.88] backdrop-blur-md border-b border-border/60">
+      {/* Header - fixed like IG, not sticky scrolling away */}
+      <header className="shrink-0 z-20 bg-background/95 backdrop-blur-md border-b border-border/60">
         <div className="flex items-center gap-3 px-4 pt-5 pb-3">
           <button
             onClick={() => navigate("/")}
@@ -317,19 +332,21 @@ const Messages = () => {
         </div>
       </header>
 
-      {/* Notes bar */}
-      <NotesBar
-        self={selfProfile}
-        myNote={myNote}
-        friends={friends || []}
-        notes={notesMap || {}}
-        mutedIds={mutedNoteIds || []}
-        onCreateNote={() => setNoteComposerOpen(true)}
-        onOpenNote={(f, note) => setNoteTarget({ friend: f as Profile, note })}
-      />
+      {/* Notes bar - fixed */}
+      <div className="shrink-0 border-b border-border/20">
+        <NotesBar
+          self={selfProfile}
+          myNote={myNote}
+          friends={friends || []}
+          notes={notesMap || {}}
+          mutedIds={mutedNoteIds || []}
+          onCreateNote={() => setNoteComposerOpen(true)}
+          onOpenNote={(f, note) => setNoteTarget({ friend: f as Profile, note })}
+        />
+      </div>
 
       {archivedCount > 0 && (
-        <div className="px-4 pb-2">
+        <div className="shrink-0 px-4 py-2 border-b border-border/10">
           <button
             onClick={() => setShowArchived((v) => !v)}
             className={cn(
@@ -343,8 +360,9 @@ const Messages = () => {
         </div>
       )}
 
-      <ScrollArea className="flex-1">
-        <div className="px-3 pb-32 space-y-1">
+      {/* Scrollable list only - like Instagram */}
+      <ScrollArea className="flex-1 min-h-0">
+        <div className="px-3 pb-32 md:pb-4 space-y-1">
           {friendsLoading ? (
             Array.from({ length: 6 }).map((_, i) => (
               <div key={i} className="flex items-center gap-3 p-2.5">
@@ -379,7 +397,7 @@ const Messages = () => {
                   onMouseLeave={() => onPressEnd(friend)}
                   className={cn(
                     "w-full p-2.5 rounded-2xl flex items-center gap-3 transition-all hover:bg-accent/60 select-none",
-                    selectedFriend?.id === friend.id && "bg-accent",
+                    selectedFriend?.id === friend.id && "bg-accent md:bg-accent",
                     flags.pinned && "bg-primary/5"
                   )}
                 >
@@ -467,40 +485,49 @@ const Messages = () => {
 
   return (
     <MainLayout showHeader={false} showBottomNav={false}>
-      <div className="min-h-[100dvh] flex flex-col bg-background">
-        <div className="flex flex-1 min-h-0">
-          {/* Left column */}
+      {/* Instagram Direct style: desktop = full screen split, no page scroll */}
+      <div className="h-[100dvh] w-full flex flex-col bg-background md:h-screen md:overflow-hidden">
+        <div className="flex flex-1 min-h-0 overflow-hidden w-full">
+          {/* Left column - like IG: fixed width, full height, independent scroll */}
           <div
             className={cn(
-              "w-full md:w-96 border-r bg-background flex flex-col min-h-0",
+              "w-full md:w-[360px] lg:w-[380px] xl:w-[400px] border-r bg-background flex flex-col overflow-hidden h-full md:h-screen shrink-0",
               selectedFriend ? "hidden md:flex" : "flex"
             )}
           >
             {tab === "chats" && renderChatsScreen()}
-            {tab === "calls" && <CallsScreen />}
+            {tab === "calls" && (
+              <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
+                <CallsScreen />
+              </div>
+            )}
             {tab === "people" && (
-              <PeopleScreen
-                friends={friends || []}
-                onlineIds={onlineIds}
-                onOpenChat={(f) => {
-                  setTab("chats");
-                  handleSelectFriend(f.id, f as Profile);
-                }}
-                onNewContact={() => navigate("/friends")}
-                onNewCommunity={() => setShowCreateGroup(true)}
-              />
+              <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
+                <PeopleScreen
+                  friends={friends || []}
+                  onlineIds={onlineIds}
+                  onOpenChat={(f) => {
+                    setTab("chats");
+                    handleSelectFriend(f.id, f as Profile);
+                  }}
+                  onNewContact={() => navigate("/friends")}
+                  onNewCommunity={() => setShowCreateGroup(true)}
+                />
+              </div>
             )}
             {tab === "settings" && (
-              <SettingsScreen
-                profile={selfProfile}
-                onOpenProfile={() => navigate("/profile")}
-                onExit={() => setTab("chats")}
-              />
+              <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
+                <SettingsScreen
+                  profile={selfProfile}
+                  onOpenProfile={() => navigate("/profile")}
+                  onExit={() => setTab("chats")}
+                />
+              </div>
             )}
           </div>
 
-          {/* Chat window */}
-          <div className={cn("flex-1 min-h-0", selectedFriend ? "flex" : "hidden md:flex")}>
+          {/* Right column - chat window like IG: fixed header, scrollable messages, fixed composer */}
+          <div className={cn("flex-1 flex flex-col overflow-hidden h-full md:h-screen bg-background", selectedFriend ? "flex" : "hidden md:flex")}>
             {selectedFriend ? (
               <SupabaseChatWindow
                 friendProfile={selectedFriend}
@@ -508,7 +535,7 @@ const Messages = () => {
                 initialDraft={chatDraft}
               />
             ) : (
-              <div className="flex-1 flex flex-col items-center justify-center text-center p-8 bg-muted/10">
+              <div className="flex-1 flex flex-col items-center justify-center text-center p-8 bg-muted/10 h-full">
                 <div className="w-24 h-24 rounded-full bg-coral-gradient flex items-center justify-center mb-6 shadow-lg">
                   <Users className="h-12 w-12 text-white" />
                 </div>
