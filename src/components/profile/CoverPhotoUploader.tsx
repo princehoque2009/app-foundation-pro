@@ -14,12 +14,13 @@ interface CoverPhotoUploaderProps {
   currentCoverUrl?: string | null;
   isOwner: boolean;
   onImageClick?: (url: string) => void;
+  theme?: string;
 }
 
 const COVER_TRANSFORM = "c_fill,ar_16:9,g_auto,w_1200";
 const COVER_PLACEHOLDER_TRANSFORM = "c_fill,ar_16:9,g_auto,w_32,e_blur:1000";
 
-export const CoverPhotoUploader = ({ userId, currentCoverUrl, isOwner, onImageClick }: CoverPhotoUploaderProps) => {
+export const CoverPhotoUploader = ({ userId, currentCoverUrl, isOwner, onImageClick, theme = 'default' }: CoverPhotoUploaderProps) => {
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isImageLoaded, setIsImageLoaded] = useState(false);
@@ -28,16 +29,15 @@ export const CoverPhotoUploader = ({ userId, currentCoverUrl, isOwner, onImageCl
 
   const uploadMutation = useMutation({
     mutationFn: async (blob: Blob) => {
-      if (!isCloudinaryConfigured()) {
-        throw new Error("Cloudinary is not configured. Add VITE_CLOUDINARY_CLOUD_NAME and VITE_CLOUDINARY_UPLOAD_PRESET to your .env.");
-      }
+      if (!isCloudinaryConfigured()) throw new Error("Cloudinary not configured");
       const result = await uploadToCloudinary(blob, { folder: `prangon/covers/${userId}` });
-      const { error: updateError } = await supabase.from("profiles").update({ cover_photo_url: result.secure_url }).eq("id", userId);
-      if (updateError) throw updateError;
+      const { error } = await supabase.from("profiles").update({ cover_photo_url: result.secure_url }).eq("id", userId);
+      if (error) throw error;
       return result.secure_url;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["profile", userId] });
+      queryClient.invalidateQueries({ queryKey: ["profile"] });
       toast({ title: "Cover photo updated!" });
       setPreviewUrl(null);
     },
@@ -51,7 +51,20 @@ export const CoverPhotoUploader = ({ userId, currentCoverUrl, isOwner, onImageCl
     const file = e.target.files?.[0];
     if (!file) return;
     if (!file.type.startsWith("image/")) {
-      toast({ title: "Invalid file", description: "Please select an image file", variant: "destructive" });
+      toast({ title: "Invalid file", description: "Please select an image", variant: "destructive" });
+      return;
+    }
+    const isGif = file.type === "image/gif";
+    if (isGif && theme === 'nitro') {
+      const objectUrl = URL.createObjectURL(file);
+      setPreviewUrl(objectUrl);
+      setIsImageLoaded(false);
+      uploadMutation.mutate(file);
+      e.target.value = "";
+      return;
+    }
+    if (isGif) {
+      toast({ title: "GIF only for Nitro", description: "Switch to Nitro theme to use GIF covers", variant: "destructive" });
       return;
     }
     setCropSrc(URL.createObjectURL(file));
@@ -67,9 +80,9 @@ export const CoverPhotoUploader = ({ userId, currentCoverUrl, isOwner, onImageCl
   }, [uploadMutation]);
 
   const rawUrl = previewUrl || currentCoverUrl;
-  const displayUrl = previewUrl || optimizeCloudinaryUrl(currentCoverUrl, COVER_TRANSFORM);
-  const placeholderUrl = !previewUrl ? optimizeCloudinaryUrl(currentCoverUrl, COVER_PLACEHOLDER_TRANSFORM) : null;
-  const isUploading = uploadMutation.isPending;
+  const isGifCover = currentCoverUrl?.toLowerCase().includes('.gif');
+  const displayUrl = previewUrl || (isGifCover ? currentCoverUrl : optimizeCloudinaryUrl(currentCoverUrl, COVER_TRANSFORM));
+  const placeholderUrl = !previewUrl && !isGifCover ? optimizeCloudinaryUrl(currentCoverUrl, COVER_PLACEHOLDER_TRANSFORM) : null;
 
   return (
     <>
@@ -77,51 +90,20 @@ export const CoverPhotoUploader = ({ userId, currentCoverUrl, isOwner, onImageCl
         <AnimatePresence mode="wait">
           {displayUrl ? (
             <motion.div key={displayUrl} initial={{ opacity: 0 }} animate={{ opacity: isImageLoaded ? 1 : 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }} className="absolute inset-0">
-              <img
-                src={displayUrl}
-                alt="Cover"
-                className="w-full h-full object-cover cursor-pointer"
-                onLoad={() => setIsImageLoaded(true)}
-                onClick={() => rawUrl && onImageClick?.(rawUrl)}
-              />
+              <img src={displayUrl} alt="Cover" className="w-full h-full object-cover cursor-pointer" onLoad={() => setIsImageLoaded(true)} onClick={() => rawUrl && onImageClick?.(rawUrl)} />
             </motion.div>
-          ) : (
-            <div className="absolute inset-0 bg-gradient-to-br from-muted to-muted/50" />
-          )}
+          ) : <div className="absolute inset-0 bg-gradient-to-br from-muted to-muted/50" />}
         </AnimatePresence>
-
-        {placeholderUrl && !isImageLoaded && (
-          <img src={placeholderUrl} alt="" aria-hidden="true" className="absolute inset-0 w-full h-full object-cover scale-[1.02]" />
-        )}
-        {displayUrl && !isImageLoaded && !placeholderUrl && <div className="absolute inset-0 shimmer" />}
-
-        {isUploading && (
-          <div className="absolute inset-0 bg-background/60 backdrop-blur-sm flex items-center justify-center">
-            <div className="flex flex-col items-center gap-2">
-              <Loader2 className="h-6 w-6 animate-spin text-primary" />
-              <span className="text-xs text-muted-foreground">Uploading...</span>
-            </div>
-          </div>
-        )}
-
-        {isOwner && !isUploading && (
-          <Button
-            variant="secondary"
-            size="sm"
-            className={cn("absolute bottom-3 right-3 gap-1.5 rounded-full z-20", "bg-background/80 backdrop-blur-sm shadow-lg", "hover:bg-background/90 transition-all", "text-xs font-medium")}
-            onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }}
-          >
-            <Camera className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline">Edit Cover</span>
+        {placeholderUrl && !isImageLoaded && <img src={placeholderUrl} alt="" className="absolute inset-0 w-full h-full object-cover scale-[1.02]" />}
+        {uploadMutation.isPending && <div className="absolute inset-0 bg-background/60 backdrop-blur-sm flex items-center justify-center"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>}
+        {isOwner && !uploadMutation.isPending && (
+          <Button variant="secondary" size="sm" className={cn("absolute bottom-3 right-3 gap-1.5 rounded-full z-20 bg-background/80 backdrop-blur-sm shadow-lg text-xs")} onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }}>
+            <Camera className="h-3.5 w-3.5" /><span className="hidden sm:inline">{theme === 'nitro' ? "Edit GIF Cover" : "Edit Cover"}</span>
           </Button>
         )}
-
-        <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileSelect} />
+        <input ref={fileInputRef} type="file" accept={theme === 'nitro' ? "image/*,image/gif" : "image/*"} className="hidden" onChange={handleFileSelect} />
       </div>
-
-      {cropSrc && (
-        <ImageCropDialog open={!!cropSrc} onOpenChange={(v) => !v && setCropSrc(null)} imageSrc={cropSrc} aspectRatio={16 / 9} shape="rect" onCropComplete={handleCropComplete} />
-      )}
+      {cropSrc && <ImageCropDialog open={!!cropSrc} onOpenChange={(v) => !v && setCropSrc(null)} imageSrc={cropSrc} aspectRatio={16/9} shape="rect" onCropComplete={handleCropComplete} />}
     </>
   );
 };
