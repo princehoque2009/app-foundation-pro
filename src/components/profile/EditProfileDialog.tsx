@@ -69,26 +69,20 @@ export const EditProfileDialog = ({ profile, open, onOpenChange }: EditProfileDi
 
   const avatarFileRef = useRef<HTMLInputElement>(null);
   const bannerFileRef = useRef<HTMLInputElement>(null);
-  const normalBannerFileRef = useRef<HTMLInputElement>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
-  const [normalBannerPreview, setNormalBannerPreview] = useState<string | null>(null);
-  const [nitroBannerPreview, setNitroBannerPreview] = useState<string | null>(null);
+  const [bannerPreview, setBannerPreview] = useState<string | null>(null);
   const [avatarBlob, setAvatarBlob] = useState<Blob | null>(null);
-  const [normalBannerBlob, setNormalBannerBlob] = useState<Blob | null>(null);
-  const [nitroBannerBlob, setNitroBannerBlob] = useState<Blob | null>(null);
+  const [bannerBlob, setBannerBlob] = useState<Blob | null>(null);
   const [avatarCropSrc, setAvatarCropSrc] = useState<string | null>(null);
   const [bannerCropSrc, setBannerCropSrc] = useState<string | null>(null);
-  const [cropTarget, setCropTarget] = useState<'normal' | 'nitro'>('normal');
   const [avatarUploading, setAvatarUploading] = useState(false);
   const [bannerUploading, setBannerUploading] = useState(false);
-  const [removeNormalBanner, setRemoveNormalBanner] = useState(false);
-  const [removeNitroBanner, setRemoveNitroBanner] = useState(false);
+  const [removeBanner, setRemoveBanner] = useState(false);
 
-  // Dual banner: normal and nitro separate, one at a time per theme
   const currentAvatarUrl = avatarPreview || profile?.avatar_url;
-  const currentNormalBannerUrl = removeNormalBanner ? null : (normalBannerPreview || profile?.cover_photo_url);
-  const currentNitroBannerUrl = removeNitroBanner ? null : (nitroBannerPreview || (profile as any)?.nitro_cover_url);
-  const activeBannerForTheme = profileTheme === 'nitro' ? (currentNitroBannerUrl || currentNormalBannerUrl) : currentNormalBannerUrl;
+  const currentBannerUrl = removeBanner ? null : (bannerPreview || profile?.cover_photo_url);
+  const isGifBanner = currentBannerUrl?.toLowerCase().includes('.gif');
+  const isGifHiddenOnTheme = isGifBanner && profileTheme !== 'nitro';
 
   const handleThemeSelect = (themeId: 'default' | 'yellow' | 'mono' | 'nitro') => {
     if (themeId === 'nitro') {
@@ -122,8 +116,6 @@ export const EditProfileDialog = ({ profile, open, onOpenChange }: EditProfileDi
     mutationFn: async () => {
       let avatar_url = profile?.avatar_url;
       let cover_photo_url = profile?.cover_photo_url;
-      let nitro_cover_url = (profile as any)?.nitro_cover_url;
-
       if (avatarBlob) {
         setAvatarUploading(true);
         const fileName = `avatar-${user?.id}-${Date.now()}.jpg`;
@@ -133,49 +125,26 @@ export const EditProfileDialog = ({ profile, open, onOpenChange }: EditProfileDi
         avatar_url = data.publicUrl;
         setAvatarUploading(false);
       }
-
-      if (normalBannerBlob) {
+      if (bannerBlob) {
         if (!isCloudinaryConfigured()) throw new Error("Cloudinary not configured");
         setBannerUploading(true);
-        const result = await uploadToCloudinary(normalBannerBlob, { folder: `prangon/covers/${user?.id}` });
+        const result = await uploadToCloudinary(bannerBlob, { folder: `prangon/covers/${user?.id}` });
         cover_photo_url = result.secure_url;
         setBannerUploading(false);
       }
-      if (nitroBannerBlob) {
-        if (!isCloudinaryConfigured()) throw new Error("Cloudinary not configured");
-        setBannerUploading(true);
-        const result = await uploadToCloudinary(nitroBannerBlob, { folder: `prangon/covers/${user?.id}/nitro` });
-        nitro_cover_url = result.secure_url;
-        setBannerUploading(false);
-      }
-
-      if (removeNormalBanner) cover_photo_url = null;
-      if (removeNitroBanner) nitro_cover_url = null;
-
+      if (removeBanner) cover_photo_url = null;
       const cleanedUsername = username.replace(/^@/, '').trim().toLowerCase().replace(/[^a-z0-9_]/g, '_').replace(/__+/g, '_');
       if (cleanedUsername.length < 3) throw new Error("Username must be at least 3 characters");
       if (!/^[a-z0-9_]+$/.test(cleanedUsername)) throw new Error("Username can only contain letters, numbers and underscore");
-
       if (cleanedUsername !== profile?.username) {
         const { data: existingUser } = await supabase.from("profiles").select("id").eq("username", cleanedUsername).neq("id", user?.id).maybeSingle();
         if (existingUser) throw new Error("This username is already taken.");
       }
-
       if (displayName && displayName !== profile?.display_name) {
         const { data: existingName } = await supabase.from("profiles").select("id").eq("display_name", displayName).neq("id", user?.id).maybeSingle();
         if (existingName) throw new Error("This display name is already in use.");
       }
-
-      const updateData: any = {
-        display_name: displayName,
-        username: cleanedUsername,
-        bio,
-        country,
-        avatar_url,
-        cover_photo_url,
-        nitro_cover_url,
-        social_links: socialLinks as any,
-      };
+      const updateData: any = { display_name: displayName, username: cleanedUsername, bio, country, avatar_url, cover_photo_url, social_links: socialLinks as any };
       if (isVerified) updateData.profile_theme = profileTheme;
       const { error } = await supabase.from("profiles").update(updateData).eq("id", user?.id);
       if (error) throw error;
@@ -208,51 +177,32 @@ export const EditProfileDialog = ({ profile, open, onOpenChange }: EditProfileDi
     setAvatarPreview(URL.createObjectURL(blob));
   }, []);
 
-  const handleBannerFileSelect = (e: React.ChangeEvent<HTMLInputElement>, target: 'normal' | 'nitro') => {
+  const handleBannerFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     const isGif = file.type === "image/gif";
-    
-    if (target === 'nitro') {
-      if (!isNitroUnlocked) {
-        toast({ title: "Locked", variant: "destructive" });
-        return;
-      }
-      const validation = validateFileUpload(file, { maxSizeMB: 10, allowedTypes: ["image/gif", "image/jpeg", "image/png", "image/webp"] });
-      if (!validation.valid) { toast({ title: validation.error, variant: "destructive" }); return; }
-      if (isGif) {
-        setNitroBannerBlob(file);
-        setNitroBannerPreview(URL.createObjectURL(file));
-        setRemoveNitroBanner(false);
-      } else {
-        setCropTarget('nitro');
-        setBannerCropSrc(URL.createObjectURL(file));
-      }
+    if (isGif && profileTheme !== 'nitro') {
+      toast({ title: "GIF only for Nitro", description: "Switch to Nitro theme first", variant: "destructive" });
+      return;
+    }
+    const validation = validateFileUpload(file, { maxSizeMB: 10, allowedTypes: isGif ? ["image/gif", "image/jpeg", "image/png", "image/webp"] : ["image/jpeg", "image/png", "image/webp"] });
+    if (!validation.valid) { toast({ title: validation.error, variant: "destructive" }); return; }
+    if (isGif) {
+      setBannerBlob(file);
+      setBannerPreview(URL.createObjectURL(file));
+      setRemoveBanner(false);
     } else {
-      if (isGif) {
-        toast({ title: "GIF only for Nitro", description: "Use Nitro theme for GIF", variant: "destructive" });
-        return;
-      }
-      const validation = validateFileUpload(file, { maxSizeMB: 10, allowedTypes: ["image/jpeg", "image/png", "image/webp"] });
-      if (!validation.valid) { toast({ title: validation.error, variant: "destructive" }); return; }
-      setCropTarget('normal');
       setBannerCropSrc(URL.createObjectURL(file));
     }
     e.target.value = "";
   };
 
   const handleBannerCropComplete = useCallback((blob: Blob) => {
-    if (cropTarget === 'nitro') {
-      setNitroBannerBlob(blob);
-      setNitroBannerPreview(URL.createObjectURL(blob));
-      setRemoveNitroBanner(false);
-    } else {
-      setNormalBannerBlob(blob);
-      setNormalBannerPreview(URL.createObjectURL(blob));
-      setRemoveNormalBanner(false);
-    }
+    setBannerBlob(blob);
     setBannerCropSrc(null);
-  }, [cropTarget]);
+    setBannerPreview(URL.createObjectURL(blob));
+    setRemoveBanner(false);
+  }, []);
 
   return (
     <>
@@ -263,34 +213,23 @@ export const EditProfileDialog = ({ profile, open, onOpenChange }: EditProfileDi
           </DialogHeader>
           <ScrollArea className="max-h-[70vh] px-6">
             <div className="space-y-6 pb-6">
-              <div className="space-y-4">
-                <div>
-                  <Label className="flex items-center gap-2">
-                    {profileTheme === 'nitro' ? "Nitro Banner" : "Banner"}
-                    {profileTheme === 'nitro' ? <span className="text-[10px] px-2 py-0.5 rounded-full bg-black text-white">GIF allowed • Exclusive</span> : null}
-                  </Label>
-                  <p className="text-[11px] text-muted-foreground mb-2">
-                    {profileTheme === 'nitro' ? "This banner shows only on Nitro theme. Switch theme to see normal banner." : "Normal banner for Default/Gold/Platinum. Nitro has separate GIF banner."}
-                  </p>
-                  <div className="relative w-full h-28 sm:h-36 rounded-xl overflow-hidden bg-muted border">
-                    {activeBannerForTheme ? <img src={activeBannerForTheme} alt="Banner" className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-muted-foreground text-sm">{profileTheme === 'nitro' ? "No Nitro banner yet" : "No banner"}</div>}
-                    {bannerUploading && <div className="absolute inset-0 bg-background/60 flex items-center justify-center"><Loader2 className="h-5 w-5 animate-spin" /></div>}
-                  </div>
-                  <div className="flex gap-2 mt-2">
-                    <Button type="button" variant="outline" size="sm" className="gap-1.5 flex-1" onClick={() => (profileTheme === 'nitro' ? bannerFileRef : normalBannerFileRef).current?.click()} disabled={isSaving}><ImageIcon className="h-3.5 w-3.5" />{profileTheme === 'nitro' ? "Set Nitro Banner" : "Set Banner"}</Button>
-                    <Button type="button" variant="outline" size="sm" className="gap-1.5 flex-1" onClick={() => { if (profileTheme === 'nitro') { setRemoveNitroBanner(true); setNitroBannerPreview(null); setNitroBannerBlob(null); } else { setRemoveNormalBanner(true); setNormalBannerPreview(null); setNormalBannerBlob(null); } }} disabled={isSaving}><Trash2 className="h-3.5 w-3.5" />Remove</Button>
-                  </div>
-                  <input ref={normalBannerFileRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={(e) => handleBannerFileSelect(e, 'normal')} />
-                  <input ref={bannerFileRef} type="file" accept="image/*,image/gif" className="hidden" onChange={(e) => handleBannerFileSelect(e, 'nitro')} />
+              <div>
+                <Label className="flex items-center gap-2">
+                  Banner {profileTheme === 'nitro' && <span className="ml-2 text-[10px] px-2 py-0.5 rounded-full bg-black text-white">GIF allowed</span>}
+                  {isGifHiddenOnTheme && <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 border border-amber-200">GIF hidden on {profileTheme}</span>}
+                </Label>
+                <p className="text-[11px] text-muted-foreground mb-2">
+                  {profileTheme === 'nitro' ? "Nitro: GIF supported • Will show only on Nitro theme" : isGifHiddenOnTheme ? "Current banner is GIF — hidden on this theme, switch to Nitro to show it again. No sacrifice." : "Recommended: 1500×500px • GIF only on Nitro"}
+                </p>
+                <div className="relative w-full h-28 sm:h-36 rounded-xl overflow-hidden bg-muted border">
+                  {currentBannerUrl && !isGifHiddenOnTheme ? <img src={currentBannerUrl} alt="Banner" className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-muted-foreground text-sm flex-col gap-1"><span>{isGifHiddenOnTheme ? "GIF banner hidden" : "No banner"}</span>{isGifHiddenOnTheme && <span className="text-[10px]">Switch to Nitro to see GIF again</span>}</div>}
+                  {bannerUploading && <div className="absolute inset-0 bg-background/60 flex items-center justify-center"><Loader2 className="h-5 w-5 animate-spin" /></div>}
                 </div>
-                <div className="rounded-xl border border-dashed p-3 bg-muted/20">
-                  <div className="text-[11px] font-medium mb-1">Banner Status</div>
-                  <div className="flex gap-4 text-[11px] text-muted-foreground">
-                    <span>Normal: {profile?.cover_photo_url ? "✓ Set" : "— Empty"}</span>
-                    <span>Nitro: {(profile as any)?.nitro_cover_url ? "✓ Set" : "— Empty"}</span>
-                  </div>
-                  <p className="text-[10px] text-muted-foreground mt-2">When you switch to Nitro, Nitro banner shows. When you switch to Gold/Platinum/Default, normal banner shows. One at a time.</p>
+                <div className="flex gap-2 mt-2">
+                  <Button type="button" variant="outline" size="sm" className="gap-1.5 flex-1" onClick={() => bannerFileRef.current?.click()} disabled={isSaving}><ImageIcon className="h-3.5 w-3.5" />{profileTheme === 'nitro' ? "Set Banner (GIF OK)" : "Set Banner"}</Button>
+                  <Button type="button" variant="outline" size="sm" className="gap-1.5 flex-1" onClick={() => { setRemoveBanner(true); setBannerPreview(null); setBannerBlob(null); }} disabled={isSaving}><Trash2 className="h-3.5 w-3.5" />Remove</Button>
                 </div>
+                <input ref={bannerFileRef} type="file" accept={profileTheme === 'nitro' ? "image/*,image/gif" : "image/jpeg,image/png,image/webp"} className="hidden" onChange={handleBannerFileSelect} />
               </div>
 
               <div>
@@ -330,7 +269,7 @@ export const EditProfileDialog = ({ profile, open, onOpenChange }: EditProfileDi
                           </div>
                         </div>
                         <div className="pt-8 pb-3 px-4">
-                          {profileTheme === 'nitro' && <div className="text-[10px] text-white/60">GIF • Animated ring • B&W badge • Separate banner</div>}
+                          {profileTheme === 'nitro' && <div className="text-[10px] text-white/60">GIF cover • Animated white ring • B&W badge</div>}
                         </div>
                       </div>
                       <div className="grid grid-cols-2 gap-2 mt-3">
@@ -351,7 +290,7 @@ export const EditProfileDialog = ({ profile, open, onOpenChange }: EditProfileDi
                           </button>
                         ))}
                       </div>
-                      {profileTheme === 'nitro' && isNitroUnlocked && <div className="mt-3 text-[11px] p-2 rounded-lg bg-black text-white text-center">⚡ Nitro: separate banner • B&W badge • Animated ring</div>}
+                      {profileTheme === 'nitro' && isNitroUnlocked && <div className="mt-3 text-[11px] p-2 rounded-lg bg-black text-white text-center">⚡ Nitro: GIF banner • B&W badge • Animated ring</div>}
                     </div>
                   </div>
                 )}
