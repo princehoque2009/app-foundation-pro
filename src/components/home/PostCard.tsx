@@ -71,6 +71,7 @@ export const PostCard = ({ id, author, content, image, video, mediaItems, likes,
   const isLiked = !!reactionData?.myReaction;
   const myReaction = (reactionData?.myReaction as any) || null;
 
+  // Verified theme logic - only verified + theme != default
   const theme = (author.profileTheme as any) || 'default';
   const isGold = author.isVerified && theme === 'yellow';
   const isPlatinum = author.isVerified && theme === 'mono';
@@ -127,11 +128,18 @@ export const PostCard = ({ id, author, content, image, video, mediaItems, likes,
     <>
       <article className={cn(
         "group relative mb-5 rounded-[28px] border bg-card shadow-sm transition-all duration-300 hover:shadow-md hover:-translate-y-[1px] animate-fade-in overflow-hidden",
+        // Default
         !isGold && !isPlatinum && !isNitro && "border-border/60 hover:border-border/80",
+        // Gold - subtle premium NO GLOW
         isGold && "border-amber-200/60 dark:border-amber-800/30 bg-card hover:border-amber-300/50",
+        // Platinum - cool chrome NO GLOW
         isPlatinum && "border-zinc-300/50 dark:border-zinc-700/50 bg-card hover:border-zinc-400/50",
+        // Nitro - mono + animated white ring vibe, simple no heavy glow
         isNitro && "border-zinc-800/50 dark:border-white/15 bg-card dark:bg-zinc-900/50 hover:border-zinc-700 dark:hover:border-white/20 shadow-[0_0_0_1px_rgba(255,255,255,0.05),0_4px_20px_rgba(0,0,0,0.08)] dark:shadow-[0_0_0_1px_rgba(255,255,255,0.08),0_8px_24px_rgba(0,0,0,0.4)]"
       )}>
+        {/* Theme accent line removed to keep it clean - only avatar + name shows theme */}
+
+        {/* Header */}
         <div className="flex items-center gap-3 p-4 pb-3">
           <div className="flex items-center gap-3 cursor-pointer group/avatar min-w-0 flex-1" onClick={handleProfileClick}>
             <div className="relative">
@@ -145,6 +153,7 @@ export const PostCard = ({ id, author, content, image, video, mediaItems, likes,
                 <AvatarImage src={author.avatar || undefined} alt={author.name} className="object-cover" />
                 <AvatarFallback className="bg-muted text-muted-foreground"><span className="text-xs font-medium">?</span></AvatarFallback>
               </Avatar>
+              <div className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-success border-2 border-card hidden group-hover/avatar:block" />
             </div>
             <div className="min-w-0 flex flex-col gap-0.5">
               <div className="flex items-center gap-1.5 flex-wrap">
@@ -157,6 +166,7 @@ export const PostCard = ({ id, author, content, image, video, mediaItems, likes,
                   isNitro && "text-zinc-900 dark:text-white"
                 )}>{author.name}</span>
                 {author.isVerified && <VerifiedBadge size="sm" theme={theme} />}
+                {authorEffects.hasCustomBadge && <span className="inline-flex items-center justify-center h-4 w-4 rounded-full bg-gradient-to-r from-violet-500 to-purple-600 text-[8px] text-white font-bold shadow-sm">★</span>}
                 {userRoles && userRoles.length > 0 && <UserRoleBadges roles={userRoles as any} size="sm" />}
               </div>
               <div className="flex items-center gap-1.5 text-[12px] text-muted-foreground">
@@ -168,7 +178,17 @@ export const PostCard = ({ id, author, content, image, video, mediaItems, likes,
           </div>
           <PostMenu postId={id} postUserId={author.userId || ""} mediaUrl={image || video} mediaType={video ? "video" : "image"} onEdit={handleEdit} onDelete={handleDelete} onShare={handleShare} />
         </div>
-        {content && <div className="px-4 pb-3"><p className="text-[15px] leading-[1.55] text-foreground/90 tracking-[-0.01em] whitespace-pre-wrap break-words"><RenderMentions text={content} /></p></div>}
+
+        {/* Content */}
+        {content && (
+          <div className="px-4 pb-3">
+            <p className="text-[15px] leading-[1.55] text-foreground/90 tracking-[-0.01em] whitespace-pre-wrap break-words">
+              <RenderMentions text={content} />
+            </p>
+          </div>
+        )}
+
+        {/* Media */}
         {mediaItems && mediaItems.length > 0 ? (
           <div className="relative bg-muted/30 cursor-pointer overflow-hidden select-none border-y border-border/40" onDoubleClick={handleDoubleTap} onContextMenu={(e) => e.preventDefault()}>
             <MediaCarousel media={mediaItems} onDoubleClick={handleDoubleTap} />
@@ -176,13 +196,47 @@ export const PostCard = ({ id, author, content, image, video, mediaItems, likes,
           </div>
         ) : (image || video) && (
           <div className="relative bg-muted/30 cursor-pointer overflow-hidden select-none border-y border-border/40" onDoubleClick={handleDoubleTap} onContextMenu={(e) => e.preventDefault()}>
-            {image && <><img src={image} alt="Post" className={cn("w-full object-cover max-h-[560px] transition-opacity duration-300", isImageLoaded ? "opacity-100" : "opacity-0 h-0")} loading="lazy" onLoad={() => setIsImageLoaded(true)} draggable={false} /></>}
+            {image && <>
+              {!isImageLoaded && <div className="w-full h-80 shimmer rounded-none" />}
+              <img src={image} alt="Post" className={cn("w-full object-cover max-h-[560px] transition-opacity duration-300", isImageLoaded ? "opacity-100" : "opacity-0 h-0")} loading="lazy" onLoad={() => setIsImageLoaded(true)} draggable={false} />
+            </>}
             {video && <PrangonVideoPlayer src={video} className="w-full max-h-[560px]" compact />}
+            <AnimatePresence>{showHeartAnimation && <motion.div initial={{ scale: 0, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 1.8, opacity: 0 }} transition={{ duration: 0.5, ease: "easeOut" }} className="absolute inset-0 flex items-center justify-center pointer-events-none"><span className="text-7xl drop-shadow-2xl">{getReactionMeta(myReaction || "love").emoji}</span></motion.div>}</AnimatePresence>
           </div>
         )}
-        {likeCount > 0 && <div className="px-4 pt-3"><button onClick={() => setShowReactionBreakdown(true)} className="reaction-pill lg-press"><span className="flex -space-x-1">{Object.entries(reactionData?.counts || {}).filter(([_, c]) => (c as number) > 0).sort((a, b) => (b[1] as number) - (a[1] as number)).slice(0, 3).map(([key]) => <span key={key} className="text-[14px] leading-none">{getReactionMeta(key).emoji}</span>)}</span><span className="tabular-nums text-foreground/80">{likeCount}</span></button></div>}
-        <div className="p-2.5 pt-3"><div className="flex items-center justify-between"><div className="flex items-center gap-1"><ReactionTrayButton currentReaction={myReaction} count={likeCount} onReact={handleReact} disabled={toggleReaction.isPending} /><Button variant="ghost" size="sm" className="h-9 gap-1.5 rounded-full px-3 text-muted-foreground hover:text-foreground hover:bg-muted/80" onClick={() => setShowComments(true)}><MessageCircle className="h-[20px] w-[20px]" strokeWidth={1.75} />{comments > 0 && <span className="text-[13px] font-semibold tabular-nums">{comments}</span>}</Button><Button variant="ghost" size="sm" className="h-9 rounded-full px-3 text-muted-foreground hover:text-foreground hover:bg-muted/80" onClick={handleShare}><Share2 className="h-[19px] w-[19px]" strokeWidth={1.75} /></Button></div><Button variant="ghost" size="sm" className="h-9 w-9 rounded-full hover:bg-muted/80" onClick={() => { if (isSaved) unsavePost.mutate(id); else savePost.mutate(id); }}><Bookmark className={cn("h-[19px] w-[19px]", isSaved ? "fill-primary text-primary" : "text-muted-foreground")} strokeWidth={isSaved ? 2 : 1.75} /></Button></div></div>
+
+        {/* Reaction count pill - refined - no theme tint */}
+        {likeCount > 0 && (
+          <div className="px-4 pt-3">
+            <button onClick={() => setShowReactionBreakdown(true)} className="reaction-pill lg-press">
+              <span className="flex -space-x-1">
+                {Object.entries(reactionData?.counts || {}).filter(([_, c]) => (c as number) > 0).sort((a, b) => (b[1] as number) - (a[1] as number)).slice(0, 3).map(([key]) => <span key={key} className="text-[14px] leading-none drop-shadow-sm">{getReactionMeta(key).emoji}</span>)}
+              </span>
+              <span className="tabular-nums text-foreground/80">{likeCount}</span>
+            </button>
+          </div>
+        )}
+
+        {/* Action bar - modern pill style */}
+        <div className="p-2.5 pt-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-1">
+              <ReactionTrayButton currentReaction={myReaction} count={likeCount} onReact={handleReact} disabled={toggleReaction.isPending} />
+              <Button variant="ghost" size="sm" className="h-9 gap-1.5 rounded-full px-3 text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-all" onClick={() => setShowComments(true)}>
+                <MessageCircle className="h-[20px] w-[20px]" strokeWidth={1.75} />
+                {comments > 0 && <span className="text-[13px] font-semibold tabular-nums">{comments}</span>}
+              </Button>
+              <Button variant="ghost" size="sm" className="h-9 rounded-full px-3 text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-all" onClick={handleShare}>
+                <Share2 className="h-[19px] w-[19px]" strokeWidth={1.75} />
+              </Button>
+            </div>
+            <Button variant="ghost" size="sm" className="h-9 w-9 rounded-full hover:bg-muted/80 transition-all" onClick={() => { if (isSaved) unsavePost.mutate(id); else savePost.mutate(id); }} disabled={savePost.isPending || unsavePost.isPending}>
+              <Bookmark className={cn("h-[19px] w-[19px] transition-all", isSaved ? "fill-primary text-primary" : "text-muted-foreground")} strokeWidth={isSaved ? 2 : 1.75} />
+            </Button>
+          </div>
+        </div>
       </article>
+
       <CommentsDialog postId={id} open={showComments} onOpenChange={setShowComments} />
       <EditPostDialog postId={id} currentCaption={content} currentMediaUrl={image || video} currentMediaType={video ? "video" : image ? "image" : undefined} open={showEditDialog} onOpenChange={setShowEditDialog} />
       <ReactionBreakdownDialog postId={id} open={showReactionBreakdown} onOpenChange={setShowReactionBreakdown} counts={reactionData?.counts || {}} totalCount={reactionData?.totalCount || 0} />
