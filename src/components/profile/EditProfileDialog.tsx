@@ -1,7 +1,7 @@
 import React, { useState, useRef, useCallback } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -226,12 +226,13 @@ export const EditProfileDialog = ({ profile, open, onOpenChange }: EditProfileDi
                   {bannerUploading && <div className="absolute inset-0 bg-background/60 flex items-center justify-center"><Loader2 className="h-5 w-5 animate-spin" /></div>}
                 </div>
                 <div className="flex gap-2 mt-2">
-                  <Button type="button" variant="outline" size="sm" className="gap-1.5 flex-1" asChild disabled={isSaving}>
-                    <label htmlFor="edit-profile-banner-upload" className="cursor-pointer flex items-center justify-center gap-1.5">
-                      <ImageIcon className="h-3.5 w-3.5" />
-                      {profileTheme === 'nitro' ? "Set Banner (GIF OK)" : "Set Banner"}
-                    </label>
-                  </Button>
+                  <label
+                    htmlFor="edit-profile-banner-upload"
+                    className={buttonVariants({ variant: "outline", size: "sm" }) + " gap-1.5 flex-1 cursor-pointer" + (isSaving ? " opacity-50 pointer-events-none" : "")}
+                  >
+                    <ImageIcon className="h-3.5 w-3.5" />
+                    {profileTheme === 'nitro' ? "Set Banner (GIF OK)" : "Set Banner"}
+                  </label>
                   <Button type="button" variant="outline" size="sm" className="gap-1.5 flex-1" onClick={() => { setRemoveBanner(true); setBannerPreview(null); setBannerBlob(null); }} disabled={isSaving}><Trash2 className="h-3.5 w-3.5" />Remove</Button>
                 </div>
                 <input id="edit-profile-banner-upload" ref={bannerFileRef} type="file" accept={profileTheme === 'nitro' ? "image/*,image/gif" : "image/jpeg,image/png,image/webp"} className="hidden" onChange={handleBannerFileSelect} />
