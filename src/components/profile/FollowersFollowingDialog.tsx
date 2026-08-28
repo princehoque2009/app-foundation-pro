@@ -235,58 +235,172 @@ export const FollowersFollowingDialog = ({
     enabled: !!currentUser?.id && open && filter === "mutual",
   });
 
-  // Follow mutation - fixed to match UserProfile.tsx working logic (status: accepted)
+  // Helper: instantly update profile counts in cache (so header shows 1 not 2 without refresh)
+  const patchProfileCounts = (targetId: string, opts: { followingDelta?: number; followersDelta?: number }) => {
+    const idsToPatch = new Set<string>();
+    if (currentUser?.id) idsToPatch.add(currentUser.id); // current user following_count
+    if (targetId) idsToPatch.add(targetId); // target followers_count
+    if (userId) idsToPatch.add(userId); // dialog owner (could be same as current)
+
+    idsToPatch.forEach((pid) => {
+      const key = ["profile", pid];
+      const existing = queryClient.getQueryData<any>(key);
+      if (!existing) return;
+      // if patching current user -> following_count
+      if (pid === currentUser?.id && typeof opts.followingDelta === "number") {
+        queryClient.setQueryData(key, {
+          ...existing,
+          following_count: Math.max(0, (existing.following_count ?? 0) + opts.followingDelta),
+        });
+      }
+      // if patching target -> followers_count
+      if (pid === targetId && typeof opts.followersDelta === "number") {
+        queryClient.setQueryData(key, {
+          ...existing,
+          followers_count: Math.max(0, (existing.followers_count ?? 0) + opts.followersDelta),
+        });
+      }
+      // if dialog owner is current user and we changed following
+      if (pid === userId && userId === currentUser?.id && typeof opts.followingDelta === "number" && pid !== currentUser?.id) {
+        // already handled
+      }
+      // if dialog owner is target, its followers already handled
+      // if dialog owner is current user, its following handled above, but also need to handle case where userId === currentUser.id already
+      if (pid === userId && userId === currentUser?.id && typeof opts.followingDelta === "number") {
+        // ensure if currentUser id equals userId we already patched, but set again for safety
+        const cur = queryClient.getQueryData<any>(key);
+        if (cur && pid === currentUser?.id) return; // already done
+        queryClient.setQueryData(key, {
+          ...existing,
+          following_count: Math.max(0, (existing.following_count ?? 0) + (opts.followingDelta || 0)),
+        });
+      }
+    });
+
+    // Also patch the generic profile list if any (Profile page own query key ["profile", user?.id])
+    // And patch for optimistic UI in following/followers infinite lists
+  };
+
+  // Follow mutation - fixed to match UserProfile.tsx working logic (status: accepted) + instant counts
   const followMutation = useMutation({
     mutationFn: async (targetUserId: string) => {
-      // Delete any existing request first (prevents duplicate error)
-      await supabase
-        .from("friend_requests")
-        .delete()
-        .eq("from_user_id", currentUser?.id)
-        .eq("to_user_id", targetUserId);
-
-      const { error } = await supabase
-        .from("friend_requests")
-        .insert({
-          from_user_id: currentUser?.id,
-          to_user_id: targetUserId,
-          status: "accepted",
-        });
+      await supabase.from("friend_requests").delete().eq("from_user_id", currentUser?.id).eq("to_user_id", targetUserId);
+      const { error } = await supabase.from("friend_requests").insert({ from_user_id: currentUser?.id, to_user_id: targetUserId, status: "accepted" });
       if (error) throw error;
       void pushNewFollower(targetUserId, currentUser?.id as string);
     },
+    onMutate: async (targetUserId: string) => {
+      await queryClient.cancelQueries({ queryKey: ["my-friendships", currentUser?.id] });
+      await queryClient.cancelQueries({ queryKey: ["profile"] });
+      await queryClient.cancelQueries({ queryKey: ["followers", userId] });
+      await queryClient.cancelQueries({ queryKey: ["following", userId] });
+
+      const prevFriendships = queryClient.getQueryData<Set<string>>(["my-friendships", currentUser?.id]);
+      const prevProfiles = new Map<string, any>();
+      [currentUser?.id, targetUserId, userId].forEach((id) => {
+        if (!id) return;
+        const data = queryClient.getQueryData<any>(["profile", id]);
+        if (data) prevProfiles.set(id, data);
+      });
+
+      // Optimistic: add to my friendships
+      if (prevFriendships) {
+        const next = new Set(prevFriendships);
+        next.add(targetUserId);
+        queryClient.setQueryData(["my-friendships", currentUser?.id], next);
+      }
+      // Optimistic: patch counts
+      patchProfileCounts(targetUserId, { followingDelta: 1, followersDelta: 1 });
+
+      return { prevFriendships, prevProfiles };
+    },
+    onError: (e: any, targetUserId, context: any) => {
+      if (context?.prevFriendships) queryClient.setQueryData(["my-friendships", currentUser?.id], context.prevFriendships);
+      if (context?.prevProfiles) {
+        context.prevProfiles.forEach((data: any, id: string) => {
+          queryClient.setQueryData(["profile", id], data);
+        });
+      }
+      console.error("Follow failed:", e);
+      toast({ title: "Failed to follow", description: e?.message, variant: "destructive" });
+    },
     onSuccess: () => {
+      toast({ title: "Following!" });
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["my-friendships"] });
       queryClient.invalidateQueries({ queryKey: ["friend-requests-sent"] });
       queryClient.invalidateQueries({ queryKey: ["followers"] });
       queryClient.invalidateQueries({ queryKey: ["following"] });
       queryClient.invalidateQueries({ queryKey: ["is-following"] });
-      toast({ title: "Following!" });
-    },
-    onError: (e: any) => {
-      console.error("Follow failed:", e);
-      toast({ title: "Failed to follow", description: e?.message, variant: "destructive" });
+      queryClient.invalidateQueries({ queryKey: ["profile"] });
+      queryClient.invalidateQueries({ queryKey: ["friendships"] });
+      queryClient.invalidateQueries({ queryKey: ["followers-following"] });
     },
   });
 
-  // Unfollow mutation
+  // Unfollow mutation - instant count update
   const unfollowMutation = useMutation({
     mutationFn: async (targetUserId: string) => {
-      const { error } = await supabase
-        .from("friendships")
-        .delete()
-        .eq("user_id", currentUser?.id)
-        .eq("friend_id", targetUserId);
+      const { error } = await supabase.from("friendships").delete().eq("user_id", currentUser?.id).eq("friend_id", targetUserId);
       if (error) throw error;
+      // also clean request row
+      await supabase.from("friend_requests").delete().eq("from_user_id", currentUser?.id).eq("to_user_id", targetUserId);
+    },
+    onMutate: async (targetUserId: string) => {
+      await queryClient.cancelQueries({ queryKey: ["my-friendships", currentUser?.id] });
+      await queryClient.cancelQueries({ queryKey: ["profile"] });
+      await queryClient.cancelQueries({ queryKey: ["followers", userId] });
+      await queryClient.cancelQueries({ queryKey: ["following", userId] });
+
+      const prevFriendships = queryClient.getQueryData<Set<string>>(["my-friendships", currentUser?.id]);
+      const prevProfiles = new Map<string, any>();
+      [currentUser?.id, targetUserId, userId].forEach((id) => {
+        if (!id) return;
+        const data = queryClient.getQueryData<any>(["profile", id]);
+        if (data) prevProfiles.set(id, data);
+      });
+
+      if (prevFriendships) {
+        const next = new Set(prevFriendships);
+        next.delete(targetUserId);
+        queryClient.setQueryData(["my-friendships", currentUser?.id], next);
+      }
+      patchProfileCounts(targetUserId, { followingDelta: -1, followersDelta: -1 });
+
+      // Also optimistically remove from following infinite list if we are viewing own following
+      if (userId === currentUser?.id) {
+        queryClient.setQueryData(["following", userId], (old: any) => {
+          if (!old?.pages) return old;
+          return {
+            ...old,
+            pages: old.pages.map((page: any[]) => page.filter((u: any) => u.id !== targetUserId)),
+          };
+        });
+      }
+
+      return { prevFriendships, prevProfiles };
+    },
+    onError: (err: any, targetUserId, context: any) => {
+      if (context?.prevFriendships) queryClient.setQueryData(["my-friendships", currentUser?.id], context.prevFriendships);
+      if (context?.prevProfiles) {
+        context.prevProfiles.forEach((data: any, id: string) => {
+          queryClient.setQueryData(["profile", id], data);
+        });
+      }
+      toast({ title: "Failed to unfollow", variant: "destructive" });
     },
     onSuccess: () => {
+      toast({ title: "Unfollowed successfully" });
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["my-friendships"] });
       queryClient.invalidateQueries({ queryKey: ["followers"] });
       queryClient.invalidateQueries({ queryKey: ["following"] });
-      toast({ title: "Unfollowed successfully" });
-    },
-    onError: () => {
-      toast({ title: "Failed to unfollow", variant: "destructive" });
+      queryClient.invalidateQueries({ queryKey: ["profile"] });
+      queryClient.invalidateQueries({ queryKey: ["is-following"] });
+      queryClient.invalidateQueries({ queryKey: ["friendships"] });
+      queryClient.invalidateQueries({ queryKey: ["followers-following"] });
     },
   });
 
