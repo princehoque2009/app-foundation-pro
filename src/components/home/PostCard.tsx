@@ -29,8 +29,21 @@ import { MessageCircle, Share2, Bookmark } from "lucide-react";
 
 interface PostCardProps {
   id: string;
-  author: { name: string; avatar?: string; username: string; isVerified?: boolean; userId?: string; profileTheme?: string | null; };
-  content: string; image?: string; video?: string; mediaItems?: PostMedia[]; likes: number; comments: number; timestamp: string;
+  author: {
+    name: string;
+    avatar?: string;
+    username: string;
+    isVerified?: boolean;
+    userId?: string;
+    profileTheme?: string | null;
+  };
+  content: string;
+  image?: string;
+  video?: string;
+  mediaItems?: PostMedia[];
+  likes: number;
+  comments: number;
+  timestamp: string;
 }
 
 export const PostCard = ({ id, author, content, image, video, mediaItems, likes, comments, timestamp }: PostCardProps) => {
@@ -38,7 +51,8 @@ export const PostCard = ({ id, author, content, image, video, mediaItems, likes,
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showHeartAnimation, setShowHeartAnimation] = useState(false);
   const [showReactionBreakdown, setShowReactionBreakdown] = useState(false);
-  const navigate = useNavigate(); const queryClient = useQueryClient();
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { data: userRoles } = useUserRoles({ userId: author.userId });
   const { effects: authorEffects } = useActiveEffects(author.userId);
   const [isImageLoaded, setIsImageLoaded] = useState(false);
@@ -48,7 +62,8 @@ export const PostCard = ({ id, author, content, image, video, mediaItems, likes,
   const { data: isSaved } = useIsPostSaved(id);
   const recordView = useRecordPostView();
   useEffect(() => { recordView.mutate(id); }, [id]);
-  const isLiked = !!reactionData?.myReaction; const myReaction = (reactionData?.myReaction as any) || null;
+  const isLiked = !!reactionData?.myReaction;
+  const myReaction = (reactionData?.myReaction as any) || null;
   const theme = (author.profileTheme as any) || 'default';
   const isGold = author.isVerified && theme === 'yellow';
   const isPlatinum = author.isVerified && theme === 'mono';
@@ -74,7 +89,7 @@ export const PostCard = ({ id, author, content, image, video, mediaItems, likes,
                 "h-11 w-11 shrink-0 ring-1 transition-all duration-200 group-hover/avatar:scale-[1.03]",
                 !isGold && !isPlatinum && "ring-border/50 group-hover/avatar:ring-border",
                 isGold && "ring-2 ring-amber-400",
-                isPlatinum && "ring-2 ring-zinc-300 dark:ring-zinc-600"
+                isPlatinum && "ring-2 ring-zinc-300 dark:ring-zinc-600 shadow-[0_0_0_2px_hsl(var(--background)),0_0_0_4px_black] dark:shadow-[0_0_0_2px_hsl(var(--background)),0_0_0_4px_white]"
               )}>
                 <AvatarImage src={author.avatar || undefined} alt={author.name} className="object-cover" />
                 <AvatarFallback className="bg-muted text-muted-foreground"><span className="text-xs font-medium">?</span></AvatarFallback>
@@ -109,7 +124,7 @@ export const PostCard = ({ id, author, content, image, video, mediaItems, likes,
           </div>
         ) : (image || video) && (
           <div className="relative bg-muted/30 cursor-pointer overflow-hidden select-none border-y border-border/40" onDoubleClick={handleDoubleTap} onContextMenu={(e) => e.preventDefault()}>
-            {image && <img src={image} alt="Post" className={cn("w-full object-cover max-h-[560px]", isImageLoaded ? "opacity-100" : "opacity-0 h-0")} loading="lazy" onLoad={() => setIsImageLoaded(true)} draggable={false} />}
+            {image && <><img src={image} alt="Post" className={cn("w-full object-cover max-h-[560px]", isImageLoaded ? "opacity-100" : "opacity-0 h-0")} loading="lazy" onLoad={() => setIsImageLoaded(true)} draggable={false} /></>}
             {video && <PrangonVideoPlayer src={video} className="w-full max-h-[560px]" compact />}
           </div>
         )}
