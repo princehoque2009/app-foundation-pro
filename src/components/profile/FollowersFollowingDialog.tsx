@@ -18,6 +18,7 @@ import { UserRoleBadges } from "@/components/ui/RoleBadge";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/hooks/use-toast";
+import { pushNewFollower } from "@/lib/push";
 import { Search, UserCircle, UserPlus, UserMinus, Lock, Filter, Clock, Users, UserCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
@@ -234,24 +235,37 @@ export const FollowersFollowingDialog = ({
     enabled: !!currentUser?.id && open && filter === "mutual",
   });
 
-  // Follow mutation
+  // Follow mutation - fixed to match UserProfile.tsx working logic (status: accepted)
   const followMutation = useMutation({
     mutationFn: async (targetUserId: string) => {
+      // Delete any existing request first (prevents duplicate error)
+      await supabase
+        .from("friend_requests")
+        .delete()
+        .eq("from_user_id", currentUser?.id)
+        .eq("to_user_id", targetUserId);
+
       const { error } = await supabase
         .from("friend_requests")
         .insert({
           from_user_id: currentUser?.id,
           to_user_id: targetUserId,
+          status: "accepted",
         });
       if (error) throw error;
+      void pushNewFollower(targetUserId, currentUser?.id as string);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["my-friendships"] });
       queryClient.invalidateQueries({ queryKey: ["friend-requests-sent"] });
-      toast({ title: "Follow request sent!" });
+      queryClient.invalidateQueries({ queryKey: ["followers"] });
+      queryClient.invalidateQueries({ queryKey: ["following"] });
+      queryClient.invalidateQueries({ queryKey: ["is-following"] });
+      toast({ title: "Following!" });
     },
-    onError: () => {
-      toast({ title: "Failed to follow", variant: "destructive" });
+    onError: (e: any) => {
+      console.error("Follow failed:", e);
+      toast({ title: "Failed to follow", description: e?.message, variant: "destructive" });
     },
   });
 
