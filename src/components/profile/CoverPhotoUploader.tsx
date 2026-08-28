@@ -12,6 +12,7 @@ import { uploadToCloudinary, optimizeCloudinaryUrl, isCloudinaryConfigured } fro
 interface CoverPhotoUploaderProps {
   userId: string;
   currentCoverUrl?: string | null;
+  currentNitroCoverUrl?: string | null;
   isOwner: boolean;
   onImageClick?: (url: string) => void;
   theme?: string;
@@ -20,25 +21,27 @@ interface CoverPhotoUploaderProps {
 const COVER_TRANSFORM = "c_fill,ar_16:9,g_auto,w_1200";
 const COVER_PLACEHOLDER_TRANSFORM = "c_fill,ar_16:9,g_auto,w_32,e_blur:1000";
 
-export const CoverPhotoUploader = ({ userId, currentCoverUrl, isOwner, onImageClick, theme = 'default' }: CoverPhotoUploaderProps) => {
+export const CoverPhotoUploader = ({ userId, currentCoverUrl, currentNitroCoverUrl, isOwner, onImageClick, theme = 'default' }: CoverPhotoUploaderProps) => {
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isImageLoaded, setIsImageLoaded] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [cropSrc, setCropSrc] = useState<string | null>(null);
+  const [pendingIsNitro, setPendingIsNitro] = useState(false);
 
   const uploadMutation = useMutation({
-    mutationFn: async (blob: Blob) => {
+    mutationFn: async ({ blob, isNitro }: { blob: Blob; isNitro: boolean }) => {
       if (!isCloudinaryConfigured()) throw new Error("Cloudinary not configured");
       const result = await uploadToCloudinary(blob, { folder: `prangon/covers/${userId}` });
-      const { error } = await supabase.from("profiles").update({ cover_photo_url: result.secure_url }).eq("id", userId);
+      const updateField = isNitro ? { nitro_cover_url: result.secure_url } : { cover_photo_url: result.secure_url };
+      const { error } = await supabase.from("profiles").update(updateField).eq("id", userId);
       if (error) throw error;
       return result.secure_url;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["profile", userId] });
       queryClient.invalidateQueries({ queryKey: ["profile"] });
-      toast({ title: "Cover photo updated!" });
+      toast({ title: pendingIsNitro ? "Nitro banner updated!" : "Cover photo updated!" });
       setPreviewUrl(null);
     },
     onError: (error: Error) => {
@@ -55,19 +58,27 @@ export const CoverPhotoUploader = ({ userId, currentCoverUrl, isOwner, onImageCl
       return;
     }
     const isGif = file.type === "image/gif";
-    if (isGif && theme === 'nitro') {
+    const isNitroTheme = theme === 'nitro';
+    if (isGif && !isNitroTheme) {
+      toast({ title: "GIF only for Nitro", description: "Switch to Nitro theme to use GIF", variant: "destructive" });
+      return;
+    }
+    if (isGif && isNitroTheme) {
+      setPendingIsNitro(true);
       const objectUrl = URL.createObjectURL(file);
       setPreviewUrl(objectUrl);
       setIsImageLoaded(false);
-      uploadMutation.mutate(file);
+      uploadMutation.mutate({ blob: file, isNitro: true });
       e.target.value = "";
       return;
     }
-    if (isGif) {
-      toast({ title: "GIF only for Nitro", description: "Switch to Nitro theme to use GIF covers", variant: "destructive" });
-      return;
+    if (isNitroTheme) {
+      setPendingIsNitro(true);
+      setCropSrc(URL.createObjectURL(file));
+    } else {
+      setPendingIsNitro(false);
+      setCropSrc(URL.createObjectURL(file));
     }
-    setCropSrc(URL.createObjectURL(file));
     e.target.value = "";
   };
 
@@ -76,13 +87,14 @@ export const CoverPhotoUploader = ({ userId, currentCoverUrl, isOwner, onImageCl
     const objectUrl = URL.createObjectURL(blob);
     setPreviewUrl(objectUrl);
     setIsImageLoaded(false);
-    uploadMutation.mutate(blob);
-  }, [uploadMutation]);
+    uploadMutation.mutate({ blob, isNitro: pendingIsNitro });
+  }, [uploadMutation, pendingIsNitro]);
 
-  const rawUrl = previewUrl || currentCoverUrl;
-  const isGifCover = currentCoverUrl?.toLowerCase().includes('.gif');
-  const displayUrl = previewUrl || (isGifCover ? currentCoverUrl : optimizeCloudinaryUrl(currentCoverUrl, COVER_TRANSFORM));
-  const placeholderUrl = !previewUrl && !isGifCover ? optimizeCloudinaryUrl(currentCoverUrl, COVER_PLACEHOLDER_TRANSFORM) : null;
+  const activeCoverRaw = theme === 'nitro' ? (currentNitroCoverUrl || currentCoverUrl) : currentCoverUrl;
+  const rawUrl = previewUrl || activeCoverRaw;
+  const isGifCover = activeCoverRaw?.toLowerCase().includes('.gif');
+  const displayUrl = previewUrl || (isGifCover ? activeCoverRaw : optimizeCloudinaryUrl(activeCoverRaw, COVER_TRANSFORM));
+  const placeholderUrl = !previewUrl && !isGifCover ? optimizeCloudinaryUrl(activeCoverRaw, COVER_PLACEHOLDER_TRANSFORM) : null;
 
   return (
     <>
@@ -95,10 +107,10 @@ export const CoverPhotoUploader = ({ userId, currentCoverUrl, isOwner, onImageCl
           ) : <div className="absolute inset-0 bg-gradient-to-br from-muted to-muted/50" />}
         </AnimatePresence>
         {placeholderUrl && !isImageLoaded && <img src={placeholderUrl} alt="" className="absolute inset-0 w-full h-full object-cover scale-[1.02]" />}
-        {uploadMutation.isPending && <div className="absolute inset-0 bg-background/60 backdrop-blur-sm flex items-center justify-center"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>}
+        {uploadMutation.isPending && <div className="absolute inset-0 bg-background/60 backdrop-blur-sm flex items-center justify-center"><div className="flex flex-col items-center gap-2"><Loader2 className="h-6 w-6 animate-spin text-primary" /><span className="text-xs">{pendingIsNitro ? "Uploading Nitro banner..." : "Uploading..."}</span></div></div>}
         {isOwner && !uploadMutation.isPending && (
           <Button variant="secondary" size="sm" className={cn("absolute bottom-3 right-3 gap-1.5 rounded-full z-20 bg-background/80 backdrop-blur-sm shadow-lg text-xs")} onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }}>
-            <Camera className="h-3.5 w-3.5" /><span className="hidden sm:inline">{theme === 'nitro' ? "Edit GIF Cover" : "Edit Cover"}</span>
+            <Camera className="h-3.5 w-3.5" /><span className="hidden sm:inline">{theme === 'nitro' ? (currentNitroCoverUrl ? "Change Nitro Banner" : "Add Nitro Banner") : "Edit Cover"}</span>
           </Button>
         )}
         <input ref={fileInputRef} type="file" accept={theme === 'nitro' ? "image/*,image/gif" : "image/*"} className="hidden" onChange={handleFileSelect} />
