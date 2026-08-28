@@ -338,9 +338,9 @@ export const SupabaseChatWindow = ({ friendProfile, onBack, initialDraft }: Supa
   };
 
   return (
-    <div className="flex-1 flex flex-col h-[100dvh] md:h-full bg-background min-w-0 overflow-hidden">
-      {/* Header */}
-      <div className="sticky top-0 z-10 px-2 sm:px-3 py-2 flex items-center gap-2 border-b bg-card/80 backdrop-blur-md min-w-0">
+    <div className="flex-1 flex flex-col h-[100dvh] md:h-screen w-full bg-background min-w-0 overflow-hidden">
+      {/* Header - fixed like IG Direct */}
+      <div className="shrink-0 z-10 px-2 sm:px-3 py-2 flex items-center gap-2 border-b bg-card/95 backdrop-blur-md min-w-0">
         {onBack && (
           <Button variant="ghost" size="icon" onClick={onBack} className="md:hidden h-9 w-9 shrink-0">
             <ArrowLeft className="h-5 w-5" />
@@ -495,8 +495,8 @@ export const SupabaseChatWindow = ({ friendProfile, onBack, initialDraft }: Supa
         );
       })()}
 
-      {/* Messages */}
-      <ScrollArea className="flex-1 min-w-0">
+      {/* Messages - only this scrolls like IG */}
+      <ScrollArea className="flex-1 min-h-0 min-w-0 overflow-hidden">
         <div ref={scrollRef} className="p-3 sm:p-4 space-y-1.5 min-h-full min-w-0">
 
           {(loading || convoLoading) && visibleMessages.length === 0 ? (
@@ -754,9 +754,9 @@ export const SupabaseChatWindow = ({ friendProfile, onBack, initialDraft }: Supa
         </div>
       </ScrollArea>
 
-      {/* Composer */}
+      {/* Composer - fixed bottom like IG */}
       <div
-        className="sticky bottom-0 z-20 shrink-0 border-t p-3 bg-card"
+        className="shrink-0 z-20 border-t p-3 bg-card"
         style={{ paddingBottom: "calc(0.75rem + env(safe-area-inset-bottom))" }}
       >
         {editingId && (
