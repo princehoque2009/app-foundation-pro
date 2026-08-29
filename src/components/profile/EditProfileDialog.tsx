@@ -181,8 +181,13 @@ export const EditProfileDialog = ({ profile, open, onOpenChange }: EditProfileDi
   const handleAvatarFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const validation = validateFileUpload(file, { maxSizeMB: 5, allowedTypes: ["image/jpeg", "image/png", "image/webp"] });
-    if (!validation.valid) { toast({ title: validation.error, variant: "destructive" }); return; }
+    const result: any = validateFileUpload(file, { maxSizeMB: 5, allowedTypes: ["image/jpeg", "image/png", "image/webp"] } as any);
+    // Support both old {valid, error} and new string|null API
+    if (result && typeof result === "object" && "valid" in result) {
+      if (!result.valid) { toast({ title: result.error || "Invalid file", variant: "destructive" }); return; }
+    } else if (typeof result === "string" && result) {
+      toast({ title: result, variant: "destructive" }); return;
+    }
     setAvatarCropSrc(URL.createObjectURL(file));
     e.target.value = "";
   };
@@ -201,8 +206,12 @@ export const EditProfileDialog = ({ profile, open, onOpenChange }: EditProfileDi
       toast({ title: "GIF only for Nitro", description: "Switch to Nitro theme first", variant: "destructive" });
       return;
     }
-    const validation = validateFileUpload(file, { maxSizeMB: 10, allowedTypes: isGif ? ["image/gif", "image/jpeg", "image/png", "image/webp"] : ["image/jpeg", "image/png", "image/webp"] });
-    if (!validation.valid) { toast({ title: validation.error, variant: "destructive" }); return; }
+    const result: any = validateFileUpload(file, { maxSizeMB: 10, allowedTypes: isGif ? ["image/gif", "image/jpeg", "image/png", "image/webp"] : ["image/jpeg", "image/png", "image/webp"] } as any);
+    if (result && typeof result === "object" && "valid" in result) {
+      if (!result.valid) { toast({ title: result.error || "Invalid file", variant: "destructive" }); return; }
+    } else if (typeof result === "string" && result) {
+      toast({ title: result, variant: "destructive" }); return;
+    }
     if (isGif) {
       setBannerBlob(file);
       setBannerPreview(URL.createObjectURL(file));
