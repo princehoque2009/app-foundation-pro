@@ -106,11 +106,13 @@ export const CoverPhotoUploader = ({ userId, currentCoverUrl, isOwner, onImageCl
         {placeholderUrl && !isImageLoaded && !isGifHidden && <img src={placeholderUrl} alt="" className="absolute inset-0 w-full h-full object-cover scale-[1.02]" />}
         {uploadMutation.isPending && <div className="absolute inset-0 bg-background/60 backdrop-blur-sm flex items-center justify-center"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>}
         {isOwner && !uploadMutation.isPending && (
-          <Button variant="secondary" size="sm" className={cn("absolute bottom-3 right-3 gap-1.5 rounded-full z-20 bg-background/80 backdrop-blur-sm shadow-lg text-xs")} onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }}>
-            <Camera className="h-3.5 w-3.5" /><span className="hidden sm:inline">{theme === 'nitro' ? (currentCoverUrl ? "Change Banner (GIF allowed)" : "Add Banner (GIF)") : "Edit Cover"}</span>
+          <Button variant="secondary" size="sm" className={cn("absolute bottom-3 right-3 gap-1.5 rounded-full z-20 bg-background/80 backdrop-blur-sm shadow-lg text-xs p-0")} asChild>
+            <label htmlFor={`cover-input-${userId}`} className="flex items-center gap-1.5 cursor-pointer px-3 py-1.5 h-full">
+              <Camera className="h-3.5 w-3.5" /><span className="hidden sm:inline">{theme === 'nitro' ? (currentCoverUrl ? "Change Banner (GIF allowed)" : "Add Banner (GIF)") : "Edit Cover"}</span>
+            </label>
           </Button>
         )}
-        <input ref={fileInputRef} type="file" accept={theme === 'nitro' ? "image/*,image/gif" : "image/*"} className="sr-only" tabIndex={-1} onChange={handleFileSelect} />
+        <input ref={fileInputRef} id={`cover-input-${userId}`} type="file" accept={theme === 'nitro' ? "image/*,image/gif" : "image/*"} className="sr-only" tabIndex={-1} onChange={handleFileSelect} />
       </div>
       {cropSrc && <ImageCropDialog open={!!cropSrc} onOpenChange={(v) => !v && setCropSrc(null)} imageSrc={cropSrc} aspectRatio={16/9} shape="rect" onCropComplete={handleCropComplete} />}
     </>
