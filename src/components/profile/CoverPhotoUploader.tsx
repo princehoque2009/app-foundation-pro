@@ -2,9 +2,7 @@ import { useState, useRef, useCallback } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import { Button } from "@/components/ui/button";
 import { Camera, Loader2 } from "lucide-react";
-import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { ImageCropDialog } from "@/components/circles/ImageCropDialog";
 import { uploadToCloudinary, optimizeCloudinaryUrl, isCloudinaryConfigured } from "@/lib/cloudinary";
@@ -55,13 +53,11 @@ export const CoverPhotoUploader = ({ userId, currentCoverUrl, isOwner, onImageCl
       return;
     }
     const isGif = file.type === "image/gif";
-    // 2-in-1: GIF only allowed on Nitro theme
     if (isGif && theme !== 'nitro') {
       toast({ title: "GIF only for Nitro", description: "Switch to Nitro theme to use GIF covers", variant: "destructive" });
       return;
     }
     if (isGif && theme === 'nitro') {
-      // GIF direct upload to keep animation
       const objectUrl = URL.createObjectURL(file);
       setPreviewUrl(objectUrl);
       setIsImageLoaded(false);
@@ -69,7 +65,6 @@ export const CoverPhotoUploader = ({ userId, currentCoverUrl, isOwner, onImageCl
       e.target.value = "";
       return;
     }
-    // Normal image
     setCropSrc(URL.createObjectURL(file));
     e.target.value = "";
   };
@@ -84,7 +79,6 @@ export const CoverPhotoUploader = ({ userId, currentCoverUrl, isOwner, onImageCl
 
   const rawUrl = previewUrl || currentCoverUrl;
   const isGifCover = currentCoverUrl?.toLowerCase().includes('.gif');
-  // 2-in-1: if GIF and not nitro, hide in uploader preview? show but with note
   const isGifHidden = isGifCover && theme !== 'nitro';
   const displayUrl = previewUrl || (isGifCover ? currentCoverUrl : optimizeCloudinaryUrl(currentCoverUrl, COVER_TRANSFORM));
   const placeholderUrl = !previewUrl && !isGifCover ? optimizeCloudinaryUrl(currentCoverUrl, COVER_PLACEHOLDER_TRANSFORM) : null;
@@ -106,11 +100,10 @@ export const CoverPhotoUploader = ({ userId, currentCoverUrl, isOwner, onImageCl
         {placeholderUrl && !isImageLoaded && !isGifHidden && <img src={placeholderUrl} alt="" className="absolute inset-0 w-full h-full object-cover scale-[1.02]" />}
         {uploadMutation.isPending && <div className="absolute inset-0 bg-background/60 backdrop-blur-sm flex items-center justify-center"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>}
         {isOwner && !uploadMutation.isPending && (
-          <Button variant="secondary" size="sm" className={cn("absolute bottom-3 right-3 gap-1.5 rounded-full z-20 bg-background/80 backdrop-blur-sm shadow-lg text-xs p-0")} asChild>
-            <label htmlFor={`cover-input-${userId}`} className="flex items-center gap-1.5 cursor-pointer px-3 py-1.5 h-full">
-              <Camera className="h-3.5 w-3.5" /><span className="hidden sm:inline">{theme === 'nitro' ? (currentCoverUrl ? "Change Banner (GIF allowed)" : "Add Banner (GIF)") : "Edit Cover"}</span>
-            </label>
-          </Button>
+          <label htmlFor={`cover-input-${userId}`} className="absolute bottom-3 right-3 z-20 inline-flex items-center gap-1.5 rounded-full bg-background/80 backdrop-blur-sm shadow-lg text-[11px] sm:text-xs h-8 px-3 cursor-pointer border border-border/50 hover:bg-background transition-colors">
+            <Camera className="h-3.5 w-3.5" /><span className="hidden sm:inline">{theme === 'nitro' ? (currentCoverUrl ? "Change Banner (GIF allowed)" : "Add Banner (GIF)") : "Edit Cover"}</span>
+            <span className="sm:hidden">Edit</span>
+          </label>
         )}
         <input ref={fileInputRef} id={`cover-input-${userId}`} type="file" accept={theme === 'nitro' ? "image/*,image/gif" : "image/*"} className="sr-only" tabIndex={-1} onChange={handleFileSelect} />
       </div>
