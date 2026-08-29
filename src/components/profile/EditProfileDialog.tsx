@@ -241,20 +241,28 @@ export const EditProfileDialog = ({ profile, open, onOpenChange }: EditProfileDi
                   {currentBannerUrl && !isGifHiddenOnTheme ? <img src={currentBannerUrl} alt="Banner" className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-muted-foreground text-sm flex-col gap-1"><span>{isGifHiddenOnTheme ? "GIF banner hidden" : "No banner"}</span>{isGifHiddenOnTheme && <span className="text-[10px]">Switch to Nitro to see GIF again</span>}</div>}
                   {bannerUploading && <div className="absolute inset-0 bg-background/60 flex items-center justify-center"><Loader2 className="h-5 w-5 animate-spin" /></div>}
                 </div>
+                <input ref={bannerFileRef} id="edit-banner-input" type="file" accept={profileTheme === 'nitro' ? "image/*,image/gif" : "image/jpeg,image/png,image/webp"} className="sr-only" tabIndex={-1} onChange={handleBannerFileSelect} />
                 <div className="flex gap-2 mt-2">
-                  <Button type="button" variant="outline" size="sm" className="gap-1.5 flex-1" onClick={(e) => { e.preventDefault(); bannerFileRef.current?.click(); }} disabled={isSaving}><ImageIcon className="h-3.5 w-3.5" />{profileTheme === 'nitro' ? "Set Banner (GIF OK)" : "Set Banner"}</Button>
+                  <Button type="button" variant="outline" size="sm" className="gap-1.5 flex-1 p-0" asChild disabled={isSaving}>
+                    <label htmlFor="edit-banner-input" className="flex items-center justify-center gap-1.5 w-full h-full cursor-pointer px-3 py-1.5">
+                      <ImageIcon className="h-3.5 w-3.5" />{profileTheme === 'nitro' ? "Set Banner (GIF OK)" : "Set Banner"}
+                    </label>
+                  </Button>
                   <Button type="button" variant="outline" size="sm" className="gap-1.5 flex-1" onClick={() => { setRemoveBanner(true); setBannerPreview(null); setBannerBlob(null); }} disabled={isSaving}><Trash2 className="h-3.5 w-3.5" />Remove</Button>
                 </div>
-                <input ref={bannerFileRef} type="file" accept={profileTheme === 'nitro' ? "image/*,image/gif" : "image/jpeg,image/png,image/webp"} className="sr-only" tabIndex={-1} onChange={handleBannerFileSelect} />
               </div>
 
               <div>
                 <Label>Avatar</Label>
                 <div className="flex items-center gap-4 mt-2">
                   <Avatar className="h-20 w-20"><AvatarImage src={currentAvatarUrl} /><AvatarFallback><UserCircle className="h-10 w-10" /></AvatarFallback></Avatar>
-                  <Button type="button" variant="outline" size="sm" onClick={(e) => { e.preventDefault(); avatarFileRef.current?.click(); }} disabled={isSaving}><Camera className="h-4 w-4 mr-2" />Change</Button>
+                  <Button type="button" variant="outline" size="sm" className="p-0" asChild disabled={isSaving}>
+                    <label htmlFor="edit-avatar-input" className="flex items-center cursor-pointer px-3 py-1.5 h-full">
+                      <Camera className="h-4 w-4 mr-2" />Change
+                    </label>
+                  </Button>
                 </div>
-                <input ref={avatarFileRef} type="file" accept="image/*" className="sr-only" tabIndex={-1} onChange={handleAvatarFileSelect} />
+                <input ref={avatarFileRef} id="edit-avatar-input" type="file" accept="image/*" className="sr-only" tabIndex={-1} onChange={handleAvatarFileSelect} />
               </div>
 
               <div className="space-y-4">
