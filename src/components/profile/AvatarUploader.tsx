@@ -124,37 +124,42 @@ export const AvatarUploader = ({
               )}
             </div>
 
-            <div className="flex flex-col gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                className="w-full gap-2"
-                onClick={(e) => { e.preventDefault(); fileInputRef.current?.click(); }}
-                disabled={isUploading}
-              >
-                <Image className="h-4 w-4" />
-                Choose from Gallery
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                className="w-full gap-2"
-                onClick={(e) => { e.preventDefault(); fileInputRef.current?.click(); }}
-                disabled={isUploading}
-              >
-                <Camera className="h-4 w-4" />
-                Take Photo
-              </Button>
-            </div>
-
             <input
               ref={fileInputRef}
+              id="avatar-uploader-input"
               type="file"
               accept="image/*"
               className="sr-only"
               tabIndex={-1}
               onChange={handleFileSelect}
             />
+
+            <div className="flex flex-col gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full gap-2 p-0"
+                asChild
+                disabled={isUploading}
+              >
+                <label htmlFor="avatar-uploader-input" className="flex items-center justify-center gap-2 w-full h-full cursor-pointer px-4 py-2">
+                  <Image className="h-4 w-4" />
+                  Choose from Gallery
+                </label>
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full gap-2 p-0"
+                asChild
+                disabled={isUploading}
+              >
+                <label htmlFor="avatar-uploader-input" className="flex items-center justify-center gap-2 w-full h-full cursor-pointer px-4 py-2">
+                  <Camera className="h-4 w-4" />
+                  Take Photo
+                </label>
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>
