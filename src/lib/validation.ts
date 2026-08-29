@@ -21,8 +21,35 @@ export const commentSchema = z.string().trim().min(1, "Comment cannot be empty")
 export const messageSchema = z.string().trim().min(1, "Message cannot be empty").max(MAX_MESSAGE_LENGTH, `Message must be under ${MAX_MESSAGE_LENGTH} characters`);
 export const bioSchema = z.string().max(MAX_BIO_LENGTH, `Bio must be under ${MAX_BIO_LENGTH} characters`).optional();
 
-/** Validates an uploaded file for type and size */
-export const validateFileUpload = (file: File, type: "image" | "video"): string | null => {
+type OldOptions = { maxSizeMB?: number; allowedTypes?: string[] };
+type ValidationResultOld = { valid: boolean; error?: string };
+
+/**
+ * Validates an uploaded file for type and size
+ * Supports both APIs:
+ * - New: validateFileUpload(file, "image" | "video") => string | null
+ * - Old: validateFileUpload(file, { maxSizeMB, allowedTypes }) => { valid, error }
+ */
+export function validateFileUpload(file: File, type: "image" | "video"): string | null;
+export function validateFileUpload(file: File, options: OldOptions): ValidationResultOld;
+export function validateFileUpload(file: File, typeOrOptions: "image" | "video" | OldOptions): string | null | ValidationResultOld {
+  // Old API: object with maxSizeMB / allowedTypes
+  if (typeof typeOrOptions === "object" && typeOrOptions !== null) {
+    const { maxSizeMB, allowedTypes } = typeOrOptions as OldOptions;
+    const maxSize = (maxSizeMB ?? 10) * 1024 * 1024;
+    const allowed = allowedTypes ?? ALLOWED_IMAGE_TYPES;
+
+    if (allowed.length && !allowed.includes(file.type)) {
+      return { valid: false, error: `Invalid file type. Allowed: ${allowed.map(t => t.split("/")[1]).join(", ")}` };
+    }
+    if (file.size > maxSize) {
+      return { valid: false, error: `File too large. Max size: ${maxSizeMB ?? 10}MB` };
+    }
+    return { valid: true };
+  }
+
+  // New API: string type
+  const type = (typeOrOptions as "image" | "video") || "image";
   const allowedTypes = type === "image" ? ALLOWED_IMAGE_TYPES : ALLOWED_VIDEO_TYPES;
   const maxSize = type === "image" ? MAX_IMAGE_SIZE : MAX_VIDEO_SIZE;
 
@@ -33,7 +60,7 @@ export const validateFileUpload = (file: File, type: "image" | "video"): string 
     return `File too large. Max size: ${Math.round(maxSize / (1024 * 1024))}MB`;
   }
   return null;
-};
+}
 
 /** Sanitize user input: strip potential script tags */
 export const sanitizeInput = (input: string): string => {
