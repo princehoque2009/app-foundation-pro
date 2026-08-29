@@ -2,7 +2,9 @@ import { useState, useRef, useCallback } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import { Button } from "@/components/ui/button";
 import { Camera, Loader2 } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { ImageCropDialog } from "@/components/circles/ImageCropDialog";
 import { uploadToCloudinary, optimizeCloudinaryUrl, isCloudinaryConfigured } from "@/lib/cloudinary";
@@ -53,11 +55,13 @@ export const CoverPhotoUploader = ({ userId, currentCoverUrl, isOwner, onImageCl
       return;
     }
     const isGif = file.type === "image/gif";
+    // 2-in-1: GIF only allowed on Nitro theme
     if (isGif && theme !== 'nitro') {
       toast({ title: "GIF only for Nitro", description: "Switch to Nitro theme to use GIF covers", variant: "destructive" });
       return;
     }
     if (isGif && theme === 'nitro') {
+      // GIF direct upload to keep animation
       const objectUrl = URL.createObjectURL(file);
       setPreviewUrl(objectUrl);
       setIsImageLoaded(false);
@@ -65,6 +69,7 @@ export const CoverPhotoUploader = ({ userId, currentCoverUrl, isOwner, onImageCl
       e.target.value = "";
       return;
     }
+    // Normal image
     setCropSrc(URL.createObjectURL(file));
     e.target.value = "";
   };
@@ -79,9 +84,11 @@ export const CoverPhotoUploader = ({ userId, currentCoverUrl, isOwner, onImageCl
 
   const rawUrl = previewUrl || currentCoverUrl;
   const isGifCover = currentCoverUrl?.toLowerCase().includes('.gif');
+  // 2-in-1: if GIF and not nitro, hide in uploader preview? show but with note
   const isGifHidden = isGifCover && theme !== 'nitro';
-  const displayUrl = previewUrl || (isGifCover ? currentCoverUrl : optimizeCloudinaryUrl(currentCoverUrl, COVER_TRANSFORM));
-  const placeholderUrl = !previewUrl && !isGifCover ? optimizeCloudinaryUrl(currentCoverUrl, COVER_PLACEHOLDER_TRANSFORM) : null;
+  // Use raw URL to match EditProfileDialog preview exactly - no Cloudinary crop that cuts face
+  const displayUrl = previewUrl || currentCoverUrl;
+  const placeholderUrl = null;
 
   return (
     <>
