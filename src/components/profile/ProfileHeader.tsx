@@ -72,11 +72,11 @@ export const ProfileHeader = ({
     );
   }
 
-  // Dual banner logic: normal vs nitro
-  const normalCover = profile?.cover_photo_url;
-  const nitroCover = (profile as any)?.nitro_cover_url;
-  const activeCover = theme === 'nitro' ? (nitroCover || normalCover) : normalCover;
-  const isGifCover = activeCover?.toLowerCase().includes('.gif');
+  // 2-in-1 banner: single cover_photo_url, GIF only visible on Nitro theme
+  const rawCover = profile?.cover_photo_url;
+  const isGifCover = rawCover?.toLowerCase().includes('.gif');
+  // If GIF and not nitro theme, hide GIF (show fallback) - no sacrifice, file stays in DB and comes back on Nitro
+  const activeCover = isGifCover && theme !== 'nitro' ? null : rawCover;
 
   return (
     <>
@@ -85,8 +85,7 @@ export const ProfileHeader = ({
           {isOwner ? (
             <CoverPhotoUploader 
               userId={userId} 
-              currentCoverUrl={normalCover} 
-              currentNitroCoverUrl={nitroCover}
+              currentCoverUrl={profile?.cover_photo_url}
               isOwner 
               theme={theme} 
             />
