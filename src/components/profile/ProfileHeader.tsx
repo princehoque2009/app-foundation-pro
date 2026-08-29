@@ -72,7 +72,7 @@ export const ProfileHeader = ({
     );
   }
 
-  // 2-in-1 banner: single cover_photo_url, GIF only visible on Nitro theme
+  // 2-in-1 banner: single cover_photo_url, GIF only visible on Nitro theme - use raw URL to match preview exactly
   const rawCover = profile?.cover_photo_url;
   const isGifCover = rawCover?.toLowerCase().includes('.gif');
   // If GIF and not nitro theme, hide GIF (show fallback) - no sacrifice, file stays in DB and comes back on Nitro
@@ -90,7 +90,7 @@ export const ProfileHeader = ({
               theme={theme} 
             />
           ) : activeCover ? (
-            <img src={isGifCover ? activeCover : optimizeCloudinaryUrl(activeCover, "c_fill,ar_3:1,g_auto,w_1200")} alt="cover" className={cn("w-full h-full object-cover", theme === 'mono' && "grayscale")} />
+            <img src={activeCover} alt="cover" className={cn("w-full h-full object-cover object-center", theme === 'mono' && "grayscale")} />
           ) : (
             <div className={cn("absolute inset-0", theme === 'yellow' ? "bg-gradient-to-br from-amber-100 via-yellow-50 to-orange-50 dark:from-amber-950/30 dark:via-yellow-950/20 dark:to-orange-950/20" : theme === 'mono' ? "bg-gradient-to-br from-zinc-100 via-zinc-200 to-zinc-300 dark:from-zinc-800 dark:via-zinc-700 dark:to-zinc-900" : theme === 'nitro' ? "bg-gradient-to-br from-zinc-900 via-black to-zinc-800" : "bg-gradient-to-br from-muted via-background to-muted")} />
           )}
