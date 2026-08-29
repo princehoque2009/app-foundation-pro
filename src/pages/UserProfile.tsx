@@ -190,8 +190,14 @@ const UserProfile = () => {
 
   const handleMessage = async () => {
     if (!userId) return;
-    const conversationId = await createConversation.mutateAsync(userId);
-    navigate(`/messages?conversation=${conversationId}`);
+    try {
+      // Ensure conversation exists
+      await createConversation.mutateAsync(userId);
+      // Messages page expects ?friend= param, not ?conversation=
+      navigate(`/messages?friend=${userId}`);
+    } catch (err: any) {
+      toast({ title: "Could not start chat", description: err.message, variant: "destructive" });
+    }
   };
 
   if (user?.id === userId) {
@@ -237,7 +243,7 @@ const UserProfile = () => {
           },
         }}
       />
-      <div className="max-w-screen-lg mx-auto bg-background min-h-screen">
+      <div className="max-w-screen-lg mx-auto bg-transparent min-h-screen">
         <ProfileHeader
           profile={profile}
           userId={userId!}
@@ -367,4 +373,5 @@ const UserProfile = () => {
   );
 };
 
+export default UserProfile;
 export default UserProfile;
