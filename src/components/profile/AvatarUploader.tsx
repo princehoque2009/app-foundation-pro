@@ -126,18 +126,20 @@ export const AvatarUploader = ({
 
             <div className="flex flex-col gap-2">
               <Button
+                type="button"
                 variant="outline"
                 className="w-full gap-2"
-                onClick={() => fileInputRef.current?.click()}
+                onClick={(e) => { e.preventDefault(); fileInputRef.current?.click(); }}
                 disabled={isUploading}
               >
                 <Image className="h-4 w-4" />
                 Choose from Gallery
               </Button>
               <Button
+                type="button"
                 variant="outline"
                 className="w-full gap-2"
-                onClick={() => fileInputRef.current?.click()}
+                onClick={(e) => { e.preventDefault(); fileInputRef.current?.click(); }}
                 disabled={isUploading}
               >
                 <Camera className="h-4 w-4" />
@@ -149,7 +151,8 @@ export const AvatarUploader = ({
               ref={fileInputRef}
               type="file"
               accept="image/*"
-              className="hidden"
+              className="sr-only"
+              tabIndex={-1}
               onChange={handleFileSelect}
             />
           </div>
