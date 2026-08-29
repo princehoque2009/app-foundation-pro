@@ -86,6 +86,8 @@ const Messages = () => {
 
   useEffect(() => {
     const friendId = searchParams.get("friend");
+    const conversationId = searchParams.get("conversation");
+    
     if (friendId) {
       supabase
         .from("profiles")
@@ -95,10 +97,33 @@ const Messages = () => {
         .then(({ data }) => {
           if (data) setSelectedFriend(data);
         });
+    } else if (conversationId) {
+      // Backward compat: handle ?conversation= param (old links)
+      // Find other participant in this conversation
+      supabase
+        .from("conversation_participants" as any)
+        .select("user_id")
+        .eq("conversation_id", conversationId)
+        .neq("user_id", user?.id)
+        .maybeSingle()
+        .then(async ({ data }: any) => {
+          if (data?.user_id) {
+            const { data: profile } = await supabase
+              .from("profiles")
+              .select("id, username, display_name, avatar_url, is_verified")
+              .eq("id", data.user_id)
+              .single();
+            if (profile) {
+              setSelectedFriend(profile);
+              // Update URL to use friend param for consistency
+              setSearchParams({ friend: profile.id });
+            }
+          }
+        });
     } else {
       setSelectedFriend(null);
     }
-  }, [searchParams]);
+  }, [searchParams, user?.id]);
 
   const { data: friends, isLoading: friendsLoading } = useQuery({
     queryKey: ["friends", user?.id],
@@ -275,7 +300,7 @@ const Messages = () => {
         <div className="flex items-center gap-3 px-4 pt-5 pb-3">
           <button
             onClick={() => navigate("/")}
-            className="h-9 w-9 -ml-1 rounded-full flex items-center justify-center text-muted-foreground hover:bg-accent/60 transition-colors md:hidden"
+            className="h-9 w-9 -ml-1 rounded-full flex items-center justify-center text-muted-foreground hover:bg-accent/60 transition-colors"
             aria-label="Back to home"
           >
             <ArrowLeft className="h-5 w-5" strokeWidth={1.75} />
