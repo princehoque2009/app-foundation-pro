@@ -191,13 +191,15 @@ const UserProfile = () => {
   const handleMessage = async () => {
     if (!userId) return;
     try {
-      // Ensure conversation exists
+      // Try to ensure conversation exists via secure RPC
       await createConversation.mutateAsync(userId);
-      // Messages page expects ?friend= param, not ?conversation=
-      navigate(`/messages?friend=${userId}`);
     } catch (err: any) {
-      toast({ title: "Could not start chat", description: err.message, variant: "destructive" });
+      // Log but don't block - Messages page will also try to create via useDirectConversation RPC
+      console.warn("createConversation failed, navigating anyway:", err?.message);
     }
+    // Always navigate - Messages page expects ?friend= param
+    // The chat window itself will call get_or_create_direct_conversation RPC to ensure convo exists
+    navigate(`/messages?friend=${userId}`);
   };
 
   if (user?.id === userId) {
