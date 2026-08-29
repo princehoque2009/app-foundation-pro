@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/hooks/use-toast";
-import { CheckCircle, XCircle, Clock, Upload } from "lucide-react";
+import { CheckCircle, XCircle, Clock, Upload, BadgeCheck, Palette, Shield, Star } from "lucide-react";
 import { z } from "zod";
 
 const verificationSchema = z.object({
@@ -149,14 +149,69 @@ export const VerificationRequest = () => {
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Request Verification</CardTitle>
-        <CardDescription>
-          Submit your information to get your account verified
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
+    <div className="space-y-6">
+      {/* Benefits Info Section */}
+      <Card className="border border-zinc-200 dark:border-zinc-800 bg-gradient-to-br from-zinc-50 via-white to-zinc-50 dark:from-zinc-900 dark:via-black dark:to-zinc-900 overflow-hidden">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <div className="h-8 w-8 rounded-full bg-black text-white flex items-center justify-center text-sm">✓</div>
+            Why get verified?
+          </CardTitle>
+          <CardDescription>Themes only for verified users • Exclusive benefits</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="flex gap-3 p-3 rounded-xl bg-background border border-border/50">
+              <div className="h-9 w-9 rounded-full bg-blue-50 dark:bg-blue-950/30 flex items-center justify-center shrink-0">
+                <BadgeCheck className="h-5 w-5 text-blue-600" />
+              </div>
+              <div>
+                <div className="text-sm font-medium">Verified Badge</div>
+                <div className="text-[11px] text-muted-foreground leading-tight">Blue checkmark on your profile • More trust</div>
+              </div>
+            </div>
+            <div className="flex gap-3 p-3 rounded-xl bg-background border border-border/50">
+              <div className="h-9 w-9 rounded-full bg-amber-50 dark:bg-amber-950/20 flex items-center justify-center shrink-0">
+                <Palette className="h-5 w-5 text-amber-600" />
+              </div>
+              <div>
+                <div className="text-sm font-medium">Exclusive Themes</div>
+                <div className="text-[11px] text-muted-foreground leading-tight">Gold • Platinum • Nitro (GIF banner, animated ring)</div>
+              </div>
+            </div>
+            <div className="flex gap-3 p-3 rounded-xl bg-background border border-border/50">
+              <div className="h-9 w-9 rounded-full bg-green-50 dark:bg-green-950/20 flex items-center justify-center shrink-0">
+                <Shield className="h-5 w-5 text-green-600" />
+              </div>
+              <div>
+                <div className="text-sm font-medium">Trust & Visibility</div>
+                <div className="text-[11px] text-muted-foreground leading-tight">Higher in search • More profile views</div>
+              </div>
+            </div>
+            <div className="flex gap-3 p-3 rounded-xl bg-background border border-border/50">
+              <div className="h-9 w-9 rounded-full bg-purple-50 dark:bg-purple-950/20 flex items-center justify-center shrink-0">
+                <Star className="h-5 w-5 text-purple-600" />
+              </div>
+              <div>
+                <div className="text-sm font-medium">Premium Features</div>
+                <div className="text-[11px] text-muted-foreground leading-tight">Early access to new features • Priority support</div>
+              </div>
+            </div>
+          </div>
+          <div className="rounded-xl bg-black text-white p-3 flex items-center gap-2 text-[11px]">
+            <span className="text-amber-400">⚡</span> Themes only for verified users. Nitro is exclusive - requires special access.
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Request Verification</CardTitle>
+          <CardDescription>
+            Submit your information to get your account verified
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
         <div>
           <Label htmlFor="fullName">Full Name</Label>
           <Input
@@ -208,5 +263,6 @@ export const VerificationRequest = () => {
         </Button>
       </CardContent>
     </Card>
+    </div>
   );
 };
