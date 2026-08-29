@@ -143,7 +143,46 @@ export const VerificationRequest = () => {
 
   return (
     <div className="space-y-6">
-      {/* Detailed Benefits Section */}
+      {/* Request Form - TOP so user finds it instantly */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Request Verification</CardTitle>
+          <CardDescription>Submit your information to get your account verified - usually reviewed within 24-48 hours</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+        <div>
+          <Label htmlFor="fullName">Full Name</Label>
+          <Input id="fullName" value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Enter your full name" />
+        </div>
+
+        <div>
+          <Label htmlFor="email">Email</Label>
+          <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Enter your email" />
+        </div>
+
+        <div>
+          <Label htmlFor="idDocument">ID Document</Label>
+          <p className="text-[11px] text-muted-foreground mb-2">Government ID, passport, or any official document with your photo</p>
+          <div className="mt-2">
+            <Label htmlFor="idDocument" className="cursor-pointer">
+              <div className="border-2 border-dashed rounded-lg p-6 text-center hover:border-primary transition-colors">
+                <Upload className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
+                <p className="text-sm text-muted-foreground">{idFile ? idFile.name : "Click to upload ID document"}</p>
+                <p className="text-[10px] text-muted-foreground mt-1">Image or PDF, max 10MB</p>
+              </div>
+            </Label>
+            <Input id="idDocument" type="file" accept="image/*,.pdf" className="hidden" onChange={(e) => setIdFile(e.target.files?.[0] || null)} />
+          </div>
+        </div>
+
+        <Button onClick={() => submitRequestMutation.mutate()} disabled={submitRequestMutation.isPending} className="w-full">
+          {submitRequestMutation.isPending ? "Submitting..." : "Submit Request"}
+        </Button>
+        <p className="text-[10px] text-center text-muted-foreground">By submitting, you agree to our verification process. We never share your ID document.</p>
+      </CardContent>
+    </Card>
+
+      {/* Detailed Benefits Section - BOTTOM */}
       <Card className="border border-zinc-200 dark:border-zinc-800 bg-gradient-to-br from-zinc-50 via-white to-zinc-50 dark:from-zinc-900 dark:via-black dark:to-zinc-900 overflow-hidden">
         <CardHeader className="pb-4">
           <CardTitle className="flex items-center gap-3 text-xl">
@@ -271,44 +310,6 @@ export const VerificationRequest = () => {
           </div>
         </CardContent>
       </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Request Verification</CardTitle>
-          <CardDescription>Submit your information to get your account verified - usually reviewed within 24-48 hours</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-        <div>
-          <Label htmlFor="fullName">Full Name</Label>
-          <Input id="fullName" value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Enter your full name" />
-        </div>
-
-        <div>
-          <Label htmlFor="email">Email</Label>
-          <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Enter your email" />
-        </div>
-
-        <div>
-          <Label htmlFor="idDocument">ID Document</Label>
-          <p className="text-[11px] text-muted-foreground mb-2">Government ID, passport, or any official document with your photo</p>
-          <div className="mt-2">
-            <Label htmlFor="idDocument" className="cursor-pointer">
-              <div className="border-2 border-dashed rounded-lg p-6 text-center hover:border-primary transition-colors">
-                <Upload className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
-                <p className="text-sm text-muted-foreground">{idFile ? idFile.name : "Click to upload ID document"}</p>
-                <p className="text-[10px] text-muted-foreground mt-1">Image or PDF, max 10MB</p>
-              </div>
-            </Label>
-            <Input id="idDocument" type="file" accept="image/*,.pdf" className="hidden" onChange={(e) => setIdFile(e.target.files?.[0] || null)} />
-          </div>
-        </div>
-
-        <Button onClick={() => submitRequestMutation.mutate()} disabled={submitRequestMutation.isPending} className="w-full">
-          {submitRequestMutation.isPending ? "Submitting..." : "Submit Request"}
-        </Button>
-        <p className="text-[10px] text-center text-muted-foreground">By submitting, you agree to our verification process. We never share your ID document.</p>
-      </CardContent>
-    </Card>
     </div>
   );
 };
