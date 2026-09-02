@@ -40,13 +40,14 @@ const Profile = () => {
   const { data: posts, isLoading: postsLoading } = useQuery({
     queryKey: ["user-posts", user?.id],
     queryFn: async () => {
-      const { data, error } = await supabase.from("posts").select("id, user_id, is_reel, media_type, media_url, caption, likes_count, comments_count, created_at").eq("user_id", user?.id).order("created_at", { ascending: false });
+      const { data, error } = await supabase.from("posts").select("id, user_id, is_reel, media_type, media_url, caption, likes_count, comments_count, created_at").eq("user_id", user?.id).eq("is_archived", false).order("created_at", { ascending: false });
       if (error) throw error;
       return data;
     },
     enabled: !!user?.id,
     staleTime: 1000 * 60 * 5,
   });
+
 
   const { data: pinnedPosts } = useQuery({
     queryKey: ["pinned-posts", user?.id],
@@ -97,10 +98,20 @@ const Profile = () => {
         <ProfileHeader profile={profile} userId={user?.id || ""} isOwner={true} postsCount={posts?.length || 0} onEditClick={() => setIsEditDialogOpen(true)} onAnalyticsClick={() => setShowAnalytics(!showAnalytics)} onAboutClick={() => setShowAbout(!showAbout)} isLoading={profileLoading} />
         {showAnalytics && <div className="px-4 sm:px-6 py-4"><LiveInsights profileViews={100} profileViewsChange={10} contentReach={totalReactions*3} contentReachChange={5} totalReactions={totalReactions} reactionsChange={10} totalShares={10} sharesChange={5} /></div>}
         {showAbout && <div className="px-4 sm:px-6 pb-4"><ProfileAboutSection bio={profile?.bio} dateOfBirth={profile?.date_of_birth} createdAt={profile?.created_at} postsCount={posts?.length||0} followersCount={profile?.followers_count??0} followingCount={profile?.following_count??0} country={profile?.country} isVerified={profile?.is_verified} accountType={profile?.account_type} displayName={profile?.display_name} username={profile?.username} socialLinks={profile?.social_links} /></div>}
-        <ProfileTabs activeTab={activeTab} onTabChange={setActiveTab} tabs={tabs} />
-        <div key={activeTab}>
-          {viewMode === "grid" ? <ProfileContentGrid items={creations} activeTab={activeTab} isLoading={postsLoading} onItemClick={(item) => setSelectedPostId(item.id)} /> : <div className="space-y-4 p-4">{getFilteredPosts().map((post) => <PostCard key={post.id} id={post.id} author={{ name: profile?.display_name||profile?.username||"", avatar: profile?.avatar_url||"", username: profile?.username||"", isVerified: profile?.is_verified||false, userId: profile?.id }} content={post.caption||""} image={post.media_type==="image"?post.media_url||"":undefined} video={post.media_type==="video"?post.media_url||"":undefined} likes={post.likes_count||0} comments={post.comments_count||0} timestamp={post.created_at} />)}{getFilteredPosts().length===0&&<p className="text-center text-muted-foreground py-8">No content yet</p>}</div>}
+        <div className="flex items-center gap-1 pr-2">
+          <div className="flex-1 min-w-0 overflow-x-auto">
+            <ProfileTabs activeTab={activeTab} onTabChange={setActiveTab} tabs={tabs} />
+          </div>
+          <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" title="Archive" onClick={() => setArchiveOpen(true)}>
+            <Archive className="h-4 w-4" />
+          </Button>
+          <GridCustomizeSheet prefs={prefs} onUpdate={update} onReset={reset} />
         </div>
+        <div key={activeTab}>
+          {viewMode === "grid" ? <ProfileContentGrid items={creations} activeTab={activeTab} isLoading={postsLoading} prefs={prefs} onItemClick={(item) => setSelectedPostId(item.id)} /> : <div className="space-y-4 p-4">{getFilteredPosts().map((post) => <PostCard key={post.id} id={post.id} author={{ name: profile?.display_name||profile?.username||"", avatar: profile?.avatar_url||"", username: profile?.username||"", isVerified: profile?.is_verified||false, userId: profile?.id }} content={post.caption||""} image={post.media_type==="image"?post.media_url||"":undefined} video={post.media_type==="video"?post.media_url||"":undefined} likes={post.likes_count||0} comments={post.comments_count||0} timestamp={post.created_at} />)}{getFilteredPosts().length===0&&<p className="text-center text-muted-foreground py-8">No content yet</p>}</div>}
+        </div>
+        <ArchivedPostsModal open={archiveOpen} onOpenChange={setArchiveOpen} />
+
         <EditProfileDialog profile={profile} open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen} />
         <PostViewDialog postId={selectedPostId} open={!!selectedPostId} onOpenChange={(open) => !open && setSelectedPostId(null)} />
       </div>

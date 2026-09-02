@@ -150,7 +150,9 @@ export const useToggleArchive = (postId: string) => {
       queryClient.invalidateQueries({ queryKey: ["posts"] });
       queryClient.invalidateQueries({ queryKey: ["archivedPosts"] });
       queryClient.invalidateQueries({ queryKey: ["post", postId] });
+      queryClient.invalidateQueries({ queryKey: ["user-posts"] });
     },
+
   });
 };
 

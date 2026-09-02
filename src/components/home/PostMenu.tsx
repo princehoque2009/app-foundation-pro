@@ -11,6 +11,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
+import { useToggleArchive } from "@/hooks/usePostInteractions";
+
 
 interface PostMenuProps {
   postId: string;
@@ -27,6 +29,8 @@ export const PostMenu = ({ postId, postUserId, isPinned = false, mediaUrl, media
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const isOwner = user?.id === postUserId;
+  const toggleArchive = useToggleArchive(postId);
+
 
   const handleReport = () => {
     toast({
@@ -120,12 +124,22 @@ export const PostMenu = ({ postId, postUserId, isPinned = false, mediaUrl, media
     }
   };
 
-  const handleArchive = () => {
-    toast({
-      title: "Post archived",
-      description: "This post has been moved to your archive.",
-    });
+  const handleArchive = async () => {
+    try {
+      await toggleArchive.mutateAsync(false);
+      toast({
+        title: "Post archived",
+        description: "This post has been moved to your archive.",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error?.message || "Failed to archive post",
+        variant: "destructive",
+      });
+    }
   };
+
 
   const handleViewInsights = () => {
     toast({

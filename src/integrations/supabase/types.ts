@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "13.0.5"
+    PostgrestVersion: "14.5"
   }
   public: {
     Tables: {
@@ -1309,10 +1309,12 @@ export type Database = {
       }
       posts: {
         Row: {
+          archived_at: string | null
           caption: string | null
           comments_count: number | null
           created_at: string
           id: string
+          is_archived: boolean
           is_reel: boolean | null
           likes_count: number | null
           media_type: string | null
@@ -1323,10 +1325,12 @@ export type Database = {
           views_count: number | null
         }
         Insert: {
+          archived_at?: string | null
           caption?: string | null
           comments_count?: number | null
           created_at?: string
           id?: string
+          is_archived?: boolean
           is_reel?: boolean | null
           likes_count?: number | null
           media_type?: string | null
@@ -1337,10 +1341,12 @@ export type Database = {
           views_count?: number | null
         }
         Update: {
+          archived_at?: string | null
           caption?: string | null
           comments_count?: number | null
           created_at?: string
           id?: string
+          is_archived?: boolean
           is_reel?: boolean | null
           likes_count?: number | null
           media_type?: string | null
@@ -1385,8 +1391,10 @@ export type Database = {
           is_suspended: boolean | null
           is_verified: boolean
           messaging_disabled: boolean | null
+          nitro_cover_url: string | null
           phone_number: string | null
           posting_disabled: boolean | null
+          profile_theme: string | null
           social_links: Json
           suspended_until: string | null
           suspension_reason: string | null
@@ -1410,8 +1418,10 @@ export type Database = {
           is_suspended?: boolean | null
           is_verified?: boolean
           messaging_disabled?: boolean | null
+          nitro_cover_url?: string | null
           phone_number?: string | null
           posting_disabled?: boolean | null
+          profile_theme?: string | null
           social_links?: Json
           suspended_until?: string | null
           suspension_reason?: string | null
@@ -1435,8 +1445,10 @@ export type Database = {
           is_suspended?: boolean | null
           is_verified?: boolean
           messaging_disabled?: boolean | null
+          nitro_cover_url?: string | null
           phone_number?: string | null
           posting_disabled?: boolean | null
+          profile_theme?: string | null
           social_links?: Json
           suspended_until?: string | null
           suspension_reason?: string | null
@@ -1567,83 +1579,6 @@ export type Database = {
             columns: ["post_id"]
             isOneToOne: false
             referencedRelation: "posts"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      store_items: {
-        Row: {
-          category: string
-          created_at: string
-          description: string | null
-          icon: string | null
-          id: string
-          is_active: boolean
-          metadata: Json | null
-          name: string
-          price: number
-          updated_at: string
-        }
-        Insert: {
-          category?: string
-          created_at?: string
-          description?: string | null
-          icon?: string | null
-          id?: string
-          is_active?: boolean
-          metadata?: Json | null
-          name: string
-          price?: number
-          updated_at?: string
-        }
-        Update: {
-          category?: string
-          created_at?: string
-          description?: string | null
-          icon?: string | null
-          id?: string
-          is_active?: boolean
-          metadata?: Json | null
-          name?: string
-          price?: number
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      store_purchases: {
-        Row: {
-          created_at: string
-          expires_at: string | null
-          id: string
-          item_id: string
-          price_paid: number
-          status: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          expires_at?: string | null
-          id?: string
-          item_id: string
-          price_paid?: number
-          status?: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          expires_at?: string | null
-          id?: string
-          item_id?: string
-          price_paid?: number
-          status?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "store_purchases_item_id_fkey"
-            columns: ["item_id"]
-            isOneToOne: false
-            referencedRelation: "store_items"
             referencedColumns: ["id"]
           },
         ]
@@ -2180,117 +2115,6 @@ export type Database = {
           },
         ]
       }
-      wallet_flags: {
-        Row: {
-          created_at: string
-          details: Json | null
-          flag_type: string
-          id: string
-          resolved: boolean
-          resolved_at: string | null
-          resolved_by: string | null
-          severity: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          details?: Json | null
-          flag_type: string
-          id?: string
-          resolved?: boolean
-          resolved_at?: string | null
-          resolved_by?: string | null
-          severity?: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          details?: Json | null
-          flag_type?: string
-          id?: string
-          resolved?: boolean
-          resolved_at?: string | null
-          resolved_by?: string | null
-          severity?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
-      wallet_transactions: {
-        Row: {
-          amount: number
-          created_at: string
-          id: string
-          payment_method: string | null
-          reference: string | null
-          related_user_id: string | null
-          sender_number: string | null
-          status: string
-          type: string
-          user_id: string
-        }
-        Insert: {
-          amount: number
-          created_at?: string
-          id?: string
-          payment_method?: string | null
-          reference?: string | null
-          related_user_id?: string | null
-          sender_number?: string | null
-          status?: string
-          type: string
-          user_id: string
-        }
-        Update: {
-          amount?: number
-          created_at?: string
-          id?: string
-          payment_method?: string | null
-          reference?: string | null
-          related_user_id?: string | null
-          sender_number?: string | null
-          status?: string
-          type?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
-      wallets: {
-        Row: {
-          balance: number
-          created_at: string
-          id: string
-          last_daily_claim: string | null
-          subscription_expires_at: string | null
-          total_received: number
-          total_sent: number
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          balance?: number
-          created_at?: string
-          id?: string
-          last_daily_claim?: string | null
-          subscription_expires_at?: string | null
-          total_received?: number
-          total_sent?: number
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          balance?: number
-          created_at?: string
-          id?: string
-          last_daily_claim?: string | null
-          subscription_expires_at?: string | null
-          total_received?: number
-          total_sent?: number
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
     }
     Views: {
       [_ in never]: never
@@ -2349,12 +2173,12 @@ export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -2378,11 +2202,11 @@ export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -2403,11 +2227,11 @@ export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -2428,11 +2252,11 @@ export type Enums<
   DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema["Enums"]
     | { schema: keyof DatabaseWithoutInternals },
-  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+  EnumName extends (DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -2445,11 +2269,11 @@ export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof DatabaseWithoutInternals },
-  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+  CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never = never,
+    : never) = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }

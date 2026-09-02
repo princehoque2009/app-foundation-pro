@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Image, Play, Tag, FileText, Pin } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
+import { DEFAULT_GRID_PREFS, type ProfileGridPrefs } from "@/hooks/useProfileGridPrefs";
 
 interface MediaItem {
   id: string;
@@ -18,7 +19,12 @@ interface ProfileContentGridProps {
   activeTab: string;
   isLoading?: boolean;
   onItemClick?: (item: MediaItem) => void;
+  prefs?: ProfileGridPrefs;
 }
+
+const colClass = { 2: "grid-cols-2", 3: "grid-cols-3", 4: "grid-cols-4" } as const;
+const gapClass = { none: "gap-0.5", sm: "gap-2", md: "gap-3" } as const;
+
 
 // Generate video thumbnail from video URL
 const VideoThumbnail = ({ src, alt }: { src: string; alt: string }) => {
@@ -80,7 +86,14 @@ export const ProfileContentGrid = ({
   activeTab,
   isLoading,
   onItemClick,
+  prefs = DEFAULT_GRID_PREFS,
 }: ProfileContentGridProps) => {
+  const gridClass = cn("grid", colClass[prefs.columns], gapClass[prefs.gap]);
+  const tileClass = cn(
+    prefs.shape === "portrait" ? "aspect-[3/4]" : "aspect-square",
+    prefs.rounded && "rounded-xl"
+  );
+
   const filteredItems = useMemo(() => {
     let filtered = items;
     if (activeTab === "media") filtered = items.filter(i => i.type === "image" || i.type === "video");
@@ -96,12 +109,13 @@ export const ProfileContentGrid = ({
 
   if (isLoading) {
     return (
-      <div className="grid grid-cols-3 gap-0.5 sm:gap-1">
+      <div className={gridClass}>
         {Array.from({ length: 9 }).map((_, i) => (
-          <Skeleton key={i} className="aspect-square rounded-none" />
+          <Skeleton key={i} className={cn(tileClass, !prefs.rounded && "rounded-none")} />
         ))}
       </div>
     );
+
   }
 
   if (filteredItems.length === 0) {
@@ -142,7 +156,7 @@ export const ProfileContentGrid = ({
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         transition={{ duration: 0.2 }}
-        className="grid grid-cols-3 gap-0.5 sm:gap-1"
+        className={gridClass}
       >
         {filteredItems.map((item, index) => (
           <motion.button
@@ -152,10 +166,12 @@ export const ProfileContentGrid = ({
             transition={{ delay: index * 0.03, duration: 0.2 }}
             onClick={() => onItemClick?.(item)}
             className={cn(
-              "relative aspect-square overflow-hidden group",
+              "relative overflow-hidden group",
+              tileClass,
               "bg-muted focus:outline-none focus:ring-2 focus:ring-primary focus:ring-inset"
             )}
           >
+
             {/* Render content based on type */}
             {item.type === "video" || item.type === "reel" ? (
               item.thumbnail ? (
@@ -193,15 +209,18 @@ export const ProfileContentGrid = ({
             )}
 
             {/* Hover overlay */}
-            <div className={cn(
-              "absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100",
-              "transition-opacity duration-200 flex items-center justify-center gap-4"
-            )}>
-              <div className="flex items-center gap-1 text-white font-semibold text-sm">
-                <span>❤️</span>
-                <span>{item.likes}</span>
+            {prefs.showStats && (
+              <div className={cn(
+                "absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100",
+                "transition-opacity duration-200 flex items-center justify-center gap-4"
+              )}>
+                <div className="flex items-center gap-1 text-white font-semibold text-sm">
+                  <span>❤️</span>
+                  <span>{item.likes}</span>
+                </div>
               </div>
-            </div>
+            )}
+
           </motion.button>
         ))}
       </motion.div>
