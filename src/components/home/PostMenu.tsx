@@ -11,6 +11,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
+import { useToggleArchive } from "@/hooks/usePostInteractions";
+
 
 interface PostMenuProps {
   postId: string;
