@@ -120,12 +120,22 @@ export const PostMenu = ({ postId, postUserId, isPinned = false, mediaUrl, media
     }
   };
 
-  const handleArchive = () => {
-    toast({
-      title: "Post archived",
-      description: "This post has been moved to your archive.",
-    });
+  const handleArchive = async () => {
+    try {
+      await toggleArchive.mutateAsync(false);
+      toast({
+        title: "Post archived",
+        description: "This post has been moved to your archive.",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error?.message || "Failed to archive post",
+        variant: "destructive",
+      });
+    }
   };
+
 
   const handleViewInsights = () => {
     toast({
