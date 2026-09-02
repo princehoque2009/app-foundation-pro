@@ -29,6 +29,8 @@ export const PostMenu = ({ postId, postUserId, isPinned = false, mediaUrl, media
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const isOwner = user?.id === postUserId;
+  const toggleArchive = useToggleArchive(postId);
+
 
   const handleReport = () => {
     toast({
