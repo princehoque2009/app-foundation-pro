@@ -86,7 +86,14 @@ export const ProfileContentGrid = ({
   activeTab,
   isLoading,
   onItemClick,
+  prefs = DEFAULT_GRID_PREFS,
 }: ProfileContentGridProps) => {
+  const gridClass = cn("grid", colClass[prefs.columns], gapClass[prefs.gap]);
+  const tileClass = cn(
+    prefs.shape === "portrait" ? "aspect-[3/4]" : "aspect-square",
+    prefs.rounded && "rounded-xl"
+  );
+
   const filteredItems = useMemo(() => {
     let filtered = items;
     if (activeTab === "media") filtered = items.filter(i => i.type === "image" || i.type === "video");
@@ -102,12 +109,13 @@ export const ProfileContentGrid = ({
 
   if (isLoading) {
     return (
-      <div className="grid grid-cols-3 gap-0.5 sm:gap-1">
+      <div className={gridClass}>
         {Array.from({ length: 9 }).map((_, i) => (
-          <Skeleton key={i} className="aspect-square rounded-none" />
+          <Skeleton key={i} className={cn(tileClass, !prefs.rounded && "rounded-none")} />
         ))}
       </div>
     );
+
   }
 
   if (filteredItems.length === 0) {
