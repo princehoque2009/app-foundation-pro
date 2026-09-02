@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Image, Play, Tag, FileText, Pin } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
+import { DEFAULT_GRID_PREFS, type ProfileGridPrefs } from "@/hooks/useProfileGridPrefs";
 
 interface MediaItem {
   id: string;
@@ -18,7 +19,12 @@ interface ProfileContentGridProps {
   activeTab: string;
   isLoading?: boolean;
   onItemClick?: (item: MediaItem) => void;
+  prefs?: ProfileGridPrefs;
 }
+
+const colClass = { 2: "grid-cols-2", 3: "grid-cols-3", 4: "grid-cols-4" } as const;
+const gapClass = { none: "gap-0.5", sm: "gap-2", md: "gap-3" } as const;
+
 
 // Generate video thumbnail from video URL
 const VideoThumbnail = ({ src, alt }: { src: string; alt: string }) => {
