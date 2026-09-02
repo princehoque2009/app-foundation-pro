@@ -156,7 +156,7 @@ export const ProfileContentGrid = ({
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         transition={{ duration: 0.2 }}
-        className="grid grid-cols-3 gap-0.5 sm:gap-1"
+        className={gridClass}
       >
         {filteredItems.map((item, index) => (
           <motion.button
@@ -166,10 +166,12 @@ export const ProfileContentGrid = ({
             transition={{ delay: index * 0.03, duration: 0.2 }}
             onClick={() => onItemClick?.(item)}
             className={cn(
-              "relative aspect-square overflow-hidden group",
+              "relative overflow-hidden group",
+              tileClass,
               "bg-muted focus:outline-none focus:ring-2 focus:ring-primary focus:ring-inset"
             )}
           >
+
             {/* Render content based on type */}
             {item.type === "video" || item.type === "reel" ? (
               item.thumbnail ? (
