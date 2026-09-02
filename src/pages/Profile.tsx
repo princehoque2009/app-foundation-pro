@@ -40,13 +40,14 @@ const Profile = () => {
   const { data: posts, isLoading: postsLoading } = useQuery({
     queryKey: ["user-posts", user?.id],
     queryFn: async () => {
-      const { data, error } = await supabase.from("posts").select("id, user_id, is_reel, media_type, media_url, caption, likes_count, comments_count, created_at").eq("user_id", user?.id).order("created_at", { ascending: false });
+      const { data, error } = await supabase.from("posts").select("id, user_id, is_reel, media_type, media_url, caption, likes_count, comments_count, created_at").eq("user_id", user?.id).eq("is_archived", false).order("created_at", { ascending: false });
       if (error) throw error;
       return data;
     },
     enabled: !!user?.id,
     staleTime: 1000 * 60 * 5,
   });
+
 
   const { data: pinnedPosts } = useQuery({
     queryKey: ["pinned-posts", user?.id],
