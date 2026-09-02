@@ -209,15 +209,18 @@ export const ProfileContentGrid = ({
             )}
 
             {/* Hover overlay */}
-            <div className={cn(
-              "absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100",
-              "transition-opacity duration-200 flex items-center justify-center gap-4"
-            )}>
-              <div className="flex items-center gap-1 text-white font-semibold text-sm">
-                <span>❤️</span>
-                <span>{item.likes}</span>
+            {prefs.showStats && (
+              <div className={cn(
+                "absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100",
+                "transition-opacity duration-200 flex items-center justify-center gap-4"
+              )}>
+                <div className="flex items-center gap-1 text-white font-semibold text-sm">
+                  <span>❤️</span>
+                  <span>{item.likes}</span>
+                </div>
               </div>
-            </div>
+            )}
+
           </motion.button>
         ))}
       </motion.div>
