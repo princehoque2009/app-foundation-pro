@@ -26,6 +26,7 @@ const colClass = { 2: "grid-cols-2", 3: "grid-cols-3", 4: "grid-cols-4", 5: "gri
 const gapClass = { none: "gap-[2px]", xs: "gap-1", sm: "gap-1.5", md: "gap-2", lg: "gap-3" } as const;
 const radiusClass = { none: "rounded-none", sm: "rounded-[4px]", md: "rounded-md", lg: "rounded-xl" } as const;
 const shapeClass = { square: "aspect-square", portrait: "aspect-[3/4]", landscape: "aspect-[4/3]", auto: "aspect-square" } as const;
+const masonryMbClass = { none: "mb-[2px]", xs: "mb-1", sm: "mb-1.5", md: "mb-2", lg: "mb-3" } as const;
 const masonryColClass = { 2: "columns-2", 3: "columns-3", 4: "columns-4", 5: "columns-5" } as const;
 
 
@@ -173,7 +174,7 @@ export const ProfileContentGrid = ({
             className={cn(
               "relative overflow-hidden group bg-muted focus:outline-none focus:ring-2 focus:ring-primary focus:ring-inset",
               isMasonry
-                ? cn("block w-full mb-[inherit] break-inside-avoid", radiusClass[prefs.radius], index % 3 === 1 ? "aspect-[3/4]" : index % 3 === 2 ? "aspect-[4/5]" : "aspect-square")
+                ? cn("block w-full break-inside-avoid", masonryMbClass[prefs.gap], radiusClass[prefs.radius], index % 3 === 1 ? "aspect-[3/4]" : index % 3 === 2 ? "aspect-[4/5]" : "aspect-square")
                 : tileClass
             )}
           >
