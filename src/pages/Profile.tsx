@@ -12,6 +12,11 @@ import { ProfileTabs } from "@/components/profile/ProfileTabs";
 import { ProfileContentGrid } from "@/components/profile/ProfileContentGrid";
 import { PostViewDialog } from "@/components/profile/PostViewDialog";
 import { PostCard } from "@/components/home/PostCard";
+import { ArchivedPostsModal } from "@/components/ArchivedPostsModal";
+import { GridCustomizeSheet } from "@/components/profile/GridCustomizeSheet";
+import { useProfileGridPrefs } from "@/hooks/useProfileGridPrefs";
+import { Button } from "@/components/ui/button";
+import { Archive } from "lucide-react";
 
 const Profile = () => {
   const { user } = useAuth();
@@ -21,6 +26,8 @@ const Profile = () => {
   const [selectedPostId, setSelectedPostId] = useState<string | null>(null);
   const [showAnalytics, setShowAnalytics] = useState(false);
   const [showAbout, setShowAbout] = useState(false);
+  const [archiveOpen, setArchiveOpen] = useState(false);
+  const { prefs, update, reset } = useProfileGridPrefs();
 
   const { data: profile, isLoading: profileLoading, error: profileError } = useQuery({
     queryKey: ["profile", user?.id],
@@ -93,11 +100,11 @@ const Profile = () => {
 
   return (
     <MainLayout>
-      <Seo title="Your Profile on Prangon" path="/profile" />
+      <Seo title="Your Profile on Prangon" description="View and manage your Prangon profile, posts, reels and activity." path="/profile" />
       <div className="max-w-screen-lg mx-auto min-h-screen">
         <ProfileHeader profile={profile} userId={user?.id || ""} isOwner={true} postsCount={posts?.length || 0} onEditClick={() => setIsEditDialogOpen(true)} onAnalyticsClick={() => setShowAnalytics(!showAnalytics)} onAboutClick={() => setShowAbout(!showAbout)} isLoading={profileLoading} />
         {showAnalytics && <div className="px-4 sm:px-6 py-4"><LiveInsights profileViews={100} profileViewsChange={10} contentReach={totalReactions*3} contentReachChange={5} totalReactions={totalReactions} reactionsChange={10} totalShares={10} sharesChange={5} /></div>}
-        {showAbout && <div className="px-4 sm:px-6 pb-4"><ProfileAboutSection bio={profile?.bio} dateOfBirth={profile?.date_of_birth} createdAt={profile?.created_at} postsCount={posts?.length||0} followersCount={profile?.followers_count??0} followingCount={profile?.following_count??0} country={profile?.country} isVerified={profile?.is_verified} accountType={profile?.account_type} displayName={profile?.display_name} username={profile?.username} socialLinks={profile?.social_links} /></div>}
+        {showAbout && <div className="px-4 sm:px-6 pb-4"><ProfileAboutSection bio={profile?.bio} dateOfBirth={profile?.date_of_birth} createdAt={profile?.created_at} postsCount={posts?.length||0} followersCount={profile?.followers_count??0} followingCount={profile?.following_count??0} country={profile?.country} isVerified={profile?.is_verified} accountType={profile?.account_type} displayName={profile?.display_name} username={profile?.username} socialLinks={profile?.social_links as any} /></div>}
         <div className="flex items-center gap-1 pr-2">
           <div className="flex-1 min-w-0 overflow-x-auto">
             <ProfileTabs activeTab={activeTab} onTabChange={setActiveTab} tabs={tabs} />
