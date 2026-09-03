@@ -100,7 +100,7 @@ const Profile = () => {
 
   return (
     <MainLayout>
-      <Seo title="Your Profile on Prangon" path="/profile" />
+      <Seo title="Your Profile on Prangon" description="View and manage your Prangon profile, posts, reels and activity." path="/profile" />
       <div className="max-w-screen-lg mx-auto min-h-screen">
         <ProfileHeader profile={profile} userId={user?.id || ""} isOwner={true} postsCount={posts?.length || 0} onEditClick={() => setIsEditDialogOpen(true)} onAnalyticsClick={() => setShowAnalytics(!showAnalytics)} onAboutClick={() => setShowAbout(!showAbout)} isLoading={profileLoading} />
         {showAnalytics && <div className="px-4 sm:px-6 py-4"><LiveInsights profileViews={100} profileViewsChange={10} contentReach={totalReactions*3} contentReachChange={5} totalReactions={totalReactions} reactionsChange={10} totalShares={10} sharesChange={5} /></div>}
