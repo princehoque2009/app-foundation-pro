@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { supabase } from "@/integrations/supabase/client";
@@ -10,7 +11,6 @@ import { Seo } from "@/components/seo/Seo";
 import { ProfileHeader } from "@/components/profile/ProfileHeader";
 import { ProfileTabs } from "@/components/profile/ProfileTabs";
 import { ProfileContentGrid } from "@/components/profile/ProfileContentGrid";
-import { PostViewDialog } from "@/components/profile/PostViewDialog";
 import { PostCard } from "@/components/home/PostCard";
 import { ArchivedPostsModal } from "@/components/ArchivedPostsModal";
 import { GridCustomizeSheet } from "@/components/profile/GridCustomizeSheet";
@@ -20,10 +20,10 @@ import { Archive } from "lucide-react";
 
 const Profile = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("all");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
-  const [selectedPostId, setSelectedPostId] = useState<string | null>(null);
   const [showAnalytics, setShowAnalytics] = useState(false);
   const [showAbout, setShowAbout] = useState(false);
   const [archiveOpen, setArchiveOpen] = useState(false);
@@ -115,12 +115,11 @@ const Profile = () => {
           <GridCustomizeSheet prefs={prefs} onUpdate={update} onReset={reset} />
         </div>
         <div key={activeTab}>
-          {viewMode === "grid" ? <ProfileContentGrid items={creations} activeTab={activeTab} isLoading={postsLoading} prefs={prefs} onItemClick={(item) => setSelectedPostId(item.id)} /> : <div className="space-y-4 p-4">{getFilteredPosts().map((post) => <PostCard key={post.id} id={post.id} author={{ name: profile?.display_name||profile?.username||"", avatar: profile?.avatar_url||"", username: profile?.username||"", isVerified: profile?.is_verified||false, userId: profile?.id }} content={post.caption||""} image={post.media_type==="image"?post.media_url||"":undefined} video={post.media_type==="video"?post.media_url||"":undefined} likes={post.likes_count||0} comments={post.comments_count||0} timestamp={post.created_at} />)}{getFilteredPosts().length===0&&<p className="text-center text-muted-foreground py-8">No content yet</p>}</div>}
+          {viewMode === "grid" ? <ProfileContentGrid items={creations} activeTab={activeTab} isLoading={postsLoading} prefs={prefs} onItemClick={(item) => navigate(`/post/${item.id}`)} /> : <div className="space-y-4 p-4">{getFilteredPosts().map((post) => <PostCard key={post.id} id={post.id} author={{ name: profile?.display_name||profile?.username||"", avatar: profile?.avatar_url||"", username: profile?.username||"", isVerified: profile?.is_verified||false, userId: profile?.id }} content={post.caption||""} image={post.media_type==="image"?post.media_url||"":undefined} video={post.media_type==="video"?post.media_url||"":undefined} likes={post.likes_count||0} comments={post.comments_count||0} timestamp={post.created_at} />)}{getFilteredPosts().length===0&&<p className="text-center text-muted-foreground py-8">No content yet</p>}</div>}
         </div>
         <ArchivedPostsModal open={archiveOpen} onOpenChange={setArchiveOpen} />
 
         <EditProfileDialog profile={profile} open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen} />
-        <PostViewDialog postId={selectedPostId} open={!!selectedPostId} onOpenChange={(open) => !open && setSelectedPostId(null)} />
       </div>
     </MainLayout>
   );

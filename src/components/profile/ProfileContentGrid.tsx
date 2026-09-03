@@ -1,6 +1,6 @@
 import { useMemo, useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Image, Play, Tag, FileText, Pin } from "lucide-react";
+import { Image, Play, Tag, FileText, Pin, Heart } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import { DEFAULT_GRID_PREFS, type ProfileGridPrefs } from "@/hooks/useProfileGridPrefs";
@@ -22,8 +22,12 @@ interface ProfileContentGridProps {
   prefs?: ProfileGridPrefs;
 }
 
-const colClass = { 2: "grid-cols-2", 3: "grid-cols-3", 4: "grid-cols-4" } as const;
-const gapClass = { none: "gap-0.5", sm: "gap-2", md: "gap-3" } as const;
+const colClass = { 2: "grid-cols-2", 3: "grid-cols-3", 4: "grid-cols-4", 5: "grid-cols-5" } as const;
+const gapClass = { none: "gap-[2px]", xs: "gap-1", sm: "gap-1.5", md: "gap-2", lg: "gap-3" } as const;
+const radiusClass = { none: "rounded-none", sm: "rounded-[4px]", md: "rounded-md", lg: "rounded-xl" } as const;
+const shapeClass = { square: "aspect-square", portrait: "aspect-[3/4]", landscape: "aspect-[4/3]", auto: "aspect-square" } as const;
+const masonryMbClass = { none: "mb-[2px]", xs: "mb-1", sm: "mb-1.5", md: "mb-2", lg: "mb-3" } as const;
+const masonryColClass = { 2: "columns-2", 3: "columns-3", 4: "columns-4", 5: "columns-5" } as const;
 
 
 // Generate video thumbnail from video URL
@@ -88,30 +92,32 @@ export const ProfileContentGrid = ({
   onItemClick,
   prefs = DEFAULT_GRID_PREFS,
 }: ProfileContentGridProps) => {
-  const gridClass = cn("grid", colClass[prefs.columns], gapClass[prefs.gap]);
-  const tileClass = cn(
-    prefs.shape === "portrait" ? "aspect-[3/4]" : "aspect-square",
-    prefs.rounded && "rounded-xl"
-  );
+  const pinnedFirst = prefs.pinnedFirst;
+  const isMasonry = prefs.layout === "masonry";
+  const gridClass = isMasonry
+    ? cn(masonryColClass[prefs.columns], gapClass[prefs.gap], "[column-fill:_balance]")
+    : cn("grid", colClass[prefs.columns], gapClass[prefs.gap]);
+  const tileClass = cn(shapeClass[prefs.shape], radiusClass[prefs.radius]);
 
   const filteredItems = useMemo(() => {
     let filtered = items;
     if (activeTab === "media") filtered = items.filter(i => i.type === "image" || i.type === "video");
     if (activeTab === "reels") filtered = items.filter(i => i.type === "reel" || i.type === "video");
     
+    if (!pinnedFirst) return filtered;
     // Sort pinned items first
     return [...filtered].sort((a, b) => {
       if (a.isPinned && !b.isPinned) return -1;
       if (!a.isPinned && b.isPinned) return 1;
       return 0;
     });
-  }, [items, activeTab]);
+  }, [items, activeTab, pinnedFirst]);
 
   if (isLoading) {
     return (
       <div className={gridClass}>
         {Array.from({ length: 9 }).map((_, i) => (
-          <Skeleton key={i} className={cn(tileClass, !prefs.rounded && "rounded-none")} />
+          <Skeleton key={i} className={cn(tileClass)} />
         ))}
       </div>
     );
@@ -166,9 +172,10 @@ export const ProfileContentGrid = ({
             transition={{ delay: index * 0.03, duration: 0.2 }}
             onClick={() => onItemClick?.(item)}
             className={cn(
-              "relative overflow-hidden group",
-              tileClass,
-              "bg-muted focus:outline-none focus:ring-2 focus:ring-primary focus:ring-inset"
+              "relative overflow-hidden group bg-muted focus:outline-none focus:ring-2 focus:ring-primary focus:ring-inset",
+              isMasonry
+                ? cn("block w-full break-inside-avoid", masonryMbClass[prefs.gap], radiusClass[prefs.radius], index % 3 === 1 ? "aspect-[3/4]" : index % 3 === 2 ? "aspect-[4/5]" : "aspect-square")
+                : tileClass
             )}
           >
 
@@ -195,7 +202,7 @@ export const ProfileContentGrid = ({
             )}
 
             {/* Video/Reel indicator */}
-            {(item.type === "video" || item.type === "reel") && (
+            {prefs.showTypeIcon && (item.type === "video" || item.type === "reel") && (
               <div className="absolute top-2 right-2">
                 <Play className="h-5 w-5 text-white drop-shadow-lg fill-white/20" />
               </div>
@@ -208,16 +215,23 @@ export const ProfileContentGrid = ({
               </div>
             )}
 
-            {/* Hover overlay */}
-            {prefs.showStats && (
+            {/* Stats overlay */}
+            {prefs.overlay !== "never" && (
               <div className={cn(
-                "absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100",
-                "transition-opacity duration-200 flex items-center justify-center gap-4"
+                "absolute inset-0 bg-black/40 transition-opacity duration-200 flex items-center justify-center gap-4",
+                prefs.overlay === "always" ? "opacity-100 bg-gradient-to-t from-black/60 via-transparent to-transparent items-end justify-start p-2" : "opacity-0 group-hover:opacity-100"
               )}>
-                <div className="flex items-center gap-1 text-white font-semibold text-sm">
-                  <span>❤️</span>
+                <div className="flex items-center gap-1 text-white font-semibold text-xs drop-shadow">
+                  <Heart className="h-3.5 w-3.5 fill-white" />
                   <span>{item.likes}</span>
                 </div>
+              </div>
+            )}
+
+            {/* Caption preview */}
+            {prefs.showCaption && item.caption && (
+              <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent px-2 pt-6 pb-1.5 text-left">
+                <p className="text-[10px] leading-tight text-white line-clamp-1">{item.caption}</p>
               </div>
             )}
 
