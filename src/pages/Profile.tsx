@@ -12,6 +12,11 @@ import { ProfileTabs } from "@/components/profile/ProfileTabs";
 import { ProfileContentGrid } from "@/components/profile/ProfileContentGrid";
 import { PostViewDialog } from "@/components/profile/PostViewDialog";
 import { PostCard } from "@/components/home/PostCard";
+import { ArchivedPostsModal } from "@/components/ArchivedPostsModal";
+import { GridCustomizeSheet } from "@/components/profile/GridCustomizeSheet";
+import { useProfileGridPrefs } from "@/hooks/useProfileGridPrefs";
+import { Button } from "@/components/ui/button";
+import { Archive } from "lucide-react";
 
 const Profile = () => {
   const { user } = useAuth();
@@ -21,6 +26,8 @@ const Profile = () => {
   const [selectedPostId, setSelectedPostId] = useState<string | null>(null);
   const [showAnalytics, setShowAnalytics] = useState(false);
   const [showAbout, setShowAbout] = useState(false);
+  const [archiveOpen, setArchiveOpen] = useState(false);
+  const { prefs, update, reset } = useProfileGridPrefs();
 
   const { data: profile, isLoading: profileLoading, error: profileError } = useQuery({
     queryKey: ["profile", user?.id],
