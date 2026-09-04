@@ -11,6 +11,7 @@ import { Switch } from "@/components/ui/switch";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import type { ProfileGridPrefs } from "@/hooks/useProfileGridPrefs";
+import { TEXT_STYLES } from "@/lib/textCardStyles";
 
 interface GridCustomizeSheetProps {
   prefs: ProfileGridPrefs;
