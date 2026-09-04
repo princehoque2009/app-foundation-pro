@@ -78,9 +78,9 @@ const Preview = ({ prefs }: { prefs: ProfileGridPrefs }) => {
         : "aspect-square";
 
   return (
-    <div className="rounded-2xl border bg-muted/30 p-3">
+    <div className="h-[186px] shrink-0 overflow-hidden rounded-2xl border bg-muted/30 p-3">
       <div className={cn("grid", cols, gap)}>
-        {Array.from({ length: prefs.columns * 2 }).map((_, i) => (
+        {Array.from({ length: prefs.columns * 3 }).map((_, i) => (
           <div
             key={i}
             className={cn(
