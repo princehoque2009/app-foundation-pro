@@ -274,7 +274,7 @@ export const ProfileContentGrid = ({
             )}
 
             {/* Caption preview */}
-            {prefs.showCaption && item.caption && (
+            {prefs.showCaption && item.caption && item.thumbnail && (
               <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent px-2 pt-6 pb-1.5 text-left">
                 <p className="text-[10px] leading-tight text-white line-clamp-1">{item.caption}</p>
               </div>
