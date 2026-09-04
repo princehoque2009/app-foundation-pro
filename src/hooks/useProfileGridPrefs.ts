@@ -18,6 +18,8 @@ export interface ProfileGridPrefs {
   showCaption: boolean;
   showTypeIcon: boolean;
   pinnedFirst: boolean;
+  /** How caption-only (text) posts are rendered in the grid. */
+  textCardStyle: TextCardStyle;
   /** Legacy key kept for backwards compatibility with stored prefs. */
   rounded?: boolean;
 }
