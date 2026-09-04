@@ -103,8 +103,8 @@ export const GridCustomizeSheet = ({ prefs, onUpdate, onReset }: GridCustomizeSh
           <LayoutGrid className="h-4 w-4" />
         </Button>
       </SheetTrigger>
-      <SheetContent side="bottom" className="rounded-t-3xl p-0 max-h-[88vh]">
-        <SheetHeader className="px-5 pt-5 pb-3 flex-row items-center justify-between space-y-0">
+      <SheetContent side="bottom" className="flex h-[86vh] flex-col rounded-t-3xl p-0">
+        <SheetHeader className="shrink-0 px-5 pt-5 pb-3 flex-row items-center justify-between space-y-0">
           <SheetTitle className="text-base">Customize grid</SheetTitle>
           <Button variant="ghost" size="sm" className="h-8 px-2 text-xs gap-1" onClick={onReset}>
             <RotateCcw className="h-3.5 w-3.5" />
@@ -112,10 +112,12 @@ export const GridCustomizeSheet = ({ prefs, onUpdate, onReset }: GridCustomizeSh
           </Button>
         </SheetHeader>
 
-        <ScrollArea className="max-h-[70vh]">
-          <div className="px-5 pb-8">
-            <Preview prefs={prefs} />
+        <div className="shrink-0 px-5 pb-1">
+          <Preview prefs={prefs} />
+        </div>
 
+        <ScrollArea className="min-h-0 flex-1">
+          <div className="px-5 pb-8">
             <div className="divide-y">
               <Section title="Layout">
                 <div className="grid grid-cols-2 gap-2">
