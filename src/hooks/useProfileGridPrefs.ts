@@ -35,6 +35,7 @@ export const DEFAULT_GRID_PREFS: ProfileGridPrefs = {
   showCaption: false,
   showTypeIcon: true,
   pinnedFirst: true,
+  textCardStyle: "gradient",
 };
 
 const KEY = "prangon:profile-grid-prefs";
