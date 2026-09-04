@@ -5,6 +5,7 @@ export type GridShape = "square" | "portrait" | "landscape" | "auto";
 export type GridGap = "none" | "xs" | "sm" | "md" | "lg";
 export type GridRadius = "none" | "sm" | "md" | "lg";
 export type GridOverlay = "hover" | "always" | "never";
+export type TextCardStyle = "gradient" | "paper" | "mono" | "sticky";
 
 export interface ProfileGridPrefs {
   layout: GridLayout;
