@@ -197,9 +197,7 @@ export const ProfileContentGrid = ({
                 loading="lazy"
               />
             ) : (
-              <div className="w-full h-full flex items-center justify-center bg-muted">
-                <FileText className="h-8 w-8 text-muted-foreground" />
-              </div>
+              <TextTile caption={item.caption} theme={prefs.textCardStyle} columns={prefs.columns} />
             )}
 
             {/* Video/Reel indicator */}
