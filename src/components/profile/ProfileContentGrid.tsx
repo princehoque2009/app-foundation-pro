@@ -86,6 +86,52 @@ const VideoThumbnail = ({ src, alt }: { src: string; alt: string }) => {
   );
 };
 
+/** Caption-only post rendered as a typographic card instead of a grey placeholder. */
+const TextTile = ({
+  caption,
+  theme,
+  columns,
+}: {
+  caption?: string;
+  theme: ProfileGridPrefs["textCardStyle"];
+  columns: ProfileGridPrefs["columns"];
+}) => {
+  const t = getTextCardTheme(theme);
+  const text = caption?.trim() || "";
+  const words = text ? text.split(/\s+/).length : 0;
+
+  return (
+    <div
+      className={cn(
+        "relative h-full w-full overflow-hidden p-3 text-left flex flex-col justify-center",
+        t.card
+      )}
+    >
+      <span className="pointer-events-none absolute -top-3 -left-1 select-none text-[64px] leading-none opacity-15">
+        &ldquo;
+      </span>
+      {text ? (
+        <p
+          className={cn(
+            "relative z-[1] whitespace-pre-line break-words leading-snug line-clamp-6",
+            t.type,
+            textCardFontClass(text.length, columns)
+          )}
+        >
+          {text}
+        </p>
+      ) : (
+        <FileText className="relative z-[1] mx-auto h-6 w-6 opacity-60" />
+      )}
+      {words > 0 && (
+        <span className="absolute bottom-2 right-2.5 z-[1] text-[9px] font-medium uppercase tracking-wide opacity-60">
+          {words} {words === 1 ? "word" : "words"}
+        </span>
+      )}
+    </div>
+  );
+};
+
 export const ProfileContentGrid = ({
   items,
   activeTab,
