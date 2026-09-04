@@ -28,7 +28,7 @@ const UserProfile = () => {
   const { createConversation } = useConversations();
   const [activeTab, setActiveTab] = useState("all");
   const [showAbout, setShowAbout] = useState(false);
-  const [selectedPostId, setSelectedPostId] = useState<string | null>(null);
+  const { prefs: gridPrefs } = useProfileGridPrefs();
 
   // Fetch profile
   const { data: profile, isLoading: profileLoading } = useQuery({
