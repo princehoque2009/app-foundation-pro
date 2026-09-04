@@ -4,6 +4,7 @@ import { Image, Play, Tag, FileText, Pin, Heart } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import { DEFAULT_GRID_PREFS, type ProfileGridPrefs } from "@/hooks/useProfileGridPrefs";
+import { getTextCardTheme, textCardFontClass } from "@/lib/textCardStyles";
 
 interface MediaItem {
   id: string;
