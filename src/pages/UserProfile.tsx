@@ -14,7 +14,7 @@ import { Seo } from "@/components/seo/Seo";
 import { ProfileHeader } from "@/components/profile/ProfileHeader";
 import { ProfileTabs } from "@/components/profile/ProfileTabs";
 import { ProfileContentGrid } from "@/components/profile/ProfileContentGrid";
-import { PostViewDialog } from "@/components/profile/PostViewDialog";
+import { useProfileGridPrefs } from "@/hooks/useProfileGridPrefs";
 import { toast } from "@/hooks/use-toast";
 import { useConversations } from "@/hooks/useConversations";
 import { motion, AnimatePresence } from "framer-motion";
@@ -28,7 +28,7 @@ const UserProfile = () => {
   const { createConversation } = useConversations();
   const [activeTab, setActiveTab] = useState("all");
   const [showAbout, setShowAbout] = useState(false);
-  const [selectedPostId, setSelectedPostId] = useState<string | null>(null);
+  const { prefs: gridPrefs } = useProfileGridPrefs();
 
   // Fetch profile
   const { data: profile, isLoading: profileLoading } = useQuery({
@@ -348,7 +348,8 @@ const UserProfile = () => {
                   items={creations}
                   activeTab={activeTab}
                   isLoading={postsLoading}
-                  onItemClick={(item) => setSelectedPostId(item.id)}
+                  prefs={gridPrefs}
+                  onItemClick={(item) => navigate(`/post/${item.id}`)}
                 />
               </motion.div>
             </AnimatePresence>
@@ -365,12 +366,6 @@ const UserProfile = () => {
           </div>
         )}
       </div>
-
-      <PostViewDialog
-        postId={selectedPostId}
-        open={!!selectedPostId}
-        onOpenChange={(open) => !open && setSelectedPostId(null)}
-      />
     </MainLayout>
   );
 };

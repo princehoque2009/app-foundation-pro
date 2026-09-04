@@ -5,6 +5,7 @@ export type GridShape = "square" | "portrait" | "landscape" | "auto";
 export type GridGap = "none" | "xs" | "sm" | "md" | "lg";
 export type GridRadius = "none" | "sm" | "md" | "lg";
 export type GridOverlay = "hover" | "always" | "never";
+export type TextCardStyle = "gradient" | "paper" | "mono" | "sticky";
 
 export interface ProfileGridPrefs {
   layout: GridLayout;
@@ -17,6 +18,8 @@ export interface ProfileGridPrefs {
   showCaption: boolean;
   showTypeIcon: boolean;
   pinnedFirst: boolean;
+  /** How caption-only (text) posts are rendered in the grid. */
+  textCardStyle: TextCardStyle;
   /** Legacy key kept for backwards compatibility with stored prefs. */
   rounded?: boolean;
 }
@@ -32,6 +35,7 @@ export const DEFAULT_GRID_PREFS: ProfileGridPrefs = {
   showCaption: false,
   showTypeIcon: true,
   pinnedFirst: true,
+  textCardStyle: "gradient",
 };
 
 const KEY = "prangon:profile-grid-prefs";

@@ -11,6 +11,7 @@ import { Switch } from "@/components/ui/switch";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import type { ProfileGridPrefs } from "@/hooks/useProfileGridPrefs";
+import { TEXT_STYLES } from "@/lib/textCardStyles";
 
 interface GridCustomizeSheetProps {
   prefs: ProfileGridPrefs;
@@ -78,9 +79,9 @@ const Preview = ({ prefs }: { prefs: ProfileGridPrefs }) => {
         : "aspect-square";
 
   return (
-    <div className="rounded-2xl border bg-muted/30 p-3">
+    <div className="h-[186px] shrink-0 overflow-hidden rounded-2xl border bg-muted/30 p-3">
       <div className={cn("grid", cols, gap)}>
-        {Array.from({ length: prefs.columns * 2 }).map((_, i) => (
+        {Array.from({ length: prefs.columns * 3 }).map((_, i) => (
           <div
             key={i}
             className={cn(
@@ -103,8 +104,8 @@ export const GridCustomizeSheet = ({ prefs, onUpdate, onReset }: GridCustomizeSh
           <LayoutGrid className="h-4 w-4" />
         </Button>
       </SheetTrigger>
-      <SheetContent side="bottom" className="rounded-t-3xl p-0 max-h-[88vh]">
-        <SheetHeader className="px-5 pt-5 pb-3 flex-row items-center justify-between space-y-0">
+      <SheetContent side="bottom" className="flex h-[86vh] flex-col rounded-t-3xl p-0">
+        <SheetHeader className="shrink-0 px-5 pt-5 pb-3 flex-row items-center justify-between space-y-0">
           <SheetTitle className="text-base">Customize grid</SheetTitle>
           <Button variant="ghost" size="sm" className="h-8 px-2 text-xs gap-1" onClick={onReset}>
             <RotateCcw className="h-3.5 w-3.5" />
@@ -112,10 +113,12 @@ export const GridCustomizeSheet = ({ prefs, onUpdate, onReset }: GridCustomizeSh
           </Button>
         </SheetHeader>
 
-        <ScrollArea className="max-h-[70vh]">
-          <div className="px-5 pb-8">
-            <Preview prefs={prefs} />
+        <div className="shrink-0 px-5 pb-1">
+          <Preview prefs={prefs} />
+        </div>
 
+        <ScrollArea className="min-h-0 flex-1">
+          <div className="px-5 pb-8">
             <div className="divide-y">
               <Section title="Layout">
                 <div className="grid grid-cols-2 gap-2">
@@ -213,6 +216,31 @@ export const GridCustomizeSheet = ({ prefs, onUpdate, onReset }: GridCustomizeSh
                 <Row label="Pinned posts first">
                   <Switch checked={prefs.pinnedFirst} onCheckedChange={(v) => onUpdate("pinnedFirst", v)} />
                 </Row>
+              </Section>
+
+              <Section title="Text posts">
+                <div className="grid grid-cols-4 gap-2">
+                  {TEXT_STYLES.map((s) => (
+                    <button
+                      key={s.id}
+                      onClick={() => onUpdate("textCardStyle", s.id)}
+                      className={cn(
+                        "rounded-xl border p-1.5 transition-colors",
+                        prefs.textCardStyle === s.id ? "border-primary" : "border-border"
+                      )}
+                    >
+                      <span
+                        className={cn(
+                          "flex aspect-square items-center justify-center rounded-lg text-[10px] font-semibold",
+                          s.swatch
+                        )}
+                      >
+                        Aa
+                      </span>
+                      <span className="mt-1 block text-[10px] text-muted-foreground">{s.label}</span>
+                    </button>
+                  ))}
+                </div>
               </Section>
             </div>
           </div>
