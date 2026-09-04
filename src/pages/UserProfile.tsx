@@ -366,12 +366,6 @@ const UserProfile = () => {
           </div>
         )}
       </div>
-
-      <PostViewDialog
-        postId={selectedPostId}
-        open={!!selectedPostId}
-        onOpenChange={(open) => !open && setSelectedPostId(null)}
-      />
     </MainLayout>
   );
 };
