@@ -348,7 +348,8 @@ const UserProfile = () => {
                   items={creations}
                   activeTab={activeTab}
                   isLoading={postsLoading}
-                  onItemClick={(item) => setSelectedPostId(item.id)}
+                  prefs={gridPrefs}
+                  onItemClick={(item) => navigate(`/post/${item.id}`)}
                 />
               </motion.div>
             </AnimatePresence>
