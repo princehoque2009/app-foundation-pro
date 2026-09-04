@@ -216,6 +216,31 @@ export const GridCustomizeSheet = ({ prefs, onUpdate, onReset }: GridCustomizeSh
                   <Switch checked={prefs.pinnedFirst} onCheckedChange={(v) => onUpdate("pinnedFirst", v)} />
                 </Row>
               </Section>
+
+              <Section title="Text posts">
+                <div className="grid grid-cols-4 gap-2">
+                  {TEXT_STYLES.map((s) => (
+                    <button
+                      key={s.id}
+                      onClick={() => onUpdate("textCardStyle", s.id)}
+                      className={cn(
+                        "rounded-xl border p-1.5 transition-colors",
+                        prefs.textCardStyle === s.id ? "border-primary" : "border-border"
+                      )}
+                    >
+                      <span
+                        className={cn(
+                          "flex aspect-square items-center justify-center rounded-lg text-[10px] font-semibold",
+                          s.swatch
+                        )}
+                      >
+                        Aa
+                      </span>
+                      <span className="mt-1 block text-[10px] text-muted-foreground">{s.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </Section>
             </div>
           </div>
         </ScrollArea>
