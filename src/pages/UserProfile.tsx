@@ -14,7 +14,7 @@ import { Seo } from "@/components/seo/Seo";
 import { ProfileHeader } from "@/components/profile/ProfileHeader";
 import { ProfileTabs } from "@/components/profile/ProfileTabs";
 import { ProfileContentGrid } from "@/components/profile/ProfileContentGrid";
-import { PostViewDialog } from "@/components/profile/PostViewDialog";
+import { useProfileGridPrefs } from "@/hooks/useProfileGridPrefs";
 import { toast } from "@/hooks/use-toast";
 import { useConversations } from "@/hooks/useConversations";
 import { motion, AnimatePresence } from "framer-motion";
