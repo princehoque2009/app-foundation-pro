@@ -26,8 +26,13 @@ interface EditProfileDialogProps {
 }
 
 const NITRO_PIN_ENC = "c2hvaGFpbDA5";
+const NITRO_TRIAL_PIN = "nitro24";
+const NITRO_TRIAL_PIN_ENC = "bml0cm8yNA==";
 const getNitroPin = () => {
   try { return atob(NITRO_PIN_ENC); } catch { return ""; }
+};
+const getTrialPin = () => {
+  try { return atob(NITRO_TRIAL_PIN_ENC); } catch { return NITRO_TRIAL_PIN; }
 };
 
 export const EditProfileDialog = ({ profile, open, onOpenChange }: EditProfileDialogProps) => {
@@ -41,8 +46,12 @@ export const EditProfileDialog = ({ profile, open, onOpenChange }: EditProfileDi
   const isVerified = !!profile?.is_verified;
 
   const [isNitroUnlocked, setIsNitroUnlocked] = useState(false);
+  const [isPermanentUnlocked, setIsPermanentUnlocked] = useState(false);
+  const [nitroTrial, setNitroTrial] = useState<any>(null);
+  const [trialCountdown, setTrialCountdown] = useState<string>("");
   const [showNitroPinDialog, setShowNitroPinDialog] = useState(false);
   const [nitroPinInput, setNitroPinInput] = useState("");
+  const [checkingTrial, setCheckingTrial] = useState(false);
 
   React.useEffect(() => {
     if (!profile) return;
@@ -57,11 +66,87 @@ export const EditProfileDialog = ({ profile, open, onOpenChange }: EditProfileDi
     if ((profile as any)?.profile_theme === 'nitro') setIsNitroUnlocked(true);
   }, [profile?.id, profile?.display_name, profile?.username, profile?.bio, profile?.country, (profile as any)?.profile_theme, profile?.social_links]);
 
+  // Keep existing localStorage for backward compat + fetch global DB state
   React.useEffect(() => {
     if (!user?.id) return;
     const unlocked = localStorage.getItem(`nitro_unlocked_${user.id}`) === 'true';
-    if (unlocked) setIsNitroUnlocked(true);
-  }, [user?.id]);
+    if (unlocked) {
+      setIsNitroUnlocked(true);
+      setIsPermanentUnlocked(true);
+    }
+    // Fetch global permanent + trial + trigger global expiry cleanup
+    const fetchNitroStatus = async () => {
+      try {
+        setCheckingTrial(true);
+        // Try global cleanup (security definer, will revert all expired)
+        try { await (supabase as any).rpc('revert_expired_nitro_trials'); } catch {}
+        const [{ data: perm }, { data: trial }] = await Promise.all([
+          supabase.from("nitro_permanent_unlocks").select("*").eq("user_id", user.id).maybeSingle(),
+          supabase.from("nitro_trials").select("*").eq("user_id", user.id).maybeSingle()
+        ]);
+        if (perm) {
+          setIsPermanentUnlocked(true);
+          setIsNitroUnlocked(true);
+        }
+        if (trial) {
+          setNitroTrial(trial);
+          // HARDCODED 24h check - cannot bypass
+          const startedAt = new Date(trial.started_at).getTime();
+          const nowMs = Date.now();
+          const hardExpired = nowMs - startedAt >= 24 * 60 * 60 * 1000;
+          const isExpired = hardExpired || new Date(trial.expires_at) < new Date() || trial.is_expired;
+          if (!isExpired && !perm) {
+            setIsNitroUnlocked(true);
+          } else if (isExpired && !perm) {
+            // Restore to old setup (current setup before trial) + delete GIF
+            const prevTheme = trial.previous_theme || 'default';
+            const prevCover = trial.previous_cover_url;
+            const isGif = profile?.cover_photo_url?.toLowerCase().includes('.gif');
+            const updateData: any = { profile_theme: prevTheme };
+            if (isGif) {
+              // Restore old banner if it wasn't GIF, else NULL - back to old setup
+              if (prevCover && !prevCover.toLowerCase().includes('.gif')) {
+                updateData.cover_photo_url = prevCover;
+              } else {
+                updateData.cover_photo_url = null;
+              }
+            }
+            await supabase.from("profiles").update(updateData).eq("id", user.id);
+            await supabase.from("nitro_trials").update({ is_expired: true }).eq("user_id", user.id);
+            setProfileTheme(prevTheme as any);
+            setIsNitroUnlocked(false);
+            queryClient.invalidateQueries({ queryKey: ["profile"] });
+            queryClient.invalidateQueries({ queryKey: ["current-profile"] });
+            toast({ title: "Trial expired", description: `Back to old setup: ${prevTheme} theme, GIF banner deleted` });
+          }
+        }
+      } catch {}
+      setCheckingTrial(false);
+    };
+    fetchNitroStatus();
+  }, [user?.id, profile?.id]);
+
+  // Countdown for trial
+  React.useEffect(() => {
+    if (!nitroTrial || isPermanentUnlocked) return;
+    const isExpired = new Date(nitroTrial.expires_at) < new Date() || nitroTrial.is_expired;
+    if (isExpired) return;
+    const updateCountdown = () => {
+      const now = new Date().getTime();
+      const exp = new Date(nitroTrial.expires_at).getTime();
+      const diff = exp - now;
+      if (diff <= 0) {
+        setTrialCountdown("Expired");
+        return;
+      }
+      const h = Math.floor(diff / (1000 * 60 * 60));
+      const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      setTrialCountdown(`${h}h ${m}m left`);
+    };
+    updateCountdown();
+    const iv = setInterval(updateCountdown, 60000);
+    return () => clearInterval(iv);
+  }, [nitroTrial, isPermanentUnlocked]);
 
   const [socialLinks, setSocialLinks] = useState<SocialLinksMap>(
     (profile?.social_links && typeof profile.social_links === "object") ? profile.social_links : {}
@@ -99,18 +184,79 @@ export const EditProfileDialog = ({ profile, open, onOpenChange }: EditProfileDi
     setProfileTheme(themeId);
   };
 
-  const handleNitroPinSubmit = () => {
+  const handleNitroPinSubmit = async () => {
     const pin = nitroPinInput.trim();
-    if (pin === getNitroPin()) {
+    const masterPin = getNitroPin();
+    const trialPin = getTrialPin();
+    const trialPinPlain = NITRO_TRIAL_PIN;
+
+    // Master PIN - permanent global - works even after trial used
+    if (pin === masterPin) {
       setIsNitroUnlocked(true);
-      if (user?.id) localStorage.setItem(`nitro_unlocked_${user.id}`, 'true');
+      setIsPermanentUnlocked(true);
+      if (user?.id) {
+        localStorage.setItem(`nitro_unlocked_${user.id}`, 'true');
+        // Global permanent record - keep current system untouched but add global
+        try {
+          await supabase.from("nitro_permanent_unlocks").upsert({ user_id: user.id, unlocked_via: 'pin' }, { onConflict: 'user_id' });
+          // If they had trial before, mark it expired so it doesn't interfere - trial stays in DB for once-in-lifetime check but permanent wins
+          await supabase.from("nitro_trials").update({ is_expired: true }).eq("user_id", user.id);
+        } catch {}
+      }
       setProfileTheme('nitro');
       setShowNitroPinDialog(false);
       setNitroPinInput("");
-      toast({ title: "Unlocked! ⚡" });
-    } else {
-      toast({ title: "Incorrect", variant: "destructive" });
+      toast({ title: "Unlocked! ⚡ Permanent", description: "Permanent access - even if you used trial before, you now have full Nitro" });
+      return;
     }
+
+    // Trial PIN - 24h one-time per verified user, global
+    if (pin.toLowerCase() === trialPin.toLowerCase() || pin.toLowerCase() === trialPinPlain.toLowerCase()) {
+      if (!isVerified) {
+        toast({ title: "Verified only", description: "Nitro trial is only for verified profiles", variant: "destructive" });
+        return;
+      }
+      if (isPermanentUnlocked) {
+        toast({ title: "You already have permanent Nitro", description: "No need for trial" });
+        setShowNitroPinDialog(false);
+        setNitroPinInput("");
+        return;
+      }
+      // Check if already used trial (once in lifetime)
+      try {
+        const { data: existingTrial } = await supabase.from("nitro_trials").select("*").eq("user_id", user?.id).maybeSingle();
+        if (existingTrial) {
+          toast({ title: "Trial already used", description: "You can try nitro24 only once in a lifetime", variant: "destructive" });
+          setShowNitroPinDialog(false);
+          setNitroPinInput("");
+          return;
+        }
+        // Create trial - global visible
+        const now = new Date();
+        const expires = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+        const prevTheme = profileTheme !== 'nitro' ? profileTheme : (profile as any)?.profile_theme || 'default';
+        const { error } = await supabase.from("nitro_trials").insert({
+          user_id: user?.id,
+          code: 'nitro24',
+          started_at: now.toISOString(),
+          expires_at: expires.toISOString(),
+          previous_theme: prevTheme,
+          previous_cover_url: profile?.cover_photo_url || null,
+        });
+        if (error) throw error;
+        setNitroTrial({ user_id: user?.id, started_at: now.toISOString(), expires_at: expires.toISOString(), previous_theme: prevTheme, is_expired: false });
+        setIsNitroUnlocked(true);
+        setProfileTheme('nitro');
+        setShowNitroPinDialog(false);
+        setNitroPinInput("");
+        toast({ title: "Trial unlocked! ⚡ 24h", description: "Nitro visible to everyone for 24 hours. GIF banner will be removed after expiry." });
+      } catch (e: any) {
+        toast({ title: "Trial failed", description: e.message, variant: "destructive" });
+      }
+      return;
+    }
+
+    toast({ title: "Incorrect PIN", variant: "destructive" });
   };
 
   const updateProfileMutation = useMutation({
@@ -181,12 +327,13 @@ export const EditProfileDialog = ({ profile, open, onOpenChange }: EditProfileDi
   const handleAvatarFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const result: any = validateFileUpload(file, { maxSizeMB: 5, allowedTypes: ["image/jpeg", "image/png", "image/webp"] } as any);
-    // Support both old {valid, error} and new string|null API
-    if (result && typeof result === "object" && "valid" in result) {
-      if (!result.valid) { toast({ title: result.error || "Invalid file", variant: "destructive" }); return; }
-    } else if (typeof result === "string" && result) {
-      toast({ title: result, variant: "destructive" }); return;
+    // Use new API: validateFileUpload(file, "image") returns string|null
+    const error = validateFileUpload(file, "image");
+    if (error) { toast({ title: error, variant: "destructive" }); return; }
+    // Extra check: avatar should not be GIF (optional)
+    if (file.type === "image/gif") {
+      toast({ title: "GIF not allowed for avatar", description: "Use JPEG, PNG, WEBP", variant: "destructive" });
+      return;
     }
     setAvatarCropSrc(URL.createObjectURL(file));
     e.target.value = "";
@@ -206,12 +353,9 @@ export const EditProfileDialog = ({ profile, open, onOpenChange }: EditProfileDi
       toast({ title: "GIF only for Nitro", description: "Switch to Nitro theme first", variant: "destructive" });
       return;
     }
-    const result: any = validateFileUpload(file, { maxSizeMB: 10, allowedTypes: isGif ? ["image/gif", "image/jpeg", "image/png", "image/webp"] : ["image/jpeg", "image/png", "image/webp"] } as any);
-    if (result && typeof result === "object" && "valid" in result) {
-      if (!result.valid) { toast({ title: result.error || "Invalid file", variant: "destructive" }); return; }
-    } else if (typeof result === "string" && result) {
-      toast({ title: result, variant: "destructive" }); return;
-    }
+    // Use new API - ALLOWED_IMAGE_TYPES includes gif, jpeg, png, webp
+    const error = validateFileUpload(file, "image");
+    if (error) { toast({ title: error, variant: "destructive" }); return; }
     if (isGif) {
       setBannerBlob(file);
       setBannerPreview(URL.createObjectURL(file));
@@ -310,7 +454,7 @@ export const EditProfileDialog = ({ profile, open, onOpenChange }: EditProfileDi
                           { id: 'default', label: 'Default', sub: 'Normal', locked: false },
                           { id: 'yellow', label: 'Gold', sub: 'Premium', locked: false },
                           { id: 'mono', label: 'Platinum', sub: 'Mono', locked: false },
-                          { id: 'nitro', label: 'Nitro', sub: isNitroUnlocked ? 'Unlocked' : 'Locked', locked: !isNitroUnlocked },
+                          { id: 'nitro', label: 'Nitro', sub: isPermanentUnlocked ? 'Unlocked' : nitroTrial && !nitroTrial.is_expired && new Date(nitroTrial.expires_at) > new Date() ? trialCountdown || 'Trial active' : isNitroUnlocked ? 'Unlocked' : 'Locked', locked: !isNitroUnlocked },
                         ].map((t) => (
                           <button key={t.id} type="button" onClick={() => handleThemeSelect(t.id as any)} className={"relative rounded-xl border p-3 text-left transition-all " + (profileTheme === t.id ? "border-primary bg-primary/5 ring-1 ring-primary" : "border-border hover:border-primary/50")}>
                             <div className="flex items-center gap-1.5">
@@ -323,7 +467,14 @@ export const EditProfileDialog = ({ profile, open, onOpenChange }: EditProfileDi
                           </button>
                         ))}
                       </div>
-                      {profileTheme === 'nitro' && isNitroUnlocked && <div className="mt-3 text-[11px] p-2 rounded-lg bg-black text-white text-center">⚡ Nitro: GIF banner • B&W badge • Animated ring</div>}
+                      {profileTheme === 'nitro' && isNitroUnlocked && (
+                        <div className="mt-3 space-y-2">
+                          <div className="text-[11px] p-2 rounded-lg bg-black text-white text-center">⚡ Nitro: GIF banner • B&W badge • Animated ring {isPermanentUnlocked ? '(Permanent)' : nitroTrial ? `• Trial ${trialCountdown}` : ''}</div>
+                          {nitroTrial && !isPermanentUnlocked && (
+                            <div className="text-[10px] p-2 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-center">Trial visible globally • After 24h theme reverts to {nitroTrial.previous_theme || 'default'} and GIF banner deleted from DB</div>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}
@@ -339,13 +490,15 @@ export const EditProfileDialog = ({ profile, open, onOpenChange }: EditProfileDi
         <DialogContent className="max-w-sm rounded-[20px]">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2"><Lock className="h-4 w-4" /> Locked Theme</DialogTitle>
-            <DialogDescription>Authentication required</DialogDescription>
+            <DialogDescription>Enter master PIN or trial code nitro24 • Trial is one-time 24h, visible globally</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div>
-              <Label>PIN</Label>
-              <Input type="password" value={nitroPinInput} onChange={(e) => setNitroPinInput(e.target.value)} placeholder="••••••••" onKeyDown={(e) => { if (e.key === 'Enter') handleNitroPinSubmit(); }} autoFocus />
+              <Label>PIN / Trial Code</Label>
+              <Input type="password" value={nitroPinInput} onChange={(e) => setNitroPinInput(e.target.value)} placeholder="•••••••• or nitro24" onKeyDown={(e) => { if (e.key === 'Enter') handleNitroPinSubmit(); }} autoFocus />
+              <p className="text-[10px] text-muted-foreground mt-1.5">Master PIN = permanent • nitro24 = 24h trial once per verified user, global</p>
             </div>
+            {checkingTrial && <div className="text-[11px] text-muted-foreground flex items-center gap-1"><Loader2 className="h-3 w-3 animate-spin" /> Checking trial status...</div>}
             <div className="flex justify-end gap-2">
               <Button variant="outline" onClick={() => { setShowNitroPinDialog(false); setNitroPinInput(""); }}>Cancel</Button>
               <Button onClick={handleNitroPinSubmit}><Unlock className="h-4 w-4 mr-1" /> Unlock</Button>
