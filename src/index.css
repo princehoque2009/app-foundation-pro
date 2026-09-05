@@ -1241,6 +1241,10 @@
     0%, 100% { box-shadow: 0 0 0 2px hsl(var(--background)), 0 0 0 4px white, 0 0 20px rgba(255,255,255,0.6); }
     50% { box-shadow: 0 0 0 2px hsl(var(--background)), 0 0 0 4px white, 0 0 30px rgba(255,255,255,0.9), 0 0 50px rgba(255,255,255,0.4); }
   }
+  @keyframes nitro-pulse-light {
+    0%, 100% { box-shadow: 0 0 0 2px hsl(var(--background)), 0 0 0 4px black, 0 0 20px rgba(0,0,0,0.25); }
+    50% { box-shadow: 0 0 0 2px hsl(var(--background)), 0 0 0 4px black, 0 0 30px rgba(0,0,0,0.35), 0 0 50px rgba(0,0,0,0.15); }
+  }
   .profile-theme-nitro {
     --profile-accent: 0 0% 100%;
   }
@@ -1290,8 +1294,32 @@
     font-weight: 700 !important;
     letter-spacing: -0.02em;
   }
+  /* LIGHT THEME — Nitro black, so name visible on #fcf0e8 warm paper */
+  :root .profile-theme-nitro .profile-avatar-ring,
+  :root .nitro-avatar-ring {
+    background: black !important;
+    animation: nitro-pulse-light 2s ease-in-out infinite;
+  }
+  :root .profile-theme-nitro .profile-avatar-ring::before,
+  :root .nitro-avatar-ring::before {
+    background: conic-gradient(from 0deg, #000 0deg, #fff 60deg, #000 120deg, #666 180deg, #000 240deg, #fff 300deg, #000 360deg);
+  }
+  :root .profile-theme-nitro .profile-avatar-ring::after,
+  :root .nitro-avatar-ring::after {
+    background: conic-gradient(from 180deg, rgba(0,0,0,0.8), transparent 60deg, rgba(0,0,0,0.5), transparent 180deg, rgba(0,0,0,0.8));
+  }
+  :root .profile-theme-nitro .profile-name {
+    color: hsl(20 14% 10%) !important; /* warm black #1e1512 visible on light */
+    text-shadow: 0 1px 0 hsl(0 0% 100% / 0.8), 0 1px 8px hsl(0 0% 0% / 0.08) !important;
+  }
+  .dark .profile-theme-nitro .profile-avatar-ring,
+  .dark .nitro-avatar-ring {
+    background: white !important;
+    animation: nitro-pulse 2s ease-in-out infinite;
+  }
   .dark .profile-theme-nitro .profile-name {
     color: white !important;
+    text-shadow: 0 0 10px rgba(255,255,255,0.5), 0 0 20px rgba(255,255,255,0.3) !important;
   }
 
   /* ===== MOBILE TOP NAV FIX - hamburger outside screen on profile page ===== */
