@@ -490,15 +490,14 @@ export const EditProfileDialog = ({ profile, open, onOpenChange }: EditProfileDi
         <DialogContent className="max-w-sm rounded-[20px]">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2"><Lock className="h-4 w-4" /> Locked Theme</DialogTitle>
-            <DialogDescription>Enter master PIN or trial code nitro24 • Trial is one-time 24h, visible globally</DialogDescription>
+            <DialogDescription>Authentication required</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div>
-              <Label>PIN / Trial Code</Label>
-              <Input type="password" value={nitroPinInput} onChange={(e) => setNitroPinInput(e.target.value)} placeholder="•••••••• or nitro24" onKeyDown={(e) => { if (e.key === 'Enter') handleNitroPinSubmit(); }} autoFocus />
-              <p className="text-[10px] text-muted-foreground mt-1.5">Master PIN = permanent • nitro24 = 24h trial once per verified user, global</p>
+              <Label>PIN</Label>
+              <Input type="password" value={nitroPinInput} onChange={(e) => setNitroPinInput(e.target.value)} placeholder="••••••••" onKeyDown={(e) => { if (e.key === 'Enter') handleNitroPinSubmit(); }} autoFocus />
             </div>
-            {checkingTrial && <div className="text-[11px] text-muted-foreground flex items-center gap-1"><Loader2 className="h-3 w-3 animate-spin" /> Checking trial status...</div>}
+            {checkingTrial && <div className="text-[11px] text-muted-foreground flex items-center gap-1"><Loader2 className="h-3 w-3 animate-spin" /> Checking status...</div>}
             <div className="flex justify-end gap-2">
               <Button variant="outline" onClick={() => { setShowNitroPinDialog(false); setNitroPinInput(""); }}>Cancel</Button>
               <Button onClick={handleNitroPinSubmit}><Unlock className="h-4 w-4 mr-1" /> Unlock</Button>
