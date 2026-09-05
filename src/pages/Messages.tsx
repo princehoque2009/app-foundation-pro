@@ -35,6 +35,7 @@ import {
   ArrowLeft,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { VerifiedBadge } from "@/components/ui/VerifiedBadge";
 import { useChatPreviews } from "@/hooks/useChat";
 import { usePresence, useSelfPresence, isUserOnline } from "@/hooks/usePresence";
 import {
@@ -453,6 +454,7 @@ const Messages = () => {
                         >
                           {friend.display_name || friend.username}
                         </h3>
+                        {friend.is_verified && <VerifiedBadge size="sm" />}
                         {flags.favourite && (
                           <Heart className="h-3 w-3 text-primary fill-primary shrink-0" />
                         )}
