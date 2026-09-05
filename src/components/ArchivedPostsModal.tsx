@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+port { useMemo, useState } from "react";
 import {
   Archive,
   ArchiveRestore,
@@ -25,6 +25,8 @@ import { toast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { getTextCardTheme } from "@/lib/textCardStyles";
 import { useProfileGridPrefs } from "@/hooks/useProfileGridPrefs";
+import { useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 interface ArchivedPostsModalProps {
   open: boolean;
@@ -36,19 +38,23 @@ const formatDate = (v: string) =>
 
 const Thumb = ({ post, textStyle }: { post: any; textStyle: any }) => {
   const theme = getTextCardTheme(textStyle);
-  if (post.media_url && post.media_type === "video") {
+  const mediaUrl = post.media_url || post.image_url;
+  const mediaType = post.media_type || (post.image_url ? "image" : "text");
+  const caption = post.caption || post.content;
+
+  if (mediaUrl && mediaType === "video") {
     return (
       <div className="relative h-full w-full bg-black">
-        <video src={post.media_url} className="h-full w-full object-cover" muted playsInline preload="metadata" />
+        <video src={mediaUrl} className="h-full w-full object-cover" muted playsInline preload="metadata" />
         <Play className="absolute right-2 top-2 h-4 w-4 fill-white/30 text-white drop-shadow" />
       </div>
     );
   }
-  if (post.media_url) {
+  if (mediaUrl) {
     return (
       <img
-        src={post.media_url}
-        alt={post.caption || "Archived post"}
+        src={mediaUrl}
+        alt={caption || "Archived post"}
         className="h-full w-full object-cover"
         loading="lazy"
       />
@@ -57,7 +63,7 @@ const Thumb = ({ post, textStyle }: { post: any; textStyle: any }) => {
   return (
     <div className={cn("flex h-full w-full items-center justify-center p-2 text-center", theme.card)}>
       <p className={cn("line-clamp-4 text-[11px] leading-snug", theme.type)}>
-        {post.caption || "Text post"}
+        {caption || "Text post"}
       </p>
     </div>
   );
@@ -67,6 +73,7 @@ export const ArchivedPostsModal = ({ open, onOpenChange }: ArchivedPostsModalPro
   const { data: archivedPosts, isLoading, error } = useArchivedPosts();
   const { prefs } = useProfileGridPrefs();
   const deletePost = useDeletePost();
+  const queryClient = useQueryClient();
 
   const [query, setQuery] = useState("");
   const [view, setView] = useState<"grid" | "list">("grid");
@@ -77,7 +84,11 @@ export const ArchivedPostsModal = ({ open, onOpenChange }: ArchivedPostsModalPro
   const posts = useMemo(() => {
     const list = (archivedPosts as any[]) || [];
     const q = query.trim().toLowerCase();
-    return q ? list.filter((p) => (p.caption || "").toLowerCase().includes(q)) : list;
+    if (!q) return list;
+    return list.filter((p) => {
+      const cap = (p.caption || p.content || "").toLowerCase();
+      return cap.includes(q);
+    });
   }, [archivedPosts, query]);
 
   const restoreOne = useToggleArchive(preview?.id || "none");
@@ -94,17 +105,18 @@ export const ArchivedPostsModal = ({ open, onOpenChange }: ArchivedPostsModalPro
         for (const id of selection) await deletePost.mutateAsync(id);
         toast({ title: `${selection.length} post(s) deleted` });
       } else {
-        const { supabase } = await import("@/integrations/supabase/client");
         const { error: err } = await supabase
           .from("posts")
-          .update({ is_archived: false, archived_at: null })
+          .update({ is_archived: false, archived_at: null } as any)
           .in("id", selection);
         if (err) throw err;
         toast({ title: `${selection.length} post(s) back on your profile` });
       }
       setSelection([]);
-      const { queryClient } = await import("@/lib/queryClient").catch(() => ({ queryClient: null as any }));
-      queryClient?.invalidateQueries?.();
+      // FIX: use queryClient from hook, not dynamic import of non-existent @/lib/queryClient
+      queryClient.invalidateQueries({ queryKey: ["posts"] });
+      queryClient.invalidateQueries({ queryKey: ["archivedPosts"] });
+      queryClient.invalidateQueries({ queryKey: ["user-posts"] });
     } catch (e: any) {
       toast({ title: "Error", description: e?.message || "Action failed", variant: "destructive" });
     } finally {
@@ -117,6 +129,8 @@ export const ArchivedPostsModal = ({ open, onOpenChange }: ArchivedPostsModalPro
       await restoreOne.mutateAsync(true);
       toast({ title: "Back on your profile" });
       setPreview(null);
+      queryClient.invalidateQueries({ queryKey: ["archivedPosts"] });
+      queryClient.invalidateQueries({ queryKey: ["posts"] });
     } catch (e: any) {
       toast({ title: "Error", description: e?.message || "Failed to restore", variant: "destructive" });
     }
@@ -245,6 +259,7 @@ export const ArchivedPostsModal = ({ open, onOpenChange }: ArchivedPostsModalPro
               <div className="space-y-2">
                 {posts.map((post: any) => {
                   const selected = selection.includes(post.id);
+                  const cap = post.caption || post.content || "No caption";
                   return (
                     <div
                       key={post.id}
@@ -260,7 +275,7 @@ export const ArchivedPostsModal = ({ open, onOpenChange }: ArchivedPostsModalPro
                         <Thumb post={post} textStyle={prefs.textCardStyle} />
                       </button>
                       <div className="min-w-0 flex-1">
-                        <p className="line-clamp-2 break-words text-sm">{post.caption || "No caption"}</p>
+                        <p className="line-clamp-2 break-words text-sm">{cap}</p>
                         <div className="mt-1 flex items-center gap-3 text-xs text-muted-foreground">
                           <span>{formatDate(post.created_at)}</span>
                           <span className="inline-flex items-center gap-1">
@@ -304,20 +319,20 @@ export const ArchivedPostsModal = ({ open, onOpenChange }: ArchivedPostsModalPro
             <ScrollArea className="min-h-0 flex-1">
               <div className="p-4">
                 <div className="overflow-hidden rounded-2xl bg-muted">
-                  {preview.media_url && preview.media_type === "video" ? (
-                    <video src={preview.media_url} className="max-h-[55vh] w-full object-contain" controls playsInline />
-                  ) : preview.media_url ? (
-                    <img src={preview.media_url} alt={preview.caption || "Archived post"} className="max-h-[55vh] w-full object-contain" />
+                  {(preview.media_url || preview.image_url) && (preview.media_type === "video" || preview.image_url?.endsWith?.(".mp4")) ? (
+                    <video src={preview.media_url || preview.image_url} className="max-h-[55vh] w-full object-contain" controls playsInline />
+                  ) : (preview.media_url || preview.image_url) ? (
+                    <img src={preview.media_url || preview.image_url} alt={preview.caption || preview.content || "Archived post"} className="max-h-[55vh] w-full object-contain" />
                   ) : (
                     <div className={cn("p-8 text-center", getTextCardTheme(prefs.textCardStyle).card)}>
                       <p className={cn("whitespace-pre-line text-lg leading-snug", getTextCardTheme(prefs.textCardStyle).type)}>
-                        {preview.caption || "Text post"}
+                        {preview.caption || preview.content || "Text post"}
                       </p>
                     </div>
                   )}
                 </div>
-                {preview.media_url && preview.caption && (
-                  <p className="mt-3 whitespace-pre-line text-sm">{preview.caption}</p>
+                {(preview.media_url || preview.image_url) && (preview.caption || preview.content) && (
+                  <p className="mt-3 whitespace-pre-line text-sm">{preview.caption || preview.content}</p>
                 )}
                 <div className="mt-3 flex items-center gap-4 text-xs text-muted-foreground">
                   <span>{formatDate(preview.created_at)}</span>
