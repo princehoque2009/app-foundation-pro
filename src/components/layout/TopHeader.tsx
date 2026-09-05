@@ -71,9 +71,9 @@ export const TopHeader = memo(() => {
         layout
         transition={spring}
         className={cn(
-          "lg-glass lg-sheen lg-pill mx-auto flex w-full max-w-[720px] items-center justify-between gap-1.5 sm:gap-3 pl-2.5 pr-1.5 sm:pl-3.5 sm:pr-2 border border-white/40 shadow-[0_8px_32px_-12px_rgba(0,0,0,0.12),0_2px_8px_-2px_rgba(0,0,0,0.06)] overflow-hidden box-border",
+          "lg-glass lg-sheen lg-pill mx-auto flex w-full max-w-[720px] items-center justify-between gap-1.5 sm:gap-3 pl-2.5 pr-1.5 sm:pl-3.5 sm:pr-2 border border-border/70 shadow-[0_2px_6px_hsl(20_12%_10%/0.07),0_8px_24px_hsl(355_20%_50%/0.08),0_0_0_1px_hsl(28_22%_84%/0.75),inset_0_1px_0_hsl(0_0%_100%/0.9)] overflow-hidden box-border",
           collapsed ? "h-[48px]" : "h-[52px] sm:h-[56px]",
-          "dark:border-white/10"
+          "dark:border-white/10 dark:shadow-[0_8px_32px_-12px_rgba(0,0,0,0.12),0_2px_8px_-2px_rgba(0,0,0,0.06)]"
         )}
       >
         {/* Left - logo + back - can shrink */}
