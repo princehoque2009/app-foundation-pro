@@ -1290,7 +1290,7 @@
   }
   .profile-theme-nitro .profile-name {
     color: white !important;
-    text-shadow: 0 0 10px rgba(255,255,255,0.5), 0 0 20px rgba(255,255,255,0.3);
+    text-shadow: none !important;
     font-weight: 700 !important;
     letter-spacing: -0.02em;
   }
@@ -1310,7 +1310,7 @@
   }
   :root .profile-theme-nitro .profile-name {
     color: hsl(20 14% 10%) !important; /* warm black #1e1512 visible on light */
-    text-shadow: 0 1px 0 hsl(0 0% 100% / 0.8), 0 1px 8px hsl(0 0% 0% / 0.08) !important;
+    text-shadow: none !important;
   }
   .dark .profile-theme-nitro .profile-avatar-ring,
   .dark .nitro-avatar-ring {
@@ -1319,7 +1319,7 @@
   }
   .dark .profile-theme-nitro .profile-name {
     color: white !important;
-    text-shadow: 0 0 10px rgba(255,255,255,0.5), 0 0 20px rgba(255,255,255,0.3) !important;
+    text-shadow: none !important;
   }
 
   /* ===== MOBILE TOP NAV FIX - hamburger outside screen on profile page ===== */
