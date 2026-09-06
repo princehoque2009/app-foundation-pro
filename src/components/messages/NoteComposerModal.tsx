@@ -153,6 +153,27 @@ export const NoteComposerModal = ({
           </span>
         </div>
 
+        {/* Emoji picker */}
+        <div className="mb-3">
+          <p className="text-[11px] text-muted-foreground mb-1.5 px-1">Add an emoji</p>
+          <div className="lg-bar flex items-center gap-1 p-1 rounded-2xl">
+            {NOTE_EMOJIS.map((e) => (
+              <button
+                key={e}
+                onClick={() => setEmoji(emoji === e ? null : e)}
+                className={cn(
+                  "h-9 flex-1 rounded-xl text-[17px] leading-none lg-press",
+                  emoji === e ? "bg-primary/10 ring-1 ring-primary/40" : "hover:bg-muted"
+                )}
+                aria-label={`Emoji ${e}`}
+              >
+                {e}
+              </button>
+            ))}
+          </div>
+        </div>
+
+
         {/* Music / activity — coming soon */}
         <div className="lg-chip w-full rounded-2xl mb-3 px-3.5 py-3 flex items-center gap-2.5 opacity-80">
           <Music2 className="h-4 w-4 text-primary shrink-0" />
