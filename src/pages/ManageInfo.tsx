@@ -4,6 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { Seo } from "@/components/seo/Seo";
 
 interface InfoOption {
   id: string;
@@ -64,6 +65,7 @@ const ManageInfo = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <Seo title="Manage Your Information — Prangon" description="Access, download, edit or delete the personal information Prangon holds about your account." path="/manage-info" />
       {/* Header */}
       <div className="sticky top-0 z-40 bg-background/80 backdrop-blur-xl border-b border-border">
         <div className="flex items-center h-14 px-4 max-w-screen-xl mx-auto">

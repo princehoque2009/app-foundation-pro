@@ -73,6 +73,8 @@ const PostView = () => {
         title={`${(post.caption || "Post").slice(0, 40)} — ${post.profiles?.display_name || post.profiles?.username || "Prangon"}`}
         description={(post.caption || `A post shared by ${post.profiles?.display_name || post.profiles?.username || "a member"} on Prangon.`).slice(0, 160)}
         path={`/post/${postId}`}
+        type="article"
+        image={post.media_url || undefined}
         jsonLd={{
           "@context": "https://schema.org",
           "@type": "SocialMediaPosting",

@@ -72,7 +72,7 @@ export const SuggestedAccounts = () => {
   return (
     <div className="relative bg-card/60 backdrop-blur-sm border border-border/50 rounded-[24px] py-4 shadow-sm mx-1">
       <div className="flex items-center justify-between px-4 mb-3">
-        <h3 className="text-[13.5px] font-semibold tracking-tight">Suggested for you</h3>
+        <h2 className="text-[13.5px] font-semibold tracking-tight">Suggested for you</h2>
         <div className="flex gap-1">
           <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full hover:bg-muted/80" onClick={() => handleScroll("left")}><ChevronLeft className="h-4 w-4" /></Button>
           <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full hover:bg-muted/80" onClick={() => handleScroll("right")}><ChevronRight className="h-4 w-4" /></Button>
@@ -83,7 +83,7 @@ export const SuggestedAccounts = () => {
           {filteredSuggestions.map((account) => (
             <motion.div key={account.id} layout initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.8 }} className="shrink-0">
               <Card className="relative w-[132px] p-3 border-border/60 bg-card shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all rounded-[20px]">
-                <button onClick={() => handleDismiss(account.id)} className="absolute top-2 right-2 p-1 rounded-full bg-muted/60"><X className="h-3 w-3" /></button>
+                <button aria-label="Dismiss suggestion" onClick={() => handleDismiss(account.id)} className="absolute top-2 right-2 p-1 rounded-full bg-muted/60"><X className="h-3 w-3" /></button>
                 <div className="flex flex-col items-center cursor-pointer pt-1" onClick={() => navigate(`/profile/${account.id}`)}>
                   <Avatar className="h-[60px] w-[60px] mb-2.5 ring-2 ring-background shadow-sm"><AvatarImage src={account.avatar_url || ""} /><AvatarFallback><UserCircle className="h-7 w-7" /></AvatarFallback></Avatar>
                   <span className="text-[13px] font-semibold truncate">{account.display_name || account.username}</span>

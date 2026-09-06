@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
+import { Seo } from "@/components/seo/Seo";
 
 interface StandardSection {
   id: string;
@@ -74,6 +75,7 @@ const CommunityStandards = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <Seo title="Community Standards — Prangon" description="The rules that keep Prangon safe: authenticity, privacy, dignity, prohibited content, reporting and enforcement." path="/community-standards" />
       {/* Header */}
       <div className="sticky top-0 z-40 bg-background/80 backdrop-blur-xl border-b border-border">
         <div className="flex items-center h-14 px-4 max-w-screen-xl mx-auto">

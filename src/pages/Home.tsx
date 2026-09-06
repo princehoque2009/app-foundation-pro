@@ -21,6 +21,7 @@ const Home = () => {
     <MainLayout>
       <Seo title="Prangon — Next-Generation Social Networking" description="Share moments, create reels, join private Circles and chat in real time on Prangon" path="/" />
       <div className="min-h-screen">
+        <h1 className="sr-only">Your Prangon Feed</h1>
         {showStories && <div className="max-w-[640px] mx-auto">{isLoading ? <div className="p-4"><StorySkeleton /></div> : <Stories />}</div>}
         <div className="max-w-[640px] mx-auto px-0 sm:px-3"><div className="px-4 sm:px-0 py-2"><SuggestedAccounts /></div></div>
         <div className="max-w-[640px] mx-auto px-3 sm:px-4 py-4 space-y-5">
