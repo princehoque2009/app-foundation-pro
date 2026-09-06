@@ -1,7 +1,7 @@
 import { Seo } from "@/components/seo/Seo";
 import { ReelCard } from "@/components/reels/ReelCard";
 import { usePosts } from "@/hooks/usePosts";
-import { Loader2, ArrowLeft, Camera } from "lucide-react";
+import { Loader2, ArrowLeft } from "lucide-react";
 import { useRef, useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
@@ -67,13 +67,8 @@ const Reels = () => {
               <ArrowLeft className="h-5 w-5" />
             </button>
             <span className="reel-text-shadow text-[15px] font-semibold text-white">Reels</span>
-            <button
-              onClick={() => navigate("/create")}
-              aria-label="Create reel"
-              className="lg-glass-strong lg-press lg-focus pointer-events-auto flex h-10 w-10 items-center justify-center rounded-full text-white"
-            >
-              <Camera className="h-5 w-5" />
-            </button>
+            <span className="h-10 w-10" aria-hidden="true" />
+
           </motion.div>
         )}
       </AnimatePresence>

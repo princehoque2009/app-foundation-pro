@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+
 import { createPortal } from "react-dom";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { UserRound, X, Trash2, Music2, Globe2, Users } from "lucide-react";
@@ -11,6 +12,8 @@ import {
 } from "@/hooks/useNotes";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+
+const NOTE_EMOJIS = ["❤️", "😂", "🔥", "✨", "🥹", "😎", "🎧"];
 
 interface NoteComposerModalProps {
   open: boolean;
@@ -30,9 +33,10 @@ export const NoteComposerModal = ({
   existing,
 }: NoteComposerModalProps) => {
   const [text, setText] = useState("");
-  const [emoji] = useState<string | null>(null);
+  const [emoji, setEmoji] = useState<string | null>(null);
   const [music, setMusic] = useState("");
   const [audience, setAudience] = useState<NoteAudience>("followers");
+  const [error, setError] = useState<string | null>(null);
   const saveNote = useSaveNote();
   const deleteNote = useDeleteNote();
   const hasExisting = !!(existing || existingNote);
@@ -41,7 +45,9 @@ export const NoteComposerModal = ({
     if (!open) return;
     setText(existing?.content ?? existingNote ?? "");
     setMusic(existing?.music ?? "");
+    setEmoji(existing?.emoji ?? null);
     setAudience((existing?.audience as NoteAudience) || "followers");
+    setError(null);
   }, [open, existing, existingNote]);
 
   useEffect(() => {
@@ -53,26 +59,40 @@ export const NoteComposerModal = ({
 
   if (!open) return null;
 
+  const describe = (e: unknown) => {
+    const err = e as { message?: string; details?: string; hint?: string; code?: string };
+    return (
+      err?.message || err?.details || err?.hint || (err?.code ? `Error ${err.code}` : "Something went wrong")
+    );
+  };
+
   const handleShare = async () => {
     if (!text.trim()) return;
+    setError(null);
     try {
       await saveNote.mutateAsync({ content: text, emoji, music: music.trim() || null, audience });
       toast.success("Note shared");
       onOpenChange(false);
-    } catch {
-      toast.error("Couldn't share your note");
+    } catch (e) {
+      const msg = describe(e);
+      setError(msg);
+      toast.error("Couldn't share your note", { description: msg });
     }
   };
 
   const handleDelete = async () => {
+    setError(null);
     try {
       await deleteNote.mutateAsync();
       toast.success("Note removed");
       onOpenChange(false);
-    } catch {
-      toast.error("Couldn't remove note");
+    } catch (e) {
+      const msg = describe(e);
+      setError(msg);
+      toast.error("Couldn't remove note", { description: msg });
     }
   };
+
 
   return createPortal(
     <div
@@ -135,6 +155,27 @@ export const NoteComposerModal = ({
             {text.length}/{NOTE_MAX_LENGTH}
           </span>
         </div>
+
+        {/* Emoji picker */}
+        <div className="mb-3">
+          <p className="text-[11px] text-muted-foreground mb-1.5 px-1">Add an emoji</p>
+          <div className="lg-bar flex items-center gap-1 p-1 rounded-2xl">
+            {NOTE_EMOJIS.map((e) => (
+              <button
+                key={e}
+                onClick={() => setEmoji(emoji === e ? null : e)}
+                className={cn(
+                  "h-9 flex-1 rounded-xl text-[17px] leading-none lg-press",
+                  emoji === e ? "bg-primary/10 ring-1 ring-primary/40" : "hover:bg-muted"
+                )}
+                aria-label={`Emoji ${e}`}
+              >
+                {e}
+              </button>
+            ))}
+          </div>
+        </div>
+
 
         {/* Music / activity — coming soon */}
         <div className="lg-chip w-full rounded-2xl mb-3 px-3.5 py-3 flex items-center gap-2.5 opacity-80">

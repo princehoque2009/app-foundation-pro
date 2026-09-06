@@ -6,8 +6,8 @@ import {
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 
-// Global sound preference - persists across videos in session
-let globalMuted = true;
+// Global sound preference - persists across videos in session (sound ON by default)
+let globalMuted = false;
 const listeners = new Set<(m: boolean) => void>();
 const setGlobalMuted = (m: boolean) => {
   globalMuted = m;
@@ -18,6 +18,7 @@ try {
   const saved = sessionStorage.getItem("prangon_muted");
   if (saved !== null) globalMuted = saved === "true";
 } catch {}
+
 
 interface PrangonVideoPlayerProps {
   src: string;
@@ -102,17 +103,30 @@ export const PrangonVideoPlayer = memo(({
     return () => observerRef.current?.disconnect();
   }, []);
 
-  // Auto-play/pause based on visibility
+  // Auto-play/pause based on visibility (sound on; fall back to muted if the browser blocks it)
   useEffect(() => {
-    if (!videoRef.current) return;
+    const video = videoRef.current;
+    if (!video) return;
     const shouldPlay = isVisible && (autoPlay || isInView);
     if (shouldPlay) {
-      videoRef.current.muted = globalMuted;
-      videoRef.current.play().catch(() => {});
+      video.muted = globalMuted;
+      video.play().catch(() => {
+        video.muted = true;
+        setIsMuted(true);
+        video.play().catch(() => {});
+        const unmuteOnGesture = () => {
+          if (!globalMuted && videoRef.current) {
+            videoRef.current.muted = false;
+            setIsMuted(false);
+          }
+        };
+        document.addEventListener("pointerdown", unmuteOnGesture, { once: true });
+      });
     } else {
-      videoRef.current.pause();
+      video.pause();
     }
   }, [isVisible, autoPlay, isInView]);
+
 
   const formatTime = (time: number) => {
     if (!isFinite(time)) return "0:00";
@@ -423,13 +437,16 @@ export const PrangonVideoPlayer = memo(({
         )}
       </AnimatePresence>
 
-      {/* Sound toggle - always visible */}
-      <button
-        onClick={(e) => { e.stopPropagation(); toggleMute(); }}
-        className="absolute top-3 right-3 z-20 h-9 w-9 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center transition-all hover:bg-black/60"
-      >
-        <VolumeIcon className="h-4 w-4 text-white" />
-      </button>
+      {/* Sound toggle - hidden in reels (compact) mode */}
+      {!compact && (
+        <button
+          onClick={(e) => { e.stopPropagation(); toggleMute(); }}
+          className="absolute top-3 right-3 z-20 h-9 w-9 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center transition-all hover:bg-black/60"
+        >
+          <VolumeIcon className="h-4 w-4 text-white" />
+        </button>
+      )}
+
 
       {/* Large play button when paused */}
       {!isPlaying && !isLoading && !hasError && showControls && (
@@ -448,13 +465,25 @@ export const PrangonVideoPlayer = memo(({
         </button>
       )}
 
+      {/* Compact (reels): slim progress line pinned to the very top, never over the caption */}
+      {compact && (
+        <div className="absolute top-0 left-0 right-0 z-20 h-[3px] bg-white/20">
+          <div
+            className="h-full transition-[width] duration-75"
+            style={{ width: `${progress}%`, background: "#FF5A5F" }}
+          />
+        </div>
+      )}
+
       {/* Controls overlay */}
       <div
         className={cn(
           "absolute bottom-0 left-0 right-0 z-20 transition-all duration-300",
+          compact && "hidden",
           showControls || !isPlaying ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2 pointer-events-none"
         )}
       >
+
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent pointer-events-none" />
 
         <div className="relative px-3 pb-3 pt-8">

@@ -961,6 +961,76 @@ export type Database = {
           },
         ]
       }
+      nitro_permanent_unlocks: {
+        Row: {
+          created_at: string | null
+          unlocked_at: string | null
+          unlocked_via: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          unlocked_at?: string | null
+          unlocked_via?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          unlocked_at?: string | null
+          unlocked_via?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nitro_permanent_unlocks_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      nitro_trials: {
+        Row: {
+          code: string
+          created_at: string | null
+          expires_at: string
+          is_expired: boolean | null
+          previous_cover_url: string | null
+          previous_theme: string | null
+          started_at: string | null
+          user_id: string
+        }
+        Insert: {
+          code?: string
+          created_at?: string | null
+          expires_at: string
+          is_expired?: boolean | null
+          previous_cover_url?: string | null
+          previous_theme?: string | null
+          started_at?: string | null
+          user_id: string
+        }
+        Update: {
+          code?: string
+          created_at?: string | null
+          expires_at?: string
+          is_expired?: boolean | null
+          previous_cover_url?: string | null
+          previous_theme?: string | null
+          started_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nitro_trials_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       note_mutes: {
         Row: {
           created_at: string
@@ -2155,6 +2225,7 @@ export type Database = {
         Args: { p_group: string; p_user: string }
         Returns: boolean
       }
+      revert_expired_nitro_trials: { Args: never; Returns: undefined }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user" | "advisor" | "support" | "COO"
