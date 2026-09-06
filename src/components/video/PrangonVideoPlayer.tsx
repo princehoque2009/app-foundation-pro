@@ -103,17 +103,30 @@ export const PrangonVideoPlayer = memo(({
     return () => observerRef.current?.disconnect();
   }, []);
 
-  // Auto-play/pause based on visibility
+  // Auto-play/pause based on visibility (sound on; fall back to muted if the browser blocks it)
   useEffect(() => {
-    if (!videoRef.current) return;
+    const video = videoRef.current;
+    if (!video) return;
     const shouldPlay = isVisible && (autoPlay || isInView);
     if (shouldPlay) {
-      videoRef.current.muted = globalMuted;
-      videoRef.current.play().catch(() => {});
+      video.muted = globalMuted;
+      video.play().catch(() => {
+        video.muted = true;
+        setIsMuted(true);
+        video.play().catch(() => {});
+        const unmuteOnGesture = () => {
+          if (!globalMuted && videoRef.current) {
+            videoRef.current.muted = false;
+            setIsMuted(false);
+          }
+        };
+        document.addEventListener("pointerdown", unmuteOnGesture, { once: true });
+      });
     } else {
-      videoRef.current.pause();
+      video.pause();
     }
   }, [isVisible, autoPlay, isInView]);
+
 
   const formatTime = (time: number) => {
     if (!isFinite(time)) return "0:00";
