@@ -30,9 +30,10 @@ export const NoteComposerModal = ({
   existing,
 }: NoteComposerModalProps) => {
   const [text, setText] = useState("");
-  const [emoji] = useState<string | null>(null);
+  const [emoji, setEmoji] = useState<string | null>(null);
   const [music, setMusic] = useState("");
   const [audience, setAudience] = useState<NoteAudience>("followers");
+  const [error, setError] = useState<string | null>(null);
   const saveNote = useSaveNote();
   const deleteNote = useDeleteNote();
   const hasExisting = !!(existing || existingNote);
@@ -41,7 +42,9 @@ export const NoteComposerModal = ({
     if (!open) return;
     setText(existing?.content ?? existingNote ?? "");
     setMusic(existing?.music ?? "");
+    setEmoji(existing?.emoji ?? null);
     setAudience((existing?.audience as NoteAudience) || "followers");
+    setError(null);
   }, [open, existing, existingNote]);
 
   useEffect(() => {
@@ -53,26 +56,40 @@ export const NoteComposerModal = ({
 
   if (!open) return null;
 
+  const describe = (e: unknown) => {
+    const err = e as { message?: string; details?: string; hint?: string; code?: string };
+    return (
+      err?.message || err?.details || err?.hint || (err?.code ? `Error ${err.code}` : "Something went wrong")
+    );
+  };
+
   const handleShare = async () => {
     if (!text.trim()) return;
+    setError(null);
     try {
       await saveNote.mutateAsync({ content: text, emoji, music: music.trim() || null, audience });
       toast.success("Note shared");
       onOpenChange(false);
-    } catch {
-      toast.error("Couldn't share your note");
+    } catch (e) {
+      const msg = describe(e);
+      setError(msg);
+      toast.error("Couldn't share your note", { description: msg });
     }
   };
 
   const handleDelete = async () => {
+    setError(null);
     try {
       await deleteNote.mutateAsync();
       toast.success("Note removed");
       onOpenChange(false);
-    } catch {
-      toast.error("Couldn't remove note");
+    } catch (e) {
+      const msg = describe(e);
+      setError(msg);
+      toast.error("Couldn't remove note", { description: msg });
     }
   };
+
 
   return createPortal(
     <div
