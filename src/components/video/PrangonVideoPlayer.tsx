@@ -448,13 +448,25 @@ export const PrangonVideoPlayer = memo(({
         </button>
       )}
 
+      {/* Compact (reels): slim progress line pinned to the very top, never over the caption */}
+      {compact && (
+        <div className="absolute top-0 left-0 right-0 z-20 h-[3px] bg-white/20">
+          <div
+            className="h-full transition-[width] duration-75"
+            style={{ width: `${progress}%`, background: "#FF5A5F" }}
+          />
+        </div>
+      )}
+
       {/* Controls overlay */}
       <div
         className={cn(
           "absolute bottom-0 left-0 right-0 z-20 transition-all duration-300",
+          compact && "hidden",
           showControls || !isPlaying ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2 pointer-events-none"
         )}
       >
+
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent pointer-events-none" />
 
         <div className="relative px-3 pb-3 pt-8">
