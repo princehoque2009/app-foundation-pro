@@ -1,7 +1,5 @@
 import { useEffect, useState } from "react";
 
-const NOTE_EMOJIS = ["❤️", "😂", "🔥", "✨", "🥹", "😎", "🎧"];
-
 import { createPortal } from "react-dom";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { UserRound, X, Trash2, Music2, Globe2, Users } from "lucide-react";
@@ -14,6 +12,8 @@ import {
 } from "@/hooks/useNotes";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+
+const NOTE_EMOJIS = ["❤️", "😂", "🔥", "✨", "🥹", "😎", "🎧"];
 
 interface NoteComposerModalProps {
   open: boolean;
