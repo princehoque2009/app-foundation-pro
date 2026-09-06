@@ -1,4 +1,7 @@
 import { useEffect, useState } from "react";
+
+const NOTE_EMOJIS = ["❤️", "😂", "🔥", "✨", "🥹", "😎", "🎧"];
+
 import { createPortal } from "react-dom";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { UserRound, X, Trash2, Music2, Globe2, Users } from "lucide-react";
