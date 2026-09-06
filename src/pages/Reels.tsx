@@ -67,13 +67,8 @@ const Reels = () => {
               <ArrowLeft className="h-5 w-5" />
             </button>
             <span className="reel-text-shadow text-[15px] font-semibold text-white">Reels</span>
-            <button
-              onClick={() => navigate("/create")}
-              aria-label="Create reel"
-              className="lg-glass-strong lg-press lg-focus pointer-events-auto flex h-10 w-10 items-center justify-center rounded-full text-white"
-            >
-              <Camera className="h-5 w-5" />
-            </button>
+            <span className="h-10 w-10" aria-hidden="true" />
+
           </motion.div>
         )}
       </AnimatePresence>
