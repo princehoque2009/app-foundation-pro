@@ -1,7 +1,7 @@
 import { Seo } from "@/components/seo/Seo";
 import { ReelCard } from "@/components/reels/ReelCard";
 import { usePosts } from "@/hooks/usePosts";
-import { Loader2, ArrowLeft, Camera } from "lucide-react";
+import { Loader2, ArrowLeft } from "lucide-react";
 import { useRef, useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
