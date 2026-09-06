@@ -6,8 +6,8 @@ import {
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 
-// Global sound preference - persists across videos in session
-let globalMuted = true;
+// Global sound preference - persists across videos in session (sound ON by default)
+let globalMuted = false;
 const listeners = new Set<(m: boolean) => void>();
 const setGlobalMuted = (m: boolean) => {
   globalMuted = m;
@@ -18,6 +18,7 @@ try {
   const saved = sessionStorage.getItem("prangon_muted");
   if (saved !== null) globalMuted = saved === "true";
 } catch {}
+
 
 interface PrangonVideoPlayerProps {
   src: string;
