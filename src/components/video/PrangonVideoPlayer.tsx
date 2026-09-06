@@ -423,13 +423,16 @@ export const PrangonVideoPlayer = memo(({
         )}
       </AnimatePresence>
 
-      {/* Sound toggle - always visible */}
-      <button
-        onClick={(e) => { e.stopPropagation(); toggleMute(); }}
-        className="absolute top-3 right-3 z-20 h-9 w-9 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center transition-all hover:bg-black/60"
-      >
-        <VolumeIcon className="h-4 w-4 text-white" />
-      </button>
+      {/* Sound toggle - hidden in reels (compact) mode */}
+      {!compact && (
+        <button
+          onClick={(e) => { e.stopPropagation(); toggleMute(); }}
+          className="absolute top-3 right-3 z-20 h-9 w-9 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center transition-all hover:bg-black/60"
+        >
+          <VolumeIcon className="h-4 w-4 text-white" />
+        </button>
+      )}
+
 
       {/* Large play button when paused */}
       {!isPlaying && !isLoading && !hasError && showControls && (
