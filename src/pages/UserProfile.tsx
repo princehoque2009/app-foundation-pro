@@ -232,6 +232,8 @@ const UserProfile = () => {
         title={`${profile?.display_name || profile?.username || "Profile"} (@${profile?.username || "user"}) on Prangon`}
         description={(profile?.bio || `See posts, reels and Circles shared by ${profile?.display_name || profile?.username || "this member"} on Prangon.`).slice(0, 160)}
         path={`/profile/${userId}`}
+        type="profile"
+        image={profile?.avatar_url || undefined}
         jsonLd={{
           "@context": "https://schema.org",
           "@type": "ProfilePage",

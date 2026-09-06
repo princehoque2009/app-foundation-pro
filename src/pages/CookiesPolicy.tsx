@@ -5,6 +5,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
+import { Seo } from "@/components/seo/Seo";
 
 interface CookieType {
   id: string;
@@ -56,6 +57,7 @@ const CookiesPolicy = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <Seo title="Cookies Policy — Prangon" description="How Prangon uses essential, authentication, preference and analytics cookies, and how you can manage them." path="/cookies-policy" />
       {/* Header */}
       <div className="sticky top-0 z-40 bg-background/80 backdrop-blur-xl border-b border-border">
         <div className="flex items-center h-14 px-4 max-w-screen-xl mx-auto">
