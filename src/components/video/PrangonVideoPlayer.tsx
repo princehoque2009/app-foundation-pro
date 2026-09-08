@@ -74,7 +74,7 @@ export const PrangonVideoPlayer = memo(({
   const [tapCount, setTapCount] = useState(0);
   const [skipAnim, setSkipAnim] = useState<"fwd" | "bwd" | null>(null);
   const [showLikeAnim, setShowLikeAnim] = useState(false);
-  const [isVisible, setIsVisible] = useState(isInView);
+  const [isVisible, setIsVisible] = useState(false);
 
   // Sync with global mute state
   useEffect(() => {
@@ -103,7 +103,8 @@ export const PrangonVideoPlayer = memo(({
     return () => observerRef.current?.disconnect();
   }, []);
 
-  // Auto-play/pause based on visibility (sound on; fall back to muted if the browser blocks it)
+  // Auto-play/pause based on visibility. Audio is only ever enabled while the
+  // video is actually on screen (>=70% visible); off-screen videos are muted+paused.
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
@@ -115,7 +116,7 @@ export const PrangonVideoPlayer = memo(({
         setIsMuted(true);
         video.play().catch(() => {});
         const unmuteOnGesture = () => {
-          if (!globalMuted && videoRef.current) {
+          if (!globalMuted && videoRef.current && isVisible) {
             videoRef.current.muted = false;
             setIsMuted(false);
           }
@@ -123,6 +124,7 @@ export const PrangonVideoPlayer = memo(({
         document.addEventListener("pointerdown", unmuteOnGesture, { once: true });
       });
     } else {
+      video.muted = true;
       video.pause();
     }
   }, [isVisible, autoPlay, isInView]);
@@ -367,7 +369,7 @@ export const PrangonVideoPlayer = memo(({
         ref={videoRef}
         src={src}
         poster={poster}
-        muted={isMuted}
+        muted={isMuted || !isVisible}
         loop={loop}
         playsInline
         preload="auto"
