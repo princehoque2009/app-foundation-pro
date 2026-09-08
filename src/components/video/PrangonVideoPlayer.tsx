@@ -369,7 +369,7 @@ export const PrangonVideoPlayer = memo(({
         ref={videoRef}
         src={src}
         poster={poster}
-        muted={isMuted}
+        muted={isMuted || !isVisible}
         loop={loop}
         playsInline
         preload="auto"
