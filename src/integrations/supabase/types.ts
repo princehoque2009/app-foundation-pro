@@ -733,6 +733,36 @@ export type Database = {
         }
         Relationships: []
       }
+      feed_events: {
+        Row: {
+          author_id: string | null
+          created_at: string
+          event_type: string
+          id: string
+          post_id: string | null
+          user_id: string
+          value: number
+        }
+        Insert: {
+          author_id?: string | null
+          created_at?: string
+          event_type: string
+          id?: string
+          post_id?: string | null
+          user_id: string
+          value?: number
+        }
+        Update: {
+          author_id?: string | null
+          created_at?: string
+          event_type?: string
+          id?: string
+          post_id?: string | null
+          user_id?: string
+          value?: number
+        }
+        Relationships: []
+      }
       friend_requests: {
         Row: {
           created_at: string | null
@@ -1316,6 +1346,38 @@ export type Database = {
           },
         ]
       }
+      post_rankings: {
+        Row: {
+          engagement_score: number
+          post_id: string
+          quality_score: number
+          trending_score: number
+          updated_at: string
+        }
+        Insert: {
+          engagement_score?: number
+          post_id: string
+          quality_score?: number
+          trending_score?: number
+          updated_at?: string
+        }
+        Update: {
+          engagement_score?: number
+          post_id?: string
+          quality_score?: number
+          trending_score?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "post_rankings_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: true
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       post_reactions: {
         Row: {
           created_at: string
@@ -1381,8 +1443,10 @@ export type Database = {
         Row: {
           archived_at: string | null
           caption: string | null
+          circle_id: string | null
           comments_count: number | null
           created_at: string
+          engagement_score: number
           id: string
           is_archived: boolean
           is_reel: boolean | null
@@ -1390,15 +1454,19 @@ export type Database = {
           media_type: string | null
           media_url: string | null
           pinned_comment_id: string | null
+          topic_tags: string[]
           updated_at: string
           user_id: string
           views_count: number | null
+          visibility: string
         }
         Insert: {
           archived_at?: string | null
           caption?: string | null
+          circle_id?: string | null
           comments_count?: number | null
           created_at?: string
+          engagement_score?: number
           id?: string
           is_archived?: boolean
           is_reel?: boolean | null
@@ -1406,15 +1474,19 @@ export type Database = {
           media_type?: string | null
           media_url?: string | null
           pinned_comment_id?: string | null
+          topic_tags?: string[]
           updated_at?: string
           user_id: string
           views_count?: number | null
+          visibility?: string
         }
         Update: {
           archived_at?: string | null
           caption?: string | null
+          circle_id?: string | null
           comments_count?: number | null
           created_at?: string
+          engagement_score?: number
           id?: string
           is_archived?: boolean
           is_reel?: boolean | null
@@ -1422,9 +1494,11 @@ export type Database = {
           media_type?: string | null
           media_url?: string | null
           pinned_comment_id?: string | null
+          topic_tags?: string[]
           updated_at?: string
           user_id?: string
           views_count?: number | null
+          visibility?: string
         }
         Relationships: [
           {
@@ -1983,6 +2057,33 @@ export type Database = {
         }
         Relationships: []
       }
+      user_content_feedback: {
+        Row: {
+          author_id: string | null
+          created_at: string
+          feedback_type: string
+          id: string
+          post_id: string | null
+          user_id: string
+        }
+        Insert: {
+          author_id?: string | null
+          created_at?: string
+          feedback_type: string
+          id?: string
+          post_id?: string | null
+          user_id: string
+        }
+        Update: {
+          author_id?: string | null
+          created_at?: string
+          feedback_type?: string
+          id?: string
+          post_id?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_devices: {
         Row: {
           created_at: string
@@ -2019,6 +2120,39 @@ export type Database = {
         }
         Relationships: []
       }
+      user_interests: {
+        Row: {
+          created_at: string
+          id: string
+          interaction_count: number
+          interest_score: number
+          last_interaction_at: string
+          topic: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          interaction_count?: number
+          interest_score?: number
+          last_interaction_at?: string
+          topic: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          interaction_count?: number
+          interest_score?: number
+          last_interaction_at?: string
+          topic?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_notes: {
         Row: {
           audience: string
@@ -2048,6 +2182,48 @@ export type Database = {
           expires_at?: string
           id?: string
           music?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_relationship_scores: {
+        Row: {
+          circle_score: number
+          comment_score: number
+          created_at: string
+          id: string
+          last_interaction_at: string | null
+          message_score: number
+          reaction_score: number
+          related_user_id: string
+          relationship_score: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          circle_score?: number
+          comment_score?: number
+          created_at?: string
+          id?: string
+          last_interaction_at?: string | null
+          message_score?: number
+          reaction_score?: number
+          related_user_id: string
+          relationship_score?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          circle_score?: number
+          comment_score?: number
+          created_at?: string
+          id?: string
+          last_interaction_at?: string | null
+          message_score?: number
+          reaction_score?: number
+          related_user_id?: string
+          relationship_score?: number
+          updated_at?: string
           user_id?: string
         }
         Relationships: []
