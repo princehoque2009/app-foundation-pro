@@ -99,9 +99,9 @@ const Reels = () => {
               id={reel.id}
               authorId={reel.user_id}
               author={{
-                name: reel.profiles.display_name || reel.profiles.username,
-                username: reel.profiles.username,
-                avatar: reel.profiles.avatar_url || undefined,
+                name: reel.profiles?.display_name || reel.profiles?.username || "Unknown",
+                username: reel.profiles?.username || "unknown",
+                avatar: reel.profiles?.avatar_url || undefined,
               }}
               caption={reel.caption || undefined}
               videoUrl={reel.media_url || ""}
