@@ -5,18 +5,37 @@ import { useAppSettings } from "@/contexts/AppSettingsContext";
 import { useRoles } from "@/contexts/RolesContext";
 import { PostCard } from "@/components/home/PostCard";
 import { SuggestedAccounts } from "@/components/home/SuggestedAccounts";
-import { usePosts } from "@/hooks/usePosts";
+import { usePersonalizedFeed } from "@/hooks/useFeed";
 import { PostSkeleton, StorySkeleton } from "@/components/ui/Shimmer";
 import { SmartFeedAd } from "@/components/ads/SmartFeedAd";
-import { Fragment } from "react";
+import { Fragment, useEffect, useMemo, useRef } from "react";
 import { useTranslation } from "react-i18next";
+
 const AD_INTERVAL = 7;
+
 const Home = () => {
-  const { data: posts, isLoading } = usePosts(false);
+  const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } = usePersonalizedFeed();
   const { t } = useTranslation();
   const { settings } = useAppSettings();
   const { isAdmin } = useRoles();
   const showStories = isAdmin || settings.stories_enabled !== false;
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
+
+  const posts = useMemo(() => data?.pages.flatMap((p) => p.posts) ?? [], [data]);
+
+  useEffect(() => {
+    const el = sentinelRef.current;
+    if (!el || !hasNextPage) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && !isFetchingNextPage) fetchNextPage();
+      },
+      { rootMargin: "600px" }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
+
   return (
     <MainLayout>
       <Seo title="Prangon — Next-Generation Social Networking" description="Share moments, create reels, join private Circles and chat in real time on Prangon" path="/" />
@@ -26,7 +45,7 @@ const Home = () => {
         <div className="max-w-[640px] mx-auto px-0 sm:px-3"><div className="px-4 sm:px-0 py-2"><SuggestedAccounts /></div></div>
         <div className="max-w-[640px] mx-auto px-3 sm:px-4 py-4 space-y-5">
           <SmartFeedAd placement="home_feed" className="rounded-[20px] overflow-hidden" />
-          {isLoading ? <div className="space-y-5"><PostSkeleton /><PostSkeleton /><PostSkeleton /></div> : !posts || posts.length === 0 ? (
+          {isLoading ? <div className="space-y-5"><PostSkeleton /><PostSkeleton /><PostSkeleton /></div> : posts.length === 0 ? (
             <div className="empty-state border border-dashed border-border/60 rounded-[28px] bg-card/50 backdrop-blur-sm py-20"><div className="empty-state-icon"><span className="text-2xl">📸</span></div><p className="text-[15px] font-medium text-foreground">No posts yet</p><p className="text-sm text-muted-foreground mt-1 max-w-[260px] mx-auto">{t("home.noPosts")} Follow people to see their moments here.</p></div>
           ) : posts.map((post: any, index: number) => (
             <Fragment key={post.id}>
@@ -34,9 +53,12 @@ const Home = () => {
               {(index + 1) % AD_INTERVAL === 0 && index < posts.length - 1 && <SmartFeedAd key={`ad-${index}`} placement="home_feed" className="rounded-[28px] overflow-hidden border border-border/50" />}
             </Fragment>
           ))}
+          {isFetchingNextPage && <PostSkeleton />}
+          <div ref={sentinelRef} className="h-1" aria-hidden="true" />
         </div>
       </div>
     </MainLayout>
   );
 };
+
 export default Home;
