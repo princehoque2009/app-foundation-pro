@@ -135,14 +135,16 @@ Deno.serve(async (req) => {
       post_media ( id, media_url, media_type, display_order )
     `;
 
-    const horizon = new Date(Date.now() - 30 * 24 * 3600 * 1000).toISOString();
-    const base = () =>
-      db.from("posts").select(SELECT)
+    const horizon = new Date(Date.now() - 180 * 24 * 3600 * 1000).toISOString();
+    const base = (withHorizon = true) => {
+      let q = db.from("posts").select(SELECT)
         .eq("is_reel", false)
         .eq("is_archived", false)
         .eq("visibility", "public")
-        .lte("created_at", cursor.t)
-        .gte("created_at", horizon);
+        .lte("created_at", cursor.t);
+      if (withHorizon) q = q.gte("created_at", horizon);
+      return q;
+    };
 
     const queries: Promise<any>[] = [];
     const sources: string[] = [];
@@ -165,6 +167,17 @@ Deno.serve(async (req) => {
         if (!byId.has(post.id)) byId.set(post.id, { post, source: sources[i] });
       }
     });
+
+    // Backfill for young/sparse communities: ignore the recency horizon entirely
+    // so the feed is never empty just because nobody posted recently.
+    if (byId.size < (cursor.p + 1) * limit + limit) {
+      const { data: backfill } = await base(false)
+        .order("created_at", { ascending: false })
+        .limit(200);
+      for (const post of backfill ?? []) {
+        if (!byId.has(post.id)) byId.set(post.id, { post, source: "backfill" });
+      }
+    }
 
     // ---------- eligibility & safety ----------
     const candidates: Cand[] = [...byId.values()].filter(({ post }) => {
