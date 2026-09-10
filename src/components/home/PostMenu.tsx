@@ -1,4 +1,4 @@
-import { MoreVertical, Edit, Trash2, Flag, Share2, Pin, PinOff, Archive, BarChart3, Link2, Download, EyeOff, BellOff } from "lucide-react";
+import { MoreVertical, Edit, Trash2, Flag, Share2, Pin, PinOff, Archive, BarChart3, Link2, Download, EyeOff, BellOff, ThumbsDown } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -256,6 +256,10 @@ export const PostMenu = ({ postId, postUserId, isPinned = false, mediaUrl, media
             <DropdownMenuItem onClick={handleHide} className="cursor-pointer gap-2">
               <EyeOff className="h-4 w-4" />
               Hide post
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={handleNotInterested} className="cursor-pointer gap-2">
+              <ThumbsDown className="h-4 w-4" />
+              Not interested
             </DropdownMenuItem>
             <DropdownMenuItem onClick={handleMute} className="cursor-pointer gap-2">
               <BellOff className="h-4 w-4" />
