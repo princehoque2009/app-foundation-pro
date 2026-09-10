@@ -135,14 +135,16 @@ Deno.serve(async (req) => {
       post_media ( id, media_url, media_type, display_order )
     `;
 
-    const horizon = new Date(Date.now() - 30 * 24 * 3600 * 1000).toISOString();
-    const base = () =>
-      db.from("posts").select(SELECT)
+    const horizon = new Date(Date.now() - 180 * 24 * 3600 * 1000).toISOString();
+    const base = (withHorizon = true) => {
+      let q = db.from("posts").select(SELECT)
         .eq("is_reel", false)
         .eq("is_archived", false)
         .eq("visibility", "public")
-        .lte("created_at", cursor.t)
-        .gte("created_at", horizon);
+        .lte("created_at", cursor.t);
+      if (withHorizon) q = q.gte("created_at", horizon);
+      return q;
+    };
 
     const queries: Promise<any>[] = [];
     const sources: string[] = [];
