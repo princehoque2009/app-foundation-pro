@@ -168,6 +168,17 @@ Deno.serve(async (req) => {
       }
     });
 
+    // Backfill for young/sparse communities: ignore the recency horizon entirely
+    // so the feed is never empty just because nobody posted recently.
+    if (byId.size < (cursor.p + 1) * limit + limit) {
+      const { data: backfill } = await base(false)
+        .order("created_at", { ascending: false })
+        .limit(200);
+      for (const post of backfill ?? []) {
+        if (!byId.has(post.id)) byId.set(post.id, { post, source: "backfill" });
+      }
+    }
+
     // ---------- eligibility & safety ----------
     const candidates: Cand[] = [...byId.values()].filter(({ post }) => {
       if (!post?.id) return false;
