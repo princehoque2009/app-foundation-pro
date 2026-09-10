@@ -12,6 +12,7 @@ import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToggleArchive } from "@/hooks/usePostInteractions";
+import { useContentFeedback } from "@/hooks/useFeed";
 
 
 interface PostMenuProps {
