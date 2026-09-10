@@ -1,4 +1,4 @@
-import { MoreVertical, Edit, Trash2, Flag, Share2, Pin, PinOff, Archive, BarChart3, Link2, Download, EyeOff, BellOff } from "lucide-react";
+import { MoreVertical, Edit, Trash2, Flag, Share2, Pin, PinOff, Archive, BarChart3, Link2, Download, EyeOff, BellOff, ThumbsDown } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,6 +12,7 @@ import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToggleArchive } from "@/hooks/usePostInteractions";
+import { useContentFeedback } from "@/hooks/useFeed";
 
 
 interface PostMenuProps {
@@ -30,6 +31,7 @@ export const PostMenu = ({ postId, postUserId, isPinned = false, mediaUrl, media
   const queryClient = useQueryClient();
   const isOwner = user?.id === postUserId;
   const toggleArchive = useToggleArchive(postId);
+  const feedback = useContentFeedback();
 
 
   const handleReport = () => {
@@ -172,18 +174,16 @@ export const PostMenu = ({ postId, postUserId, isPinned = false, mediaUrl, media
     }
   };
 
+  const handleNotInterested = () => {
+    feedback.mutate({ postId, authorId: postUserId, feedbackType: "not_interested" });
+  };
+
   const handleHide = () => {
-    toast({
-      title: "Post hidden",
-      description: "You won't see this post anymore.",
-    });
+    feedback.mutate({ postId, authorId: postUserId, feedbackType: "hide" });
   };
 
   const handleMute = () => {
-    toast({
-      title: "User muted",
-      description: "You won't see posts from this user.",
-    });
+    feedback.mutate({ postId, authorId: postUserId, feedbackType: "mute" });
   };
 
   return (
@@ -256,6 +256,10 @@ export const PostMenu = ({ postId, postUserId, isPinned = false, mediaUrl, media
             <DropdownMenuItem onClick={handleHide} className="cursor-pointer gap-2">
               <EyeOff className="h-4 w-4" />
               Hide post
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={handleNotInterested} className="cursor-pointer gap-2">
+              <ThumbsDown className="h-4 w-4" />
+              Not interested
             </DropdownMenuItem>
             <DropdownMenuItem onClick={handleMute} className="cursor-pointer gap-2">
               <BellOff className="h-4 w-4" />
