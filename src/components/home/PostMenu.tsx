@@ -31,6 +31,7 @@ export const PostMenu = ({ postId, postUserId, isPinned = false, mediaUrl, media
   const queryClient = useQueryClient();
   const isOwner = user?.id === postUserId;
   const toggleArchive = useToggleArchive(postId);
+  const feedback = useContentFeedback();
 
 
   const handleReport = () => {
@@ -173,18 +174,16 @@ export const PostMenu = ({ postId, postUserId, isPinned = false, mediaUrl, media
     }
   };
 
+  const handleNotInterested = () => {
+    feedback.mutate({ postId, authorId: postUserId, feedbackType: "not_interested" });
+  };
+
   const handleHide = () => {
-    toast({
-      title: "Post hidden",
-      description: "You won't see this post anymore.",
-    });
+    feedback.mutate({ postId, authorId: postUserId, feedbackType: "hide" });
   };
 
   const handleMute = () => {
-    toast({
-      title: "User muted",
-      description: "You won't see posts from this user.",
-    });
+    feedback.mutate({ postId, authorId: postUserId, feedbackType: "mute" });
   };
 
   return (
