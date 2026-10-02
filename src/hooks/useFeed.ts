@@ -1,7 +1,9 @@
 import { useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 import {
+  fetchChronologicalFeed,
   fetchPersonalizedFeed,
   recordContentFeedback,
   recordFeedEvent,
@@ -10,13 +12,26 @@ import type { FeedPage, FeedbackType, FeedEventType } from "@/types/feed";
 
 export const FEED_QUERY_KEY = ["personalized-feed"];
 
-export const usePersonalizedFeed = (limit = 12) => {
+export type FeedMode = "foryou" | "latest" | "friends";
+
+export const usePersonalizedFeed = (mode: FeedMode = "foryou", limit = 12) => {
   const { user } = useAuth();
 
   return useInfiniteQuery<FeedPage>({
-    queryKey: [...FEED_QUERY_KEY, user?.id ?? "anon", limit],
+    queryKey: [...FEED_QUERY_KEY, mode, user?.id ?? "anon", limit],
     initialPageParam: null as string | null,
-    queryFn: ({ pageParam }) => fetchPersonalizedFeed(pageParam as string | null, limit),
+    queryFn: async ({ pageParam }) => {
+      const cursor = pageParam as string | null;
+      if (mode === "foryou") return fetchPersonalizedFeed(cursor, limit);
+      if (mode === "latest") return fetchChronologicalFeed(cursor, limit);
+      const { data } = await supabase
+        .from("friendships")
+        .select("friend_id")
+        .eq("user_id", user!.id)
+        .limit(2000);
+      const ids = (data ?? []).map((r: any) => r.friend_id);
+      return fetchChronologicalFeed(cursor, limit, ids);
+    },
     getNextPageParam: (lastPage) => lastPage.nextCursor,
     staleTime: 60_000,
     enabled: !!user?.id,

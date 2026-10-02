@@ -21,8 +21,10 @@ const POST_SELECT = `
 /** Chronological fallback used when the ranking service is unavailable. */
 export async function fetchChronologicalFeed(
   cursor: string | null,
-  limit = 12
+  limit = 12,
+  userIds?: string[]
 ): Promise<FeedPage> {
+  if (userIds && userIds.length === 0) return { posts: [], nextCursor: null, hasMore: false };
   let query = supabase
     .from("posts")
     .select(POST_SELECT)
@@ -32,6 +34,7 @@ export async function fetchChronologicalFeed(
     .order("created_at", { ascending: false })
     .limit(limit);
 
+  if (userIds) query = query.in("user_id", userIds);
   if (cursor) query = query.lt("created_at", cursor);
 
   const { data, error } = await query;
