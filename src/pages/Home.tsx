@@ -5,16 +5,24 @@ import { useAppSettings } from "@/contexts/AppSettingsContext";
 import { useRoles } from "@/contexts/RolesContext";
 import { PostCard } from "@/components/home/PostCard";
 import { SuggestedAccounts } from "@/components/home/SuggestedAccounts";
-import { usePersonalizedFeed } from "@/hooks/useFeed";
+import { usePersonalizedFeed, type FeedMode } from "@/hooks/useFeed";
 import { PostSkeleton, StorySkeleton } from "@/components/ui/Shimmer";
 import { SmartFeedAd } from "@/components/ads/SmartFeedAd";
-import { Fragment, useEffect, useMemo, useRef } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 const AD_INTERVAL = 7;
 
+const FEED_TABS: { id: FeedMode; label: string }[] = [
+  { id: "foryou", label: "For you" },
+  { id: "friends", label: "Friends" },
+  { id: "latest", label: "Latest" },
+];
+
 const Home = () => {
-  const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } = usePersonalizedFeed();
+  const [mode, setMode] = useState<FeedMode>(() => (localStorage.getItem("feed-mode") as FeedMode) || "foryou");
+  useEffect(() => { localStorage.setItem("feed-mode", mode); }, [mode]);
+  const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } = usePersonalizedFeed(mode);
   const { t } = useTranslation();
   const { settings } = useAppSettings();
   const { isAdmin } = useRoles();
@@ -44,6 +52,19 @@ const Home = () => {
         {showStories && <div className="max-w-[640px] mx-auto">{isLoading ? <div className="p-4"><StorySkeleton /></div> : <Stories />}</div>}
         <div className="max-w-[640px] mx-auto px-0 sm:px-3"><div className="px-4 sm:px-0 py-2"><SuggestedAccounts /></div></div>
         <div className="max-w-[640px] mx-auto px-3 sm:px-4 py-4 space-y-5">
+          <div role="tablist" aria-label="Feed filter" className="flex gap-1 p-1 rounded-full bg-muted/70 w-full">
+            {FEED_TABS.map((tab) => (
+              <button
+                key={tab.id}
+                role="tab"
+                aria-selected={mode === tab.id}
+                onClick={() => setMode(tab.id)}
+                className={`flex-1 h-9 rounded-full text-sm font-semibold transition-all ${mode === tab.id ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
           <SmartFeedAd placement="home_feed" className="rounded-[20px] overflow-hidden" />
           {isLoading ? <div className="space-y-5"><PostSkeleton /><PostSkeleton /><PostSkeleton /></div> : posts.length === 0 ? (
             <div className="empty-state border border-dashed border-border/60 rounded-[28px] bg-card/50 backdrop-blur-sm py-20"><div className="empty-state-icon"><span className="text-2xl">📸</span></div><p className="text-[15px] font-medium text-foreground">No posts yet</p><p className="text-sm text-muted-foreground mt-1 max-w-[260px] mx-auto">{t("home.noPosts")} Follow people to see their moments here.</p></div>
