@@ -14,7 +14,7 @@ export const FEED_QUERY_KEY = ["personalized-feed"];
 
 export type FeedMode = "foryou" | "latest" | "friends";
 
-export const usePersonalizedFeed = (mode: FeedMode = "foryou", limit = 12) => {
+export const usePersonalizedFeed = (mode: FeedMode = "latest", limit = 12) => {
   const { user } = useAuth();
 
   return useInfiniteQuery<FeedPage>({
