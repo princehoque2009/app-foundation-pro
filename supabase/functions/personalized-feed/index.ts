@@ -251,11 +251,24 @@ Deno.serve(async (req) => {
         circle * WEIGHTS.circle +
         exploration * WEIGHTS.exploration;
 
+      // Recency-first: blend score with a strong freshness term so new posts surface.
+      const recency = clamp01(Math.exp(-ageHours / 24));
+      score = score * 0.45 + recency * 0.55;
+
+      // Friends (followed / mutual / close) get top priority, strongest when recent.
+      const isFriend = mutuals.has(authorId) || following.has(authorId) || (relScores.get(authorId) ?? 0) > 0;
+      if (isFriend) {
+        score += 0.6 + recency * 0.6;
+        if (mutuals.has(authorId)) score += 0.1;
+      }
+      // Older posts (> 14 days) sink below fresh ones.
+      if (ageHours > 24 * 14) score *= 0.4;
+
       if (dampenedAuthors.has(authorId)) score *= 0.5;
-      if (alreadySeen.has(post.id)) score *= 0.45;
+      if (alreadySeen.has(post.id)) score *= 0.6;
       if (post.profiles?.is_verified && following.has(authorId)) score *= 1.03;
 
-      return { post, source, score: clamp01(score) * 100, isNew };
+      return { post, source, score: score * 100, isNew };
     });
 
     scored.sort((a, b) => b.score - a.score);
