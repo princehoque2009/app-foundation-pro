@@ -19,9 +19,18 @@ const FEED_TABS: { id: FeedMode; label: string }[] = [
   { id: "latest", label: "Latest" },
 ];
 
+/** Latest is the default for everyone; the v2 key drops any pre-existing auto-saved choice. */
+const FEED_MODE_KEY = "feed-mode-v2";
+const DEFAULT_FEED_MODE: FeedMode = "latest";
+
+const readStoredFeedMode = (): FeedMode => {
+  const stored = localStorage.getItem(FEED_MODE_KEY) as FeedMode | null;
+  return FEED_TABS.some((tab) => tab.id === stored) ? (stored as FeedMode) : DEFAULT_FEED_MODE;
+};
+
 const Home = () => {
-  const [mode, setMode] = useState<FeedMode>(() => (localStorage.getItem("feed-mode") as FeedMode) || "foryou");
-  useEffect(() => { localStorage.setItem("feed-mode", mode); }, [mode]);
+  const [mode, setMode] = useState<FeedMode>(readStoredFeedMode);
+  useEffect(() => { localStorage.setItem(FEED_MODE_KEY, mode); }, [mode]);
   const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } = usePersonalizedFeed(mode);
   const { t } = useTranslation();
   const { settings } = useAppSettings();
