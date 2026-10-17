@@ -73,6 +73,15 @@ const Anniversary = lazy(() => import("./pages/Anniversary"));
 const App = () => {
   const [showSplash, setShowSplash] = useState(true);
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const anniversaryActive = isAnniversaryActive();
+  const [showAnniversary, setShowAnniversary] = useState(
+    () => anniversaryActive && !isAnniversaryModalDismissed()
+  );
+
+  useEffect(() => {
+    document.documentElement.classList.toggle("prangon-v2", anniversaryActive);
+    return () => document.documentElement.classList.remove("prangon-v2");
+  }, [anniversaryActive]);
 
   useEffect(() => {
     const hasSeenSplash = sessionStorage.getItem("hasSeenSplash");
@@ -148,6 +157,7 @@ const App = () => {
                     <Route path="/activity-log" element={<ProtectedRoute><ActivityLog /></ProtectedRoute>} />
                     <Route path="/memories" element={<ProtectedRoute><Memories /></ProtectedRoute>} />
                     <Route path="/gaming" element={<ProtectedRoute><Gaming /></ProtectedRoute>} />
+                    <Route path="/anniversary" element={<ProtectedRoute><Anniversary /></ProtectedRoute>} />
                     <Route path="/suspended" element={<SuspendedAccount />} />
                     <Route path="*" element={<NotFound />} />
                     </Routes>
