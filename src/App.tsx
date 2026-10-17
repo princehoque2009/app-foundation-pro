@@ -115,7 +115,7 @@ const App = () => {
             <OnboardingSlides onComplete={handleOnboardingComplete} />
           )}
           <BrowserRouter>
-            {!showSplash && showAnniversary && (
+            {!showSplash && !showOnboarding && showAnniversary && (
               <AnniversaryModal onClose={() => setShowAnniversary(false)} />
             )}
             <AuthProvider>
