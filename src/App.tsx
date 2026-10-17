@@ -111,6 +111,9 @@ const App = () => {
           <Toaster />
           <Sonner />
           {showSplash && <SplashScreen onComplete={handleSplashComplete} />}
+          {!showSplash && showAnniversary && (
+            <AnniversaryModal onClose={() => setShowAnniversary(false)} />
+          )}
           {!showSplash && showOnboarding && (
             <OnboardingSlides onComplete={handleOnboardingComplete} />
           )}
