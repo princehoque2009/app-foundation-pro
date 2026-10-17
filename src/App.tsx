@@ -14,6 +14,8 @@ import { SplashScreen } from "@/components/SplashScreen";
 import { useSessionTimeout } from "@/hooks/useSessionTimeout";
 import { OnboardingSlides } from "@/components/onboarding/OnboardingSlides";
 import { CallProvider } from "@/contexts/CallContext";
+import { AnniversaryModal } from "@/components/anniversary/AnniversaryModal";
+import { isAnniversaryActive, isAnniversaryModalDismissed } from "@/lib/anniversary";
 
 // Core pages loaded eagerly to prevent blank screen flashes on tab switch
 import Home from "./pages/Home";
@@ -66,10 +68,20 @@ const PostView = lazy(() => import("./pages/PostView"));
 const ActivityLog = lazy(() => import("./pages/ActivityLog"));
 const Memories = lazy(() => import("./pages/Memories"));
 const Gaming = lazy(() => import("./pages/Gaming"));
+const Anniversary = lazy(() => import("./pages/Anniversary"));
 
 const App = () => {
   const [showSplash, setShowSplash] = useState(true);
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const anniversaryActive = isAnniversaryActive();
+  const [showAnniversary, setShowAnniversary] = useState(
+    () => anniversaryActive && !isAnniversaryModalDismissed()
+  );
+
+  useEffect(() => {
+    document.documentElement.classList.toggle("prangon-v2", anniversaryActive);
+    return () => document.documentElement.classList.remove("prangon-v2");
+  }, [anniversaryActive]);
 
   useEffect(() => {
     const hasSeenSplash = sessionStorage.getItem("hasSeenSplash");
@@ -103,6 +115,9 @@ const App = () => {
             <OnboardingSlides onComplete={handleOnboardingComplete} />
           )}
           <BrowserRouter>
+            {!showSplash && !showOnboarding && showAnniversary && (
+              <AnniversaryModal onClose={() => setShowAnniversary(false)} />
+            )}
             <AuthProvider>
               <SessionManager />
               <NotificationsManager />
@@ -145,6 +160,7 @@ const App = () => {
                     <Route path="/activity-log" element={<ProtectedRoute><ActivityLog /></ProtectedRoute>} />
                     <Route path="/memories" element={<ProtectedRoute><Memories /></ProtectedRoute>} />
                     <Route path="/gaming" element={<ProtectedRoute><Gaming /></ProtectedRoute>} />
+                    <Route path="/anniversary" element={<ProtectedRoute><Anniversary /></ProtectedRoute>} />
                     <Route path="/suspended" element={<SuspendedAccount />} />
                     <Route path="*" element={<NotFound />} />
                     </Routes>

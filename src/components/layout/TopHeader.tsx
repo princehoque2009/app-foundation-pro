@@ -7,6 +7,7 @@ import prangonLogo from "@/assets/prangon-logo.png";
 import { cn } from "@/lib/utils";
 import { useMemo, memo } from "react";
 import { useScrollCollapse, usePrefersReducedMotion, SPRING } from "@/hooks/useScrollCollapse";
+import { AnniversaryBadge } from "@/components/anniversary/AnniversaryBadge";
 
 const IconLink = ({
   to,
@@ -96,6 +97,9 @@ export const TopHeader = memo(() => {
               draggable={false}
               onContextMenu={(e) => e.preventDefault()}
             />
+          </Link>
+          <Link to="/anniversary" aria-label="Prangon v2.0 Anniversary" className="shrink-0">
+            <AnniversaryBadge />
           </Link>
         </div>
 
