@@ -198,6 +198,68 @@ export type Database = {
         }
         Relationships: []
       }
+      anniversary_capsules: {
+        Row: {
+          created_at: string
+          id: string
+          message: string
+          opens_at: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          message: string
+          opens_at?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          message?: string
+          opens_at?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      anniversary_collectibles: {
+        Row: {
+          badge: string
+          created_at: string
+          earned_at: string
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          badge: string
+          created_at?: string
+          earned_at?: string
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          badge?: string
+          created_at?: string
+          earned_at?: string
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "anniversary_collectibles_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       app_settings: {
         Row: {
           description: string | null
@@ -2366,6 +2428,12 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      anniversary_capsule: { Args: { p_message?: string }; Returns: Json }
+      anniversary_wrapped: { Args: never; Returns: Json }
+      claim_anniversary_collectible: {
+        Args: { p_badge: string }
+        Returns: undefined
+      }
       create_notification: {
         Args: {
           p_action_url?: string
