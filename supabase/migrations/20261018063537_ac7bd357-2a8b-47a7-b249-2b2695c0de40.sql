@@ -1,0 +1,5 @@
+CREATE POLICY "Capsules cannot be read directly" ON public.anniversary_capsules FOR SELECT TO authenticated USING (false);
+ALTER POLICY "Members can see earned anniversary awards" ON public.anniversary_collectibles USING (auth.uid() IS NOT NULL AND coalesce((auth.jwt()->>'is_anonymous')::boolean,false)=false);
+CREATE FUNCTION public.anniversary_require_member() RETURNS trigger LANGUAGE plpgsql SET search_path=public AS $$ BEGIN IF auth.uid() IS NOT NULL AND coalesce((auth.jwt()->>'is_anonymous')::boolean,false) THEN RAISE EXCEPTION 'Please use a full member account'; END IF; RETURN NEW; END $$;
+CREATE TRIGGER anniversary_awards_member BEFORE INSERT ON public.anniversary_collectibles FOR EACH ROW EXECUTE FUNCTION public.anniversary_require_member();
+CREATE TRIGGER anniversary_capsule_member BEFORE INSERT ON public.anniversary_capsules FOR EACH ROW EXECUTE FUNCTION public.anniversary_require_member();
