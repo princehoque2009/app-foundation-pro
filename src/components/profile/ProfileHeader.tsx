@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils";
 import { toast } from "@/hooks/use-toast";
 import { CoverPhotoUploader } from "./CoverPhotoUploader";
 import { SocialLinksInline } from "./SocialLinks";
+import { ProfileCollectibles } from "@/components/anniversary/ProfileCollectibles";
 import { optimizeCloudinaryUrl } from "@/lib/cloudinary";
 
 interface ProfileHeaderProps {
@@ -133,6 +134,7 @@ export const ProfileHeader = ({
               <UserRolesDisplay userId={userId} size="sm" />
             </div>
             <div className="mt-1 text-sm text-muted-foreground">@{profile?.username}</div>
+            <ProfileCollectibles userId={userId} />
             {profile?.bio && <p className="text-sm text-foreground/85 leading-relaxed pt-3 max-w-md mx-auto whitespace-pre-wrap">{profile.bio}</p>}
             {profile?.social_links && typeof profile.social_links === 'object' && Object.keys(profile.social_links as any).length > 0 && <div className="pt-3 flex justify-center"><SocialLinksInline links={profile.social_links} /></div>}
             {profile?.country && <div className="mt-2 text-[11px] uppercase tracking-widest text-muted-foreground">{profile.country}</div>}

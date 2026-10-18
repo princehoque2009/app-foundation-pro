@@ -1,0 +1,1 @@
+ALTER POLICY "Capsules cannot be read directly" ON public.anniversary_capsules USING (auth.uid() IS NOT NULL AND coalesce((auth.jwt()->>'is_anonymous')::boolean,false)=false AND false);

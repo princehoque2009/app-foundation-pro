@@ -1,16 +1,17 @@
+import { EVENT_START, EVENT_END, eventIsActive } from "./anniversaryRules";
 // PRANGON v2.0 — 7-Day Anniversary Edition feature flag.
 // Reversible: when the event window ends, isAnniversaryActive() returns false
 // and the original UI restores automatically — no deployment, no data changes.
 
-export const ANNIVERSARY_START = new Date("2026-10-17T00:00:00Z").getTime();
-export const ANNIVERSARY_END = new Date("2026-10-24T00:00:00Z").getTime();
+export const ANNIVERSARY_START = EVENT_START;
+export const ANNIVERSARY_END = EVENT_END;
 export const ANNIVERSARY_EDITION = "v2.0-anniversary";
 
 const DISMISS_KEY = `anniversary-modal-dismissed-${ANNIVERSARY_EDITION}`;
 
 export const isAnniversaryActive = (): boolean => {
   const now = Date.now();
-  return now >= ANNIVERSARY_START && now < ANNIVERSARY_END;
+  return eventIsActive(now);
 };
 
 export const anniversaryTimeLeft = (): { days: number; hours: number } => {

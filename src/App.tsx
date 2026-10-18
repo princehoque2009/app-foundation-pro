@@ -15,7 +15,8 @@ import { useSessionTimeout } from "@/hooks/useSessionTimeout";
 import { OnboardingSlides } from "@/components/onboarding/OnboardingSlides";
 import { CallProvider } from "@/contexts/CallContext";
 import { AnniversaryModal } from "@/components/anniversary/AnniversaryModal";
-import { isAnniversaryActive, isAnniversaryModalDismissed } from "@/lib/anniversary";
+import { useAnniversaryClock } from "@/hooks/useAnniversary";
+import { isAnniversaryModalDismissed } from "@/lib/anniversary";
 
 // Core pages loaded eagerly to prevent blank screen flashes on tab switch
 import Home from "./pages/Home";
@@ -73,7 +74,7 @@ const Anniversary = lazy(() => import("./pages/Anniversary"));
 const App = () => {
   const [showSplash, setShowSplash] = useState(true);
   const [showOnboarding, setShowOnboarding] = useState(false);
-  const anniversaryActive = isAnniversaryActive();
+  const { active: anniversaryActive } = useAnniversaryClock();
   const [showAnniversary, setShowAnniversary] = useState(
     () => anniversaryActive && !isAnniversaryModalDismissed()
   );
@@ -115,7 +116,7 @@ const App = () => {
             <OnboardingSlides onComplete={handleOnboardingComplete} />
           )}
           <BrowserRouter>
-            {!showSplash && !showOnboarding && showAnniversary && (
+            {!showSplash && !showOnboarding && anniversaryActive && showAnniversary && (
               <AnniversaryModal onClose={() => setShowAnniversary(false)} />
             )}
             <AuthProvider>
