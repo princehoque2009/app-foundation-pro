@@ -1,106 +1,99 @@
+import { useState } from "react";
+import { Link } from "react-router-dom";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { Seo } from "@/components/seo/Seo";
-import { anniversaryTimeLeft, isAnniversaryActive } from "@/lib/anniversary";
-import { Sparkles, Clock, Gift, BadgeCheck, Share2, Hourglass, Award, Rocket, Heart } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { ArrowUpRight, ArrowRight, Check, LockKeyhole, Sparkles, Share2, Heart, Film, MessageCircle, Eye, Download, Mail, Loader2 } from "lucide-react";
+import { useAnniversaryClock, useAnniversaryData } from "@/hooks/useAnniversary";
+import { canEarnCollectible, type CollectibleId } from "@/lib/anniversaryRules";
+import { COLLECTIBLES, CollectibleArt } from "@/components/anniversary/CollectibleArt";
+import sculpture from "@/assets/anniversary-sculpture.jpg";
 import { toast } from "@/hooks/use-toast";
 
-const BADGES = [
-  { name: "Founding Member", desc: "Joined during the first era of Prangon.", icon: Award },
-  { name: "Anniversary Star", desc: "Active during the v2.0 celebration week.", icon: Sparkles },
-  { name: "Circle Keeper", desc: "Built and grew a Circle community.", icon: Heart },
-  { name: "Pioneer Creator", desc: "Published reels and stories in year one.", icon: Rocket },
-];
-
 const Anniversary = () => {
-  const active = isAnniversaryActive();
-  const left = anniversaryTimeLeft();
-
+  const clock = useAnniversaryClock();
+  const { wrapped, awards, capsule, claim, seal } = useAnniversaryData();
+  const [selected, setSelected] = useState<CollectibleId | null>(null);
+  const [showWrapped, setShowWrapped] = useState(false);
+  const [step, setStep] = useState(0);
+  const [message, setMessage] = useState("");
+  const [confirmSeal, setConfirmSeal] = useState(false);
+  const chosen = COLLECTIBLES.find(c => c.id === selected);
+  const stats = wrapped.data;
+  const earned = (id: CollectibleId) => awards.data?.some(a => a.badge === id) ?? false;
+  const eligible = (id: CollectibleId) => !!stats && canEarnCollectible(id, Date.parse(stats.joined_at), stats.reels + stats.stories, clock.now);
   const share = async () => {
-    const url = `${window.location.origin}/anniversary`;
-    const text = "Celebrate PRANGON v2.0 — the 7-day Anniversary Edition!";
     try {
-      if (navigator.share) {
-        await navigator.share({ title: "PRANGON v2.0", text, url });
-      } else {
-        await navigator.clipboard.writeText(url);
-        toast({ title: "Link copied", description: "Share the anniversary page with your friends." });
-      }
-    } catch {
-      /* user cancelled */
-    }
+      if (navigator.share) await navigator.share({ title: "PRANGON v2.0", text: "One year. All of us. Celebrate Prangon.", url: window.location.href });
+      else { await navigator.clipboard.writeText(window.location.href); toast({ title: "Celebration link copied" }); }
+    } catch (error) { if (!(error instanceof DOMException && error.name === "AbortError")) toast({ title: "Could not share", variant: "destructive" }); }
   };
-
-  return (
-    <MainLayout>
-      <Seo
-        title="PRANGON v2.0 — Anniversary Edition"
-        description="Celebrate one year of Prangon: anniversary badges, Prangon Wrapped, Time Capsule and the story of how we built it."
-        path="/anniversary"
-      />
-      <div className="ann-page">
-        <header className="ann-page-hero">
-          <div className="ann-hero-glow" />
-          <Sparkles className="h-9 w-9 text-primary" />
-          <h1 className="ann-title">PRANGON <span>v2.0</span></h1>
-          <p className="ann-sub">The 7-Day Anniversary Edition — a celebration of everyone who built and believed in Prangon.</p>
-          {active && (
-            <div className="ann-countdown">
-              <Clock className="h-3.5 w-3.5" />
-              {left.days} days {left.hours} hours remaining
-            </div>
-          )}
-          <button onClick={share} className="ann-cta ann-cta-inline">
-            <Share2 className="h-4 w-4" /> Share the celebration
-          </button>
-        </header>
-
-        <section className="ann-page-section">
-          <h2 className="ann-section-title">Anniversary Collectibles</h2>
-          <div className="ann-badge-grid">
-            {BADGES.map((b) => (
-              <div key={b.name} className="ann-badge-card">
-                <div className="ann-tl-icon"><b.icon className="h-4 w-4" /></div>
-                <p className="ann-tl-title">{b.name}</p>
-                <p className="ann-tl-text">{b.desc}</p>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        <section className="ann-page-section ann-split">
-          <div className="ann-feature-card">
-            <Gift className="h-6 w-6 text-primary" />
-            <h3>Prangon Wrapped</h3>
-            <p>Your year in moments — top posts, closest circles and the friends you talked to most. A personal highlight reel of your first year.</p>
-          </div>
-          <div className="ann-feature-card">
-            <Hourglass className="h-6 w-6 text-primary" />
-            <h3>Time Capsule</h3>
-            <p>Write a note to your future self. Sealed today, opened on the next anniversary. Some things are worth waiting for.</p>
-          </div>
-        </section>
-
-        <section className="ann-page-section">
-          <h2 className="ann-section-title">Special Thanks</h2>
-          <div className="ann-thanks-card">
-            <div className="ann-thanks-avatar">SM</div>
-            <div>
-              <p className="ann-tl-title flex items-center gap-1.5">
-                Shohail Mahmud <BadgeCheck className="h-4 w-4 text-primary" />
-              </p>
-              <p className="ann-tl-text">
-                To our second developer, <span className="text-primary font-medium">@s09_dev</span>: thank you for the craft, the patience and the belief. Prangon v2.0 carries your fingerprints everywhere.
-              </p>
-            </div>
-          </div>
-        </section>
-
-        <footer className="ann-page-footer">
-          <p>Built with love by the Prangon team. Here's to year two.</p>
-        </footer>
+  const download = () => {
+    if (!stats) return;
+    const text = `PRANGON — MY YEAR ONE\nPosts: ${stats.posts}\nReels: ${stats.reels}\nRecorded stories: ${stats.stories}\nLikes received: ${stats.likes}\nComments received: ${stats.comments}\nViews: ${stats.views}\nOctober 17, 2025 – October 16, 2026`;
+    const url = URL.createObjectURL(new Blob([text], { type: "text/plain" }));
+    const a = document.createElement("a"); a.href = url; a.download = "prangon-wrapped-2026.txt"; a.click(); URL.revokeObjectURL(url);
+  };
+  const wrapSlides = stats ? [
+    { label: "YOUR FIRST CHAPTER", value: stats.posts + stats.reels + stats.stories, title: "Moments with your name on them.", detail: `${stats.posts} posts · ${stats.reels} reels · ${stats.stories} recorded stories`, icon: Film },
+    { label: "THE LOVE CAME BACK", value: stats.likes, title: "Little hearts. Real connections.", detail: `${stats.comments} comments received across your year-one content`, icon: Heart },
+    { label: "YOU MADE AN IMPRESSION", value: stats.views, title: "Your moments were seen.", detail: "Recorded post and reel views during your first chapter", icon: Eye },
+  ] : [];
+  const slide = wrapSlides[step];
+  return <MainLayout>
+    <Seo title="PRANGON v2.0 — Anniversary Edition" description="One year. All of us. Earn anniversary collectibles, explore your personal Prangon Wrapped and seal a private Time Capsule." path="/anniversary" />
+    <div className="anniversary-page">
+      <header className="anniversary-hero">
+        <img src={sculpture} alt="Sculptural glass Prangon 2.0 anniversary edition" width={1536} height={1024} className="anniversary-hero-art" />
+        <div className="anniversary-hero-copy">
+          <span className="edition-eyebrow">OCT 17 — 23, 2026 · YEAR ONE</span>
+          <h1>PRANGON <span>v2.0</span></h1>
+          <h2>One year.<br />All of us.</h2>
+          <p>A celebration of the moments, the first voices, and the people who made this place ours.</p>
+          <Button onClick={() => document.getElementById("collectibles")?.scrollIntoView({ behavior: "smooth" })} className="edition-primary">Discover your collectibles <ArrowRight /></Button>
+        </div>
+        <span className="edition-hero-foot">THE ANNIVERSARY EDITION / 001</span>
+      </header>
+      <div className="edition-event-strip">
+        <div><span className="edition-live-dot" /><strong>{clock.active ? "Seven days. A lasting memory." : "The celebration lives on."}</strong><p>{clock.active ? "Limited-time claims · Permanent collectibles" : "Earned awards and sealed capsules stay with you."}</p></div>
+        {clock.active ? <div className="edition-clock">{[[clock.days,"DAYS"],[clock.hours,"HRS"],[clock.minutes,"MIN"],[clock.seconds,"SEC"]].map(([value,label]) => <div key={label}><strong>{String(value).padStart(2,"0")}</strong><span>{label}</span></div>)}</div> : <span className="edition-tag">EVENT COMPLETE</span>}
       </div>
-    </MainLayout>
-  );
+      <nav className="edition-nav" aria-label="Anniversary sections"><a href="#collectibles">Collectibles</a><a href="#wrapped">Your Wrapped</a><a href="#capsule">Time Capsule</a><Button variant="ghost" size="icon" aria-label="Share anniversary" title="Share anniversary" onClick={share}><Share2 /></Button></nav>
+      <section id="collectibles" className="edition-section">
+        <div className="edition-section-heading"><div><span className="edition-eyebrow">KEEP A PIECE OF YEAR ONE</span><h2>Anniversary Collectibles</h2></div><span className="edition-count">{awards.data?.length ?? 0} / 3 collected</span></div>
+        <p className="edition-intro">Not just a badge. Your part in our story, made permanent.</p>
+        {(awards.error || wrapped.error) && <p role="alert" className="edition-error">{(awards.error || wrapped.error)?.message} <Button variant="link" onClick={() => { awards.refetch(); wrapped.refetch(); }}>Retry</Button></p>}
+        <div className="edition-collectibles">{COLLECTIBLES.map((c, i) => <article className={`edition-collectible edition-${c.id}`} key={c.id}>
+          <div className="edition-card-top"><span>NO. 00{i+1}</span><span>{earned(c.id) ? "COLLECTED" : "ANNIVERSARY EXCLUSIVE"}</span></div>
+          <CollectibleArt id={c.id} className="edition-medal" />
+          <span className="edition-eyebrow">{c.edition}</span><h3>{c.name}</h3><p>{c.story}</p>
+          <div className="edition-requirement"><Check className="h-4 w-4" /><span>{c.requirement}</span></div>
+          <Button variant="outline" className="edition-card-button" onClick={() => { claim.reset(); setSelected(c.id); }}>{earned(c.id) ? <><Check /> View your collectible</> : <>Explore collectible <ArrowUpRight /></>}</Button>
+        </article>)}</div>
+      </section>
+      <section id="wrapped" className="edition-section edition-wrapped-section">
+        <div className="edition-wrapped-art" aria-hidden="true"><span>YOUR</span><strong>20<br />26</strong><span>YEAR, REPLAYED.</span></div>
+        <div className="edition-feature-copy"><span className="edition-eyebrow">A YEAR THAT COULD ONLY BE YOURS</span><h2>Prangon Wrapped</h2><p>The moments you shared. The love you received. A personal look back at your first chapter on Prangon.</p>
+          <div className="edition-mini-stats">{[[Film,stats?.posts,"Posts"],[Heart,stats?.likes,"Likes"],[MessageCircle,stats?.comments,"Comments"]].map(([Icon,value,label]) => { const StatIcon = Icon as typeof Film; return <div key={String(label)}><StatIcon /><strong>{typeof value === "number" ? value.toLocaleString() : "—"}</strong><span>{String(label)}</span></div>; })}</div>
+          <Button className="edition-primary" disabled={!stats} onClick={() => { setStep(0); setShowWrapped(true); }}>{wrapped.isLoading ? <Loader2 className="animate-spin" /> : <Sparkles />} Open my Wrapped <ArrowUpRight /></Button>
+          <small>October 17, 2025 – October 16, 2026 · Based on recorded activity</small>
+        </div>
+      </section>
+      <section id="capsule" className="edition-section edition-capsule-section">
+        <div className="edition-feature-copy"><span className="edition-eyebrow">FOR THE PERSON YOU’LL BECOME</span><h2>Time Capsule</h2><p>A thought. A promise. A little hope for the year ahead. Seal a letter to your future self — and meet it again on our next anniversary.</p><div className="edition-capsule-date"><LockKeyhole /><div><strong>Opens October 17, 2027</strong><span>Private. Just you and your future self.</span></div></div></div>
+        <div className="edition-letter">
+          {capsule.isLoading ? <Loader2 className="animate-spin" /> : capsule.data ? <><Mail className="edition-letter-icon" /><span className="edition-eyebrow">{capsule.data.message ? "DELIVERED TO YOUR FUTURE SELF" : "SEALED WITH HOPE"}</span><h3>{capsule.data.message ? "Your letter has arrived." : "See you in a year."}</h3>{capsule.data.message ? <p className="whitespace-pre-wrap">{capsule.data.message}</p> : <p>Your words are sealed. No previews, no peeking.<br />Opening on October 17, 2027.</p>}<small>Sealed {new Date(capsule.data.created_at).toLocaleDateString()}</small></> : <><label htmlFor="capsule-message">Dear future me,</label><Textarea id="capsule-message" placeholder="What do you hope to remember a year from now?" value={message} onChange={e => setMessage(e.target.value)} maxLength={2000} disabled={!clock.active} className="edition-letter-input" /><div className="edition-letter-bottom"><span>{message.length} / 2000</span><Button disabled={!clock.active || !message.trim() || capsule.isError} onClick={() => setConfirmSeal(true)}><LockKeyhole /> Seal my capsule</Button></div>{!clock.active && <p>The sealing window has closed.</p>}</>}
+          {(capsule.error || seal.error) && <p role="alert" className="edition-error">{(capsule.error || seal.error)?.message}<Button variant="link" onClick={() => capsule.refetch()}>Retry</Button></p>}
+        </div>
+      </section>
+      <section className="edition-section edition-thanks"><span className="edition-eyebrow">BUILT BY PEOPLE. FOR PEOPLE.</span><h2>This milestone is yours, too.</h2><p>Special thanks to <strong>Shohail Mahmud</strong>, our second developer, <strong>@s09_dev</strong>. For the craft, the patience, the late nights, and the belief that brought Prangon v2.0 to life.</p><span className="edition-signature">The Prangon team</span></section>
+      <footer className="edition-footer"><span>PRANGON / YEAR ONE</span><span>Here’s to the next chapter.</span><Button variant="ghost" onClick={share}><Share2 /> Share the celebration</Button></footer>
+    </div>
+    <Dialog open={!!chosen} onOpenChange={open => { if (!open) setSelected(null); }}><DialogContent className="edition-detail-dialog"><DialogTitle>{chosen?.name}</DialogTitle><DialogDescription>{chosen?.requirement}</DialogDescription>{chosen && <><CollectibleArt id={chosen.id} className="edition-detail-medal" /><p>{chosen.story}</p><p className="text-sm text-muted-foreground">Once claimed, this collectible appears on your profile and remains after the celebration ends.</p>{claim.error && <p role="alert" className="edition-error">{claim.error.message}</p>}<Button disabled={earned(chosen.id) || !eligible(chosen.id) || claim.isPending || awards.isLoading || awards.isError} onClick={() => claim.mutate(chosen.id)}>{claim.isPending ? <Loader2 className="animate-spin" /> : earned(chosen.id) ? <Check /> : <Sparkles />}{earned(chosen.id) ? "Collected · On your profile" : !clock.active ? "Claiming has ended" : eligible(chosen.id) ? "Claim collectible" : "Not eligible"}</Button>{!earned(chosen.id) && !eligible(chosen.id) && <small className="text-muted-foreground">Eligibility is based on your recorded account and content history.</small>}</>}</DialogContent></Dialog>
+    <Dialog open={showWrapped} onOpenChange={setShowWrapped}><DialogContent className="edition-wrapped-dialog"><DialogTitle>Your Prangon Wrapped</DialogTitle><DialogDescription>Year one · October 2025–October 2026</DialogDescription><div className="edition-story-progress">{wrapSlides.map((_, i) => <span key={i} className={i <= step ? "is-complete" : ""} />)}</div>{slide && <div className="edition-story"><slide.icon /><span className="edition-eyebrow">{slide.label}</span><strong>{slide.value.toLocaleString()}</strong><h3>{slide.title}</h3><p>{slide.detail}</p></div>}{step === 2 && stats?.top_post && <Link className="edition-top-post" to={`/post/${stats.top_post.id}`}><span>Your most-loved post</span><p>{stats.top_post.caption || "A moment worth revisiting"}</p><strong>{stats.top_post.likes ?? 0} likes <ArrowUpRight className="inline h-4 w-4" /></strong></Link>}<div className="flex justify-between gap-2"><Button variant="outline" disabled={step === 0} onClick={() => setStep(s => s-1)}>Previous</Button>{step < 2 ? <Button onClick={() => setStep(s => s+1)}>Next <ArrowRight /></Button> : <Button onClick={download}><Download /> Save my recap</Button>}</div><small className="text-muted-foreground">Deleted or no longer recorded activity is not included.</small></DialogContent></Dialog>
+    <Dialog open={confirmSeal} onOpenChange={setConfirmSeal}><DialogContent><DialogTitle>Seal your letter for one year?</DialogTitle><DialogDescription>Once sealed, your letter cannot be edited or viewed until October 17, 2027. Only you can open it.</DialogDescription>{seal.error && <p role="alert" className="edition-error">{seal.error.message}</p>}<Button disabled={seal.isPending || !clock.active} onClick={() => seal.mutate(message, { onSuccess: () => { setConfirmSeal(false); setMessage(""); } })}>{seal.isPending ? <Loader2 className="animate-spin" /> : <LockKeyhole />} Seal until October 17, 2027</Button></DialogContent></Dialog>
+  </MainLayout>;
 };
-
 export default Anniversary;
