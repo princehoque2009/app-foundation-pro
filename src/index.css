@@ -1680,3 +1680,26 @@
 }
 @media (max-width:380px) { .edition-collectible { grid-template-columns:90px minmax(0,1fr); gap:4px 12px; } .edition-medal { width:90px; height:90px; } .edition-section-heading { flex-direction:column; gap:8px; } .edition-count { margin-top:0; } .edition-clock { gap:8px; } .edition-event-strip { gap:10px; } }
 @media (prefers-reduced-motion:reduce) { .prangon-v2 .page-enter,.ann-chip-live,.ann-hero-glow { animation:none; } .edition-collectible,.edition-medal { transition:none; } .edition-collectible:hover,.edition-collectible:hover .edition-medal { transform:none; } }
+
+/* ===== v2.0 Anniversary Month — Photocard + app-wide celebration skin ===== */
+.edition-photocard-section { display:grid; grid-template-columns:1fr 1fr; gap:48px; align-items:center; }
+.edition-photocard-art { position:relative; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; min-height:380px; border-radius:28px; overflow:hidden; background:linear-gradient(150deg,#16080d,#2a0f16 55%,#0c060a); box-shadow:0 30px 60px -30px rgba(255,79,90,.35), inset 0 0 0 1px rgba(255,255,255,.08); }
+.edition-photocard-art::before { content:""; position:absolute; inset:0; background:radial-gradient(circle at 50% 32%, rgba(255,79,90,.5), transparent 60%); }
+.edition-photocard-art span { position:relative; font-size:11px; letter-spacing:.4em; color:#ffb9be; }
+.edition-photocard-art strong { position:relative; font-size:64px; line-height:.95; text-align:center; color:#fff; letter-spacing:.02em; }
+.edition-poster-dialog { width:min(480px, calc(100% - 24px)); }
+.edition-poster-frame { position:relative; border-radius:20px; overflow:hidden; background:#16080d; box-shadow:inset 0 0 0 1px rgba(255,255,255,.1); }
+.edition-poster-canvas { display:block; width:100%; height:auto; }
+.edition-poster-placeholder { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; color:#c9a3a9; font-size:12px; }
+.edition-poster-placeholder svg { width:28px; height:28px; opacity:.7; }
+@media (max-width:760px) { .edition-photocard-section { grid-template-columns:1fr; gap:28px; } .edition-photocard-art { min-height:260px; } .edition-photocard-art strong { font-size:44px; } }
+
+/* App-wide v2.0 skin (auto-removed when October ends) */
+.prangon-v2 body { background:hsl(var(--background)); }
+.prangon-v2 header .lg-glass { box-shadow:0 2px 6px hsl(20 12% 10%/.07), 0 10px 30px -8px hsl(355 84% 60%/.22), 0 0 0 1px hsl(355 60% 80%/.5), inset 0 1px 0 hsl(0 0% 100%/.9); }
+.prangon-v2 .lg-glass { position:relative; }
+.prangon-v2 .lg-glass::after { content:""; position:absolute; inset:0; pointer-events:none; border-radius:inherit; background:linear-gradient(120deg, transparent 30%, hsl(355 84% 65%/.06) 45%, transparent 60%); }
+.prangon-v2 .text-primary, .prangon-v2 a:hover { filter:saturate(1.15); }
+.prangon-v2 .bg-primary { box-shadow:0 6px 18px -6px hsl(355 84% 60%/.45); }
+.prangon-v2 nav a, .prangon-v2 button { transition-timing-function:cubic-bezier(.22,1,.36,1); }
+.prangon-v2 .anniversary-ribbon { position:sticky; top:0; z-index:30; text-align:center; font-size:10px; letter-spacing:.3em; padding:6px 12px; color:#fff; background:linear-gradient(90deg,#FF4F5A,#FFB020 55%,#7CE7C4); }
