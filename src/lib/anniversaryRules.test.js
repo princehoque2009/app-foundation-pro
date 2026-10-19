@@ -1,12 +1,12 @@
 import { test, expect } from "bun:test";
 import { eventIsActive, canEarnCollectible, canOpenCapsule, EVENT_START, EVENT_END, CAPSULE_OPEN } from "./anniversaryRules";
-test("edition lasts exactly seven days and ends exclusively", () => {
-  expect(EVENT_END - EVENT_START).toBe(7 * 86400000);
+test("edition lasts the whole month of October and ends exclusively", () => {
+  expect(EVENT_END - EVENT_START).toBe(31 * 86400000);
   expect(eventIsActive(EVENT_START - 1)).toBe(false);
   expect(eventIsActive(EVENT_START)).toBe(true);
   expect(eventIsActive(EVENT_END)).toBe(false);
 });
-test("founding award requires joining before the anniversary", () => {
+test("founding award requires joining before the anniversary month", () => {
   expect(canEarnCollectible("founding", EVENT_START - 1, 0, EVENT_START)).toBe(true);
   expect(canEarnCollectible("founding", EVENT_START, 0, EVENT_START)).toBe(false);
 });
