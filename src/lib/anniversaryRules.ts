@@ -1,6 +1,6 @@
 export const YEAR_ONE_START = Date.parse("2025-10-17T00:00:00Z");
-export const EVENT_START = Date.parse("2026-10-17T00:00:00Z");
-export const EVENT_END = Date.parse("2026-10-24T00:00:00Z");
+export const EVENT_START = Date.parse("2026-10-01T00:00:00Z");
+export const EVENT_END = Date.parse("2026-11-01T00:00:00Z");
 export const CAPSULE_OPEN = Date.parse("2027-10-17T00:00:00Z");
 export type CollectibleId = "founding" | "star" | "pioneer";
 export const eventIsActive = (now: number) => now >= EVENT_START && now < EVENT_END;
