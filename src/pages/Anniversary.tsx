@@ -52,7 +52,7 @@ const Anniversary = () => {
       <header className="anniversary-hero">
         <img src={sculpture} alt="Sculptural glass Prangon 2.0 anniversary edition" width={1536} height={1024} className="anniversary-hero-art" />
         <div className="anniversary-hero-copy">
-          <span className="edition-eyebrow">OCT 17 — 23, 2026 · YEAR ONE</span>
+          <span className="edition-eyebrow">ALL OCTOBER 2026 · YEAR ONE</span>
           <h1>PRANGON <span>v2.0</span></h1>
           <h2>One year.<br />All of us.</h2>
           <p>A celebration of the moments, the first voices, and the people who made this place ours.</p>
@@ -61,10 +61,10 @@ const Anniversary = () => {
         <span className="edition-hero-foot">THE ANNIVERSARY EDITION / 001</span>
       </header>
       <div className="edition-event-strip">
-        <div><span className="edition-live-dot" /><strong>{clock.active ? "Seven days. A lasting memory." : "The celebration lives on."}</strong><p>{clock.active ? "Limited-time claims · Permanent collectibles" : "Earned awards and sealed capsules stay with you."}</p></div>
+        <div><span className="edition-live-dot" /><strong>{clock.active ? "A whole month. A lasting memory." : "The celebration lives on."}</strong><p>{clock.active ? "All October · Limited-time claims · Permanent collectibles" : "Earned awards and sealed capsules stay with you."}</p></div>
         {clock.active ? <div className="edition-clock">{[[clock.days,"DAYS"],[clock.hours,"HRS"],[clock.minutes,"MIN"],[clock.seconds,"SEC"]].map(([value,label]) => <div key={label}><strong>{String(value).padStart(2,"0")}</strong><span>{label}</span></div>)}</div> : <span className="edition-tag">EVENT COMPLETE</span>}
       </div>
-      <nav className="edition-nav" aria-label="Anniversary sections"><a href="#collectibles">Collectibles</a><a href="#wrapped">Your Wrapped</a><a href="#capsule">Time Capsule</a><Button variant="ghost" size="icon" aria-label="Share anniversary" title="Share anniversary" onClick={share}><Share2 /></Button></nav>
+      <nav className="edition-nav" aria-label="Anniversary sections"><a href="#collectibles">Collectibles</a><a href="#wrapped">Your Wrapped</a><a href="#photocard">Photocard</a><a href="#capsule">Time Capsule</a><Button variant="ghost" size="icon" aria-label="Share anniversary" title="Share anniversary" onClick={share}><Share2 /></Button></nav>
       <section id="collectibles" className="edition-section">
         <div className="edition-section-heading"><div><span className="edition-eyebrow">KEEP A PIECE OF YEAR ONE</span><h2>Anniversary Collectibles</h2></div><span className="edition-count">{awards.data?.length ?? 0} / 3 collected</span></div>
         <p className="edition-intro">Not just a badge. Your part in our story, made permanent.</p>
