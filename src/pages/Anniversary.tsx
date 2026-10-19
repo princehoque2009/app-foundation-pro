@@ -5,10 +5,12 @@ import { Seo } from "@/components/seo/Seo";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowUpRight, ArrowRight, Check, LockKeyhole, Sparkles, Share2, Heart, Film, MessageCircle, Eye, Download, Mail, Loader2 } from "lucide-react";
+import { ArrowUpRight, ArrowRight, Check, LockKeyhole, Sparkles, Share2, Heart, Film, MessageCircle, Eye, Download, Mail, Loader2, Image as ImageIcon } from "lucide-react";
 import { useAnniversaryClock, useAnniversaryData } from "@/hooks/useAnniversary";
+import { useCurrentProfile } from "@/hooks/useCurrentProfile";
 import { canEarnCollectible, type CollectibleId } from "@/lib/anniversaryRules";
 import { COLLECTIBLES, CollectibleArt } from "@/components/anniversary/CollectibleArt";
+import { PhotocardPoster } from "@/components/anniversary/PhotocardPoster";
 import sculpture from "@/assets/anniversary-sculpture.jpg";
 import { toast } from "@/hooks/use-toast";
 
@@ -20,6 +22,8 @@ const Anniversary = () => {
   const [step, setStep] = useState(0);
   const [message, setMessage] = useState("");
   const [confirmSeal, setConfirmSeal] = useState(false);
+  const [showPoster, setShowPoster] = useState(false);
+  const { data: profile } = useCurrentProfile();
   const chosen = COLLECTIBLES.find(c => c.id === selected);
   const stats = wrapped.data;
   const earned = (id: CollectibleId) => awards.data?.some(a => a.badge === id) ?? false;
