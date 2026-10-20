@@ -13,6 +13,7 @@ import { COLLECTIBLES, CollectibleArt } from "@/components/anniversary/Collectib
 import { PhotocardPoster } from "@/components/anniversary/PhotocardPoster";
 import sculpture from "@/assets/anniversary-sculpture.jpg";
 import { toast } from "@/hooks/use-toast";
+import { downloadWrappedPoster, shareWrappedPoster } from "@/lib/wrappedPoster";
 
 const Anniversary = () => {
   const clock = useAnniversaryClock();
@@ -23,6 +24,7 @@ const Anniversary = () => {
   const [message, setMessage] = useState("");
   const [confirmSeal, setConfirmSeal] = useState(false);
   const [showPoster, setShowPoster] = useState(false);
+  const [posterBusy, setPosterBusy] = useState(false);
   const { data: profile } = useCurrentProfile();
   const chosen = COLLECTIBLES.find(c => c.id === selected);
   const stats = wrapped.data;
@@ -34,11 +36,25 @@ const Anniversary = () => {
       else { await navigator.clipboard.writeText(window.location.href); toast({ title: "Celebration link copied" }); }
     } catch (error) { if (!(error instanceof DOMException && error.name === "AbortError")) toast({ title: "Could not share", variant: "destructive" }); }
   };
-  const download = () => {
-    if (!stats) return;
-    const text = `PRANGON — MY YEAR ONE\nPosts: ${stats.posts}\nReels: ${stats.reels}\nRecorded stories: ${stats.stories}\nLikes received: ${stats.likes}\nComments received: ${stats.comments}\nViews: ${stats.views}\nOctober 17, 2025 – October 16, 2026`;
-    const url = URL.createObjectURL(new Blob([text], { type: "text/plain" }));
-    const a = document.createElement("a"); a.href = url; a.download = "prangon-wrapped-2026.txt"; a.click(); URL.revokeObjectURL(url);
+  const saveRecap = async () => {
+    if (!stats || posterBusy) return;
+    setPosterBusy(true);
+    try {
+      await downloadWrappedPoster(stats, profile);
+      toast({ title: "Recap saved as PNG" });
+    } catch (error) {
+      toast({ title: "Could not save recap", description: error instanceof Error ? error.message : "Please try again.", variant: "destructive" });
+    } finally { setPosterBusy(false); }
+  };
+  const shareRecap = async () => {
+    if (!stats || posterBusy) return;
+    setPosterBusy(true);
+    try {
+      const result = await shareWrappedPoster(stats, profile);
+      if (result === "downloaded") toast({ title: "Recap saved — share it anywhere" });
+    } catch (error) {
+      if (!(error instanceof DOMException && error.name === "AbortError")) toast({ title: "Could not share recap", description: error instanceof Error ? error.message : "Please try again.", variant: "destructive" });
+    } finally { setPosterBusy(false); }
   };
   const wrapSlides = stats ? [
     { label: "YOUR FIRST CHAPTER", value: stats.posts + stats.reels + stats.stories, title: "Moments with your name on them.", detail: `${stats.posts} posts · ${stats.reels} reels · ${stats.stories} recorded stories`, icon: Film },
@@ -103,7 +119,7 @@ const Anniversary = () => {
       <footer className="edition-footer"><span>PRANGON / YEAR ONE</span><span>Here’s to the next chapter.</span><Button variant="ghost" onClick={share}><Share2 /> Share the celebration</Button></footer>
     </div>
     <Dialog open={!!chosen} onOpenChange={open => { if (!open) setSelected(null); }}><DialogContent className="edition-detail-dialog"><DialogTitle>{chosen?.name}</DialogTitle><DialogDescription>{chosen?.requirement}</DialogDescription>{chosen && <><CollectibleArt id={chosen.id} className="edition-detail-medal" /><p>{chosen.story}</p><p className="text-sm text-muted-foreground">Once claimed, this collectible appears on your profile and remains after the celebration ends.</p>{claim.error && <p role="alert" className="edition-error">{claim.error.message}</p>}<Button disabled={earned(chosen.id) || !eligible(chosen.id) || claim.isPending || awards.isLoading || awards.isError} onClick={() => claim.mutate(chosen.id)}>{claim.isPending ? <Loader2 className="animate-spin" /> : earned(chosen.id) ? <Check /> : <Sparkles />}{earned(chosen.id) ? "Collected · On your profile" : !clock.active ? "Claiming has ended" : eligible(chosen.id) ? "Claim collectible" : "Not eligible"}</Button>{!earned(chosen.id) && !eligible(chosen.id) && <small className="text-muted-foreground">Eligibility is based on your recorded account and content history.</small>}</>}</DialogContent></Dialog>
-    <Dialog open={showWrapped} onOpenChange={setShowWrapped}><DialogContent className="edition-wrapped-dialog"><DialogTitle>Your Prangon Wrapped</DialogTitle><DialogDescription>Year one · October 2025–October 2026</DialogDescription><div className="edition-story-progress">{wrapSlides.map((_, i) => <span key={i} className={i <= step ? "is-complete" : ""} />)}</div>{slide && <div className="edition-story"><slide.icon /><span className="edition-eyebrow">{slide.label}</span><strong>{slide.value.toLocaleString()}</strong><h3>{slide.title}</h3><p>{slide.detail}</p></div>}{step === 2 && stats?.top_post && <Link className="edition-top-post" to={`/post/${stats.top_post.id}`}><span>Your most-loved post</span><p>{stats.top_post.caption || "A moment worth revisiting"}</p><strong>{stats.top_post.likes ?? 0} likes <ArrowUpRight className="inline h-4 w-4" /></strong></Link>}<div className="flex justify-between gap-2"><Button variant="outline" disabled={step === 0} onClick={() => setStep(s => s-1)}>Previous</Button>{step < 2 ? <Button onClick={() => setStep(s => s+1)}>Next <ArrowRight /></Button> : <Button onClick={download}><Download /> Save my recap</Button>}</div><small className="text-muted-foreground">Deleted or no longer recorded activity is not included.</small></DialogContent></Dialog>
+    <Dialog open={showWrapped} onOpenChange={setShowWrapped}><DialogContent className="edition-wrapped-dialog"><DialogTitle>Your Prangon Wrapped</DialogTitle><DialogDescription>Year one · October 2025–October 2026</DialogDescription><div className="edition-story-progress">{wrapSlides.map((_, i) => <span key={i} className={i <= step ? "is-complete" : ""} />)}</div>{slide && <div className="edition-story"><slide.icon /><span className="edition-eyebrow">{slide.label}</span><strong>{slide.value.toLocaleString()}</strong><h3>{slide.title}</h3><p>{slide.detail}</p></div>}{step === 2 && stats?.top_post && <Link className="edition-top-post" to={`/post/${stats.top_post.id}`}><span>Your most-loved post</span><p>{stats.top_post.caption || "A moment worth revisiting"}</p><strong>{stats.top_post.likes ?? 0} likes <ArrowUpRight className="inline h-4 w-4" /></strong></Link>}<div className="flex justify-between gap-2"><Button variant="outline" disabled={step === 0} onClick={() => setStep(s => s-1)}>Previous</Button>{step < 2 ? <Button onClick={() => setStep(s => s+1)}>Next <ArrowRight /></Button> : <div className="flex gap-2"><Button variant="outline" size="icon" aria-label="Share my recap" title="Share my recap" disabled={posterBusy} onClick={shareRecap}>{posterBusy ? <Loader2 className="animate-spin" /> : <Share2 />}</Button><Button disabled={posterBusy} onClick={saveRecap}>{posterBusy ? <Loader2 className="animate-spin" /> : <Download />} Save my recap</Button></div>}</div><small className="text-muted-foreground">Deleted or no longer recorded activity is not included.</small></DialogContent></Dialog>
     <PhotocardPoster open={showPoster} onOpenChange={setShowPoster} name={profile?.display_name ?? ""} username={profile?.username ?? "member"} avatarUrl={profile?.avatar_url ?? null} stats={stats} collectibles={awards.data?.length ?? 0} />
     <Dialog open={confirmSeal} onOpenChange={setConfirmSeal}><DialogContent><DialogTitle>Seal your letter for one year?</DialogTitle><DialogDescription>Once sealed, your letter cannot be edited or viewed until October 17, 2027. Only you can open it.</DialogDescription>{seal.error && <p role="alert" className="edition-error">{seal.error.message}</p>}<Button disabled={seal.isPending || !clock.active} onClick={() => seal.mutate(message, { onSuccess: () => { setConfirmSeal(false); setMessage(""); } })}>{seal.isPending ? <Loader2 className="animate-spin" /> : <LockKeyhole />} Seal until October 17, 2027</Button></DialogContent></Dialog>
   </MainLayout>;
