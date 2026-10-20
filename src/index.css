@@ -1534,6 +1534,15 @@
 /* Anniversary campaign: semantic roles shared by page and portalled dialogs. */
 :root {
   --edition-ink: 180 10% 7%;
+  --edition-recap-ink: #0d1312;
+  --edition-recap-middle: #151f1d;
+  --edition-recap-bottom: #090e0d;
+  --edition-recap-paper: #F7FBFA;
+  --edition-recap-silver: rgba(200,214,211,.85);
+  --edition-recap-mint: #7CE7C4;
+  --edition-recap-gold: #F0BE5A;
+  --edition-recap-card: rgba(255,255,255,.06);
+  --edition-recap-border: rgba(255,255,255,.14);
   --edition-paper: 0 0% 98%;
   --edition-silver: 180 4% 72%;
   --edition-mint: 157 52% 68%;

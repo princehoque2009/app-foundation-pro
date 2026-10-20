@@ -13,6 +13,7 @@ import { COLLECTIBLES, CollectibleArt } from "@/components/anniversary/Collectib
 import { PhotocardPoster } from "@/components/anniversary/PhotocardPoster";
 import sculpture from "@/assets/anniversary-sculpture.jpg";
 import { toast } from "@/hooks/use-toast";
+import { downloadWrappedPoster, shareWrappedPoster } from "@/lib/wrappedPoster";
 
 const Anniversary = () => {
   const clock = useAnniversaryClock();
@@ -23,6 +24,7 @@ const Anniversary = () => {
   const [message, setMessage] = useState("");
   const [confirmSeal, setConfirmSeal] = useState(false);
   const [showPoster, setShowPoster] = useState(false);
+  const [posterBusy, setPosterBusy] = useState(false);
   const { data: profile } = useCurrentProfile();
   const chosen = COLLECTIBLES.find(c => c.id === selected);
   const stats = wrapped.data;
@@ -34,11 +36,25 @@ const Anniversary = () => {
       else { await navigator.clipboard.writeText(window.location.href); toast({ title: "Celebration link copied" }); }
     } catch (error) { if (!(error instanceof DOMException && error.name === "AbortError")) toast({ title: "Could not share", variant: "destructive" }); }
   };
-  const download = () => {
-    if (!stats) return;
-    const text = `PRANGON — MY YEAR ONE\nPosts: ${stats.posts}\nReels: ${stats.reels}\nRecorded stories: ${stats.stories}\nLikes received: ${stats.likes}\nComments received: ${stats.comments}\nViews: ${stats.views}\nOctober 17, 2025 – October 16, 2026`;
-    const url = URL.createObjectURL(new Blob([text], { type: "text/plain" }));
-    const a = document.createElement("a"); a.href = url; a.download = "prangon-wrapped-2026.txt"; a.click(); URL.revokeObjectURL(url);
+  const saveRecap = async () => {
+    if (!stats || posterBusy) return;
+    setPosterBusy(true);
+    try {
+      await downloadWrappedPoster(stats, profile);
+      toast({ title: "Recap saved as PNG" });
+    } catch (error) {
+      toast({ title: "Could not save recap", description: error instanceof Error ? error.message : "Please try again.", variant: "destructive" });
+    } finally { setPosterBusy(false); }
+  };
+  const shareRecap = async () => {
+    if (!stats || posterBusy) return;
+    setPosterBusy(true);
+    try {
+      const result = await shareWrappedPoster(stats, profile);
+      if (result === "downloaded") toast({ title: "Recap saved — share it anywhere" });
+    } catch (error) {
+      if (!(error instanceof DOMException && error.name === "AbortError")) toast({ title: "Could not share recap", description: error instanceof Error ? error.message : "Please try again.", variant: "destructive" });
+    } finally { setPosterBusy(false); }
   };
   const wrapSlides = stats ? [
     { label: "YOUR FIRST CHAPTER", value: stats.posts + stats.reels + stats.stories, title: "Moments with your name on them.", detail: `${stats.posts} posts · ${stats.reels} reels · ${stats.stories} recorded stories`, icon: Film },
