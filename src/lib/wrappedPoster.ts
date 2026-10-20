@@ -44,28 +44,33 @@ export async function renderWrappedPoster(stats: Wrapped, profile: PosterProfile
   const [avatar, thumbnail] = await Promise.all([loadImage(profile?.avatar_url), loadImage(stats.top_post?.media_url)]);
   await document.fonts?.ready;
   const css = getComputedStyle(document.documentElement);
-  const color = (role: string) => {
-    const value = css.getPropertyValue(`--edition-recap-${role}`).trim();
+  const color = (role: string, opacity = 1) => {
+    const value = css.getPropertyValue(`--edition-${role}`).trim();
     if (!value) throw new Error("Recap colors could not load. Please reload and try again.");
-    return value;
+    return `hsl(${value} / ${opacity})`;
   };
-  const ink = color("ink"), middle = color("middle"), bottom = color("bottom");
-  const paper = color("paper"), silver = color("silver"), mint = color("mint"), gold = color("gold");
-  const card = color("card"), border = color("border");
-  const background = ctx.createLinearGradient(0, 0, 0, HEIGHT);
-  background.addColorStop(0, ink); background.addColorStop(.5, middle); background.addColorStop(1, bottom);
+  const ink = color("ink"), paper = color("paper");
+  const muted = color("ink", .64), mint = color("mint", .55), gold = color("gold", .45);
+  const card = color("paper", .86), border = color("ink", .09);
+  // Build the quiet, light base first. All tones come from the anniversary
+  // tokens, not the legacy dark recap palette or the user's current theme.
+  ctx.fillStyle = paper; ctx.fillRect(0, 0, WIDTH, HEIGHT);
+  const background = ctx.createLinearGradient(0, 0, WIDTH, HEIGHT);
+  background.addColorStop(0, color("mint", .19));
+  background.addColorStop(.55, color("paper", .15));
+  background.addColorStop(1, color("gold", .055));
   ctx.fillStyle = background; ctx.fillRect(0, 0, WIDTH, HEIGHT);
-  for (const [x, y, radius, tone, opacity] of [[170, 300, 760, mint, .2], [960, 1560, 820, gold, .16]] as const) {
-    const glow = ctx.createRadialGradient(x, y, 0, x, y, radius);
-    glow.addColorStop(0, tone); glow.addColorStop(1, "transparent");
-    ctx.globalAlpha = opacity; ctx.fillStyle = glow; ctx.fillRect(0, 0, WIDTH, HEIGHT);
-  }
+  // An oversized, feathered wash has no visible circular boundary.
+  const wash = ctx.createRadialGradient(WIDTH, HEIGHT, 0, WIDTH, HEIGHT, HEIGHT);
+  wash.addColorStop(0, color("gold", .035));
+  wash.addColorStop(1, color("gold", 0));
+  ctx.fillStyle = wash; ctx.fillRect(0, 0, WIDTH, HEIGHT);
   let seed = 2026;
   const random = () => { seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0; return seed / 4294967296; };
-  for (let i = 0; i < 120; i++) {
-    ctx.globalAlpha = .1 + random() * .3;
-    ctx.fillStyle = [mint, gold, paper][i % 3];
-    ctx.beginPath(); ctx.arc(random() * WIDTH, random() * HEIGHT, 1 + random() * 2.5, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = ink;
+  for (let i = 0; i < 38000; i++) {
+    ctx.globalAlpha = .008 + random() * .012;
+    ctx.fillRect(Math.floor(random() * WIDTH), Math.floor(random() * HEIGHT), 1, 1);
   }
   ctx.globalAlpha = 1;
   ctx.textAlign = "center";
@@ -74,52 +79,58 @@ export async function renderWrappedPoster(stats: Wrapped, profile: PosterProfile
     ctx.fillText(fitText(ctx, value, size, width, weight, minimum), x, y);
   };
   const label = (value: string, x: number, y: number, size: number, tone: string, width = 920) => {
-    ctx.letterSpacing = "3px";
+    // Tracking is included in measurement, so long labels still fit.
+    ctx.letterSpacing = "0px";
     text(value, x, y, size, tone, width);
     ctx.letterSpacing = "0px";
   };
   const drawCard = (x: number, y: number, width: number, height: number) => {
-    ctx.beginPath(); ctx.roundRect(x, y, width, height, 30);
-    ctx.fillStyle = card; ctx.fill(); ctx.strokeStyle = border; ctx.lineWidth = 2; ctx.stroke();
+    ctx.save();
+    ctx.shadowColor = color("ink", .045); ctx.shadowBlur = 14; ctx.shadowOffsetY = 4;
+    ctx.beginPath(); ctx.roundRect(x, y, width, height, 8);
+    ctx.fillStyle = card; ctx.fill();
+    ctx.shadowColor = color("ink", 0);
+    ctx.strokeStyle = border; ctx.lineWidth = 1; ctx.stroke();
+    ctx.restore();
   };
-  label("PRANGON · YEAR ONE", 540, 132, 28, silver);
-  text("MY YEAR ONE", 540, 260, 104, paper, 920, 800, 72);
-  label("PRANGON WRAPPED · 2026", 540, 318, 34, mint);
+  label("PRANGON · YEAR ONE", 540, 132, 28, muted);
+  text("MY YEAR ONE", 540, 260, 104, ink, 920, 800, 72);
+  label("PRANGON WRAPPED · 2026", 540, 318, 34, muted);
   const ring = ctx.createLinearGradient(372, 352, 708, 688);
-  ring.addColorStop(0, gold); ring.addColorStop(.5, mint); ring.addColorStop(1, silver);
+  ring.addColorStop(0, gold); ring.addColorStop(1, mint);
   ctx.beginPath(); ctx.arc(540, 520, 168, 0, Math.PI * 2);
-  ctx.strokeStyle = ring; ctx.lineWidth = 12; ctx.stroke();
+  ctx.strokeStyle = ring; ctx.lineWidth = 5; ctx.stroke();
   ctx.save(); ctx.beginPath(); ctx.arc(540, 520, 156, 0, Math.PI * 2); ctx.clip();
   if (avatar) cover(ctx, avatar, 384, 364, 312);
   else {
     ctx.fillStyle = card; ctx.fillRect(372, 352, 336, 336);
     ctx.textBaseline = "middle";
-    text(Array.from(profile?.display_name?.trim() || profile?.username || "P")[0].toUpperCase(), 540, 526, 132, mint, 260, 700);
+    text(Array.from(profile?.display_name?.trim() || profile?.username || "P")[0].toUpperCase(), 540, 526, 132, ink, 260, 700);
   }
   ctx.restore();
-  text(profile?.display_name?.trim() || "Prangon member", 540, 782, 68, paper, 900, 800, 48);
-  text(`@${profile?.username || "member"}`, 540, 842, 34, mint, 900);
+  text(profile?.display_name?.trim() || "Prangon member", 540, 782, 68, ink, 900, 800, 48);
+  text(`@${profile?.username || "member"}`, 540, 842, 34, muted, 900);
   const cells = [["Posts", stats.posts], ["Reels", stats.reels], ["Stories", stats.stories], ["Likes", stats.likes], ["Comments", stats.comments], ["Views", stats.views]] as const;
   cells.forEach(([name, value], i) => {
     const x = 80 + (i % 3) * 314, y = 906 + Math.floor(i / 3) * 216;
     drawCard(x, y, 292, 192);
-    text(value.toLocaleString(), x + 146, y + 95, 76, paper, 252, 800, 32);
-    label(name.toUpperCase(), x + 146, y + 150, 24, silver, 252);
+    text(value.toLocaleString(), x + 146, y + 95, 76, ink, 252, 800, 32);
+    label(name.toUpperCase(), x + 146, y + 150, 24, muted, 252);
   });
   if (stats.top_post) {
-    label("MOST-LOVED POST", 540, 1380, 24, silver);
+    label("MOST-LOVED POST", 540, 1380, 24, muted);
     drawCard(80, 1410, 920, 210);
-    ctx.save(); ctx.beginPath(); ctx.roundRect(110, 1440, 150, 150, 18); ctx.clip();
+    ctx.save(); ctx.beginPath(); ctx.roundRect(110, 1440, 150, 150, 8); ctx.clip();
     if (thumbnail) cover(ctx, thumbnail, 110, 1440, 150);
-    else { ctx.fillStyle = card; ctx.fillRect(110, 1440, 150, 150); text("P", 185, 1535, 64, mint, 120, 800); }
+    else { ctx.fillStyle = card; ctx.fillRect(110, 1440, 150, 150); text("P", 185, 1535, 64, ink, 120, 800); }
     ctx.restore(); ctx.textAlign = "left";
-    text(stats.top_post.caption?.trim() || "A moment worth revisiting", 292, 1488, 30, paper, 670);
-    text(`${stats.top_post.likes.toLocaleString()} likes`, 292, 1552, 34, mint, 670, 700, 26);
+    text(stats.top_post.caption?.trim() || "A moment worth revisiting", 292, 1488, 30, ink, 670);
+    text(`${stats.top_post.likes.toLocaleString()} likes`, 292, 1552, 34, muted, 670, 700, 26);
     ctx.textAlign = "center";
   }
-  text("One year. All of us.", 540, 1740, 48, paper, 920, 800);
-  label("OCTOBER 17, 2025 — OCTOBER 16, 2026", 540, 1804, 26, silver);
-  label("PRANGON / YEAR ONE", 540, 1860, 22, mint);
+  text("One year. All of us.", 540, 1740, 48, ink, 920, 800);
+  label("OCTOBER 17, 2025 — OCTOBER 16, 2026", 540, 1804, 26, muted);
+  label("PRANGON / YEAR ONE", 540, 1860, 22, muted);
   return canvas;
 }
 
