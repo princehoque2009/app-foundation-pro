@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -10,8 +10,9 @@ import { cn } from "@/lib/utils";
 import { toast } from "@/hooks/use-toast";
 import { CoverPhotoUploader } from "./CoverPhotoUploader";
 import { SocialLinksInline } from "./SocialLinks";
-import { ProfileCollectibles } from "@/components/anniversary/ProfileCollectibles";
 import { optimizeCloudinaryUrl } from "@/lib/cloudinary";
+import { supabase } from "@/integrations/supabase/client";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface ProfileHeaderProps {
   profile: any;
@@ -38,6 +39,33 @@ export const ProfileHeader = ({
   const [followersDialogTab, setFollowersDialogTab] = useState<"followers" | "following">("followers");
   const theme = (profile as any)?.profile_theme || 'default';
   const isVerifiedTheme = profile?.is_verified && theme !== 'default';
+  const queryClient = useQueryClient();
+
+  // Global 24h trial expiry check - runs on every profile view, not just Edit dialog
+  // Ensures trial reverts to old setup + deletes GIF even if user doesn't open Edit dialog
+  useEffect(() => {
+    if (!isOwner || !profile || theme !== 'nitro') return;
+    const checkExpiry = async () => {
+      try {
+        // Call global revert function (security definer, reverts all expired)
+        try { await (supabase as any).rpc('revert_expired_nitro_trials'); } catch {}
+        // Check own trial
+        const { data: trial } = await (supabase as any).from('nitro_trials').select('*').eq('user_id', userId).maybeSingle();
+        if (!trial) return;
+        const { data: perm } = await (supabase as any).from('nitro_permanent_unlocks').select('user_id').eq('user_id', userId).maybeSingle();
+        if (perm) return; // permanent wins, don't revert
+        const isExpired = new Date(trial.expires_at) < new Date() || trial.is_expired || (Date.now() - new Date(trial.started_at).getTime() >= 24*60*60*1000);
+        if (isExpired) {
+          queryClient.invalidateQueries({ queryKey: ['profile'] });
+          queryClient.invalidateQueries({ queryKey: ['current-profile'] });
+        }
+      } catch {}
+    };
+    checkExpiry();
+    // Check every 60s while on profile
+    const iv = setInterval(checkExpiry, 60000);
+    return () => clearInterval(iv);
+  }, [isOwner, userId, theme, profile?.id]);
 
   const openFollowersDialog = (tab: "followers" | "following") => {
     setFollowersDialogTab(tab);
@@ -133,8 +161,7 @@ export const ProfileHeader = ({
               {profile?.is_verified && <VerifiedBadge size="lg" theme={theme} />}
               <UserRolesDisplay userId={userId} size="sm" />
             </div>
-            <div className="mt-1 text-sm text-muted-foreground">@{profile?.username}</div>
-            <ProfileCollectibles userId={userId} />
+            <div className="mt-1 text-sm text-muted-foreground">@{profile?.username || "member"}</div>
             {profile?.bio && <p className="text-sm text-foreground/85 leading-relaxed pt-3 max-w-md mx-auto whitespace-pre-wrap">{profile.bio}</p>}
             {profile?.social_links && typeof profile.social_links === 'object' && Object.keys(profile.social_links as any).length > 0 && <div className="pt-3 flex justify-center"><SocialLinksInline links={profile.social_links} /></div>}
             {profile?.country && <div className="mt-2 text-[11px] uppercase tracking-widest text-muted-foreground">{profile.country}</div>}
